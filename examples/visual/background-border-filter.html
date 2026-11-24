@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS 背景、边框与滤镜实验室</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #25301f;
+      --muted: #69715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1d;
+      --green-soft: #e2ead7;
+      --line: #d8d3c5;
+      --amber: #d49a3a;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    button, select, input { font: inherit; }
+    button, select, input[type="range"], input[type="checkbox"] { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    ::selection { background: #cfdcba; color: var(--green-dark); }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { text-decoration-thickness: 2px; }
+    .skip-link { position: absolute; inset-block-start: -5rem; inset-inline-start: 1rem; z-index: 10; padding: .6rem 1rem; border-radius: 8px; background: var(--green-dark); color: white; }
+    .skip-link:focus { inset-block-start: 1rem; }
+    .page { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; padding-block: 1.5rem 4rem; }
+    .topbar { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; justify-content: space-between; }
+    .back-link { font-weight: 700; }
+    .top-note { color: var(--muted); font-size: .9rem; }
+
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); gap: 2rem; align-items: end; margin-block: 2.2rem 2rem; }
+    .eyebrow { margin: 0 0 .7rem; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 15ch; margin: 0; font-family: Georgia, "Songti SC", "STSong", serif; font-size: clamp(2.3rem, 7vw, 4.5rem); line-height: 1.06; letter-spacing: -.045em; text-wrap: balance; }
+    .intro { max-width: 62ch; margin: 1rem 0 0; color: var(--muted); font-size: 1.05rem; }
+    .hero-art { min-height: 180px; border: 1px solid var(--green); border-radius: var(--radius); background:
+      radial-gradient(circle at 70% 28%, rgb(255 244 197 / .95) 0 12%, transparent 12.5%),
+      repeating-radial-gradient(circle at 70% 28%, transparent 0 17px, rgb(63 107 42 / .12) 18px 19px),
+      linear-gradient(135deg, #dfe8d2, #f1e6ca);
+      box-shadow: 12px 12px 0 #d5ddc8; }
+
+    .toolbar, .card-controls { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: end; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: rgb(255 253 247 / .75); }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-block-end: .55rem; font-size: .82rem; font-weight: 800; color: var(--green-dark); }
+    .control { display: grid; gap: .35rem; flex: 1 1 150px; min-width: 0; }
+    .control > span, .control > label { font-size: .8rem; font-weight: 700; color: var(--muted); }
+    .control output { font-variant-numeric: tabular-nums; color: var(--green-dark); }
+    select { width: 100%; min-height: 42px; padding: .5rem .7rem; border: 1px solid #bcb8aa; border-radius: 8px; background: var(--card); color: var(--ink); }
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+    input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--green); }
+    button { min-height: 42px; padding: .5rem .85rem; border: 1px solid #aab29e; border-radius: 999px; background: var(--card); color: var(--green-dark); font-weight: 700; }
+    button:hover { border-color: var(--green); background: #f4f7ef; }
+    button[aria-pressed="true"] { border-color: var(--green-dark); background: var(--green); color: white; }
+    .button-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .button-row button { flex: 1 1 auto; }
+    .check-control { display: flex; gap: .5rem; align-items: center; min-height: 42px; font-size: .88rem; font-weight: 700; color: var(--green-dark); }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block-start: 1rem; }
+    .card { min-width: 0; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 8px 24px rgb(50 60 40 / .045); }
+    .card.wide { grid-column: 1 / -1; }
+    .card h2 { margin: 0; font-size: 1.22rem; letter-spacing: -.02em; }
+    .card h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--green-dark); }
+    .card p { margin-block: .65rem 0; }
+    .desc { color: var(--muted); font-size: .92rem; }
+    code { padding: .1em .35em; border-radius: 5px; background: #eeeee5; color: #315322; font: .88em ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .property-note { margin-block-start: 1rem; padding: .75rem .9rem; border-inline-start: 4px solid var(--green); border-radius: 0 9px 9px 0; background: #f0f3e9; color: #4d5944; font-size: .86rem; }
+    pre { margin: .8rem 0 0; padding: .9rem; overflow-x: auto; border-radius: 10px; background: #25301f; color: #e8eddf; font: .78rem/1.65 ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .support { margin-block-start: 1rem; color: var(--muted); font-size: .85rem; }
+
+    .background-stage {
+      min-height: 310px;
+      margin-block-start: 1rem;
+      padding: 1.4rem;
+      display: grid;
+      align-content: end;
+      border: 1px solid #c7cdbd;
+      border-radius: 16px;
+      background-color: #dce7cf;
+      background-image:
+        radial-gradient(circle at 18% 25%, rgb(255 249 223 / .9) 0 8%, transparent 8.5%),
+        repeating-linear-gradient(125deg, transparent 0 28px, rgb(63 107 42 / .18) 29px 31px, transparent 32px 52px),
+        linear-gradient(160deg, rgb(63 107 42 / .18), rgb(212 154 58 / .4)),
+        linear-gradient(45deg, #f0e7cd 25%, transparent 25% 75%, #f0e7cd 75%),
+        linear-gradient(45deg, #f0e7cd 25%, #dfe7d2 25% 75%, #f0e7cd 75%);
+      background-size: var(--bg-size, 180px 180px), var(--bg-size, 180px 180px), 100% 100%, 52px 52px, 52px 52px;
+      background-position: 0 0, 0 0, 0 0, 0 0, 26px 26px;
+      background-blend-mode: var(--bg-blend, normal), multiply, soft-light, normal, normal;
+      background-repeat: var(--bg-repeat, repeat);
+    }
+    .background-label { justify-self: start; max-width: 32ch; padding: .8rem 1rem; border: 1px solid rgb(37 48 31 / .18); border-radius: 12px; background: rgb(255 253 247 / .88); box-shadow: 0 6px 20px rgb(37 48 31 / .12); }
+    .background-label strong { display: block; font-size: 1.2rem; }
+    .background-label span { font-size: .85rem; color: var(--muted); }
+
+    .border-frame {
+      margin-block-start: 1rem;
+      padding: clamp(1.1rem, 4vw, 2.2rem);
+      border: var(--border-width, 12px) solid transparent;
+      border-image-source: linear-gradient(135deg, #3f6b2a 0 22%, #d49a3a 22% 45%, #f4f1e9 45% 60%, #9a4934 60% 82%, #3f6b2a 82%);
+      border-image-slice: 1;
+      border-image-width: var(--border-width, 12px);
+      border-image-repeat: var(--border-repeat, stretch);
+      background: #f8f6ee;
+    }
+    .border-frame strong { font-size: 1.2rem; color: var(--green-dark); }
+    .border-frame p { margin-block-end: 0; font-size: .9rem; color: var(--muted); }
+
+    .shadow-stage { display: grid; place-items: center; min-height: 240px; margin-block-start: 1rem; padding: 2rem; border: 1px solid var(--line); border-radius: 14px; background: #eeeadd; overflow: hidden; }
+    .shadow-box { width: min(100%, 230px); min-height: 140px; display: grid; place-items: center; padding: 1rem; border: 1px solid #d5dacb; border-radius: 18px; background: linear-gradient(145deg, #fffef8, #e8efde); text-align: center; font-weight: 800; color: var(--green-dark); box-shadow: var(--shadow-x, 14px) var(--shadow-y, 18px) var(--shadow-blur, 26px) var(--shadow-spread, 0px) rgb(43 65 29 / .28); }
+    .shadow-box.inset { box-shadow: inset var(--shadow-x, 14px) var(--shadow-y, 18px) var(--shadow-blur, 26px) var(--shadow-spread, 0px) rgb(43 65 29 / .25); }
+
+    .filter-art { margin-block-start: 1rem; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #e8eddf; }
+    .filter-art svg { display: block; width: 100%; height: auto; filter: blur(var(--filter-blur, 0px)) brightness(var(--filter-brightness, 100%)) contrast(var(--filter-contrast, 100%)) saturate(var(--filter-saturate, 100%)) hue-rotate(var(--filter-hue, 0deg)); }
+    .filter-badge { display: inline-block; margin-block-start: .7rem; padding: .25rem .6rem; border-radius: 999px; background: var(--green-soft); color: var(--green-dark); font: 700 .75rem ui-monospace, monospace; }
+
+    .backdrop-stage { position: relative; min-height: 300px; margin-block-start: 1rem; overflow: hidden; border: 1px solid #c8c4b6; border-radius: 14px; background:
+      radial-gradient(circle at 12% 22%, #d49a3a 0 8%, transparent 8.5%),
+      radial-gradient(circle at 80% 30%, #9a4934 0 10%, transparent 10.5%),
+      repeating-linear-gradient(35deg, transparent 0 24px, rgb(255 253 247 / .8) 25px 38px),
+      linear-gradient(135deg, #759650, #2f4f22); }
+    .backdrop-word { position: absolute; inset-block-start: 1rem; inset-inline: 1rem; color: rgb(255 253 247 / .8); font: 800 clamp(2.4rem, 8vw, 4.8rem)/1 Georgia, serif; letter-spacing: -.04em; }
+    .glass-card { position: absolute; inset-inline: 12%; inset-block-start: 42%; padding: 1.1rem; border: 1px solid rgb(255 255 255 / .55); border-radius: 16px; background: rgb(255 253 247 / .25); color: white; box-shadow: 0 12px 30px rgb(20 35 12 / .18); backdrop-filter: blur(var(--backdrop-blur, 10px)) saturate(135%); -webkit-backdrop-filter: blur(var(--backdrop-blur, 10px)) saturate(135%); }
+    .glass-card strong { display: block; font-size: 1.1rem; }
+    .glass-card p { margin-block: .35rem 0 0; font-size: .85rem; }
+    .backdrop-stage.no-backdrop .glass-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(255 253 247 / .72); color: #25301f; }
+
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .hero-art { min-height: 150px; }
+    }
+    @media (max-width: 480px) {
+      .page { width: min(100% - 1rem, 1120px); }
+      .card { border-radius: 14px; }
+      .control { flex-basis: 100%; }
+      .background-stage { min-height: 260px; padding: 1rem; }
+      .shadow-stage { padding: 1.2rem; }
+      .glass-card { inset-inline: 7%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="page">
+    <header class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <span class="top-note">独立示例 · 无外部字体与资源</span>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Surface / 视觉基础 03</p>
+          <h1 id="page-title">背景、边框与滤镜</h1>
+          <p class="intro">用多层渐变构建背景，以 border-image 绘制装饰边框，再组合阴影、filter 与 backdrop-filter，制造有层次的材质感。</p>
+        </div>
+        <div class="hero-art" role="img" aria-label="多层渐变与重复纹理背景"></div>
+      </section>
+
+      <section class="toolbar" aria-labelledby="controls-title">
+        <h2 id="controls-title" hidden>背景与滤镜控件</h2>
+        <div class="control">
+          <label for="bgSize">纹理尺寸 <output id="bgSizeValue" for="bgSize">180 px</output></label>
+          <input id="bgSize" type="range" min="60" max="260" step="10" value="180" />
+        </div>
+        <div class="control">
+          <label for="bgBlend">背景混合模式</label>
+          <select id="bgBlend">
+            <option value="normal">normal</option>
+            <option value="multiply" selected>multiply</option>
+            <option value="screen">screen</option>
+            <option value="overlay">overlay</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="filterBlur">filter · blur <output id="filterBlurValue" for="filterBlur">0 px</output></label>
+          <input id="filterBlur" type="range" min="0" max="8" step=".5" value="0" />
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card wide" aria-labelledby="background-title">
+          <h2 id="background-title">多层渐变、尺寸与混合</h2>
+          <p class="desc"><code>background-image</code> 可以叠加多个渐变，第一层位于最上方；<code>background-size</code> 分别控制每层尺寸，<code>background-blend-mode</code> 控制层与层之间的混合。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="bgRepeat">重复方式</label>
+              <select id="bgRepeat">
+                <option value="repeat" selected>repeat：平铺</option>
+                <option value="no-repeat">no-repeat：单次</option>
+                <option value="repeat-x">repeat-x：水平平铺</option>
+              </select>
+            </div>
+            <button type="button" id="bgReset">重置背景</button>
+          </div>
+          <div class="background-stage" id="backgroundStage">
+            <div class="background-label"><strong>层叠出来的风景</strong><span>5 层渐变 · 尺寸与混合模式实时可调</span></div>
+          </div>
+          <pre id="backgroundCode">background-image:
+  radial-gradient(...),
+  repeating-linear-gradient(...),
+  linear-gradient(...);
+background-size: 180px 180px, 180px 180px, 100% 100%;
+background-blend-mode: normal, multiply, soft-light;</pre>
+          <p class="property-note">背景层顺序与 <code>background-blend-mode</code> 列表一一对应。平铺纹理适合无限延伸；大尺寸渐变更适合作为氛围底色，避免高频纹理干扰正文阅读。</p>
+        </section>
+
+        <section class="card" aria-labelledby="border-title">
+          <h2 id="border-title">border-image：把渐变画在边框上</h2>
+          <p class="desc">九宫格切片把来源图分成四角、四边和中心。渐变也可以作为来源，适合节日卡片、票据和装饰性边框。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="borderWidth">边框宽度 <output id="borderWidthValue" for="borderWidth">12 px</output></label>
+              <input id="borderWidth" type="range" min="4" max="24" step="2" value="12" />
+            </div>
+            <div class="control">
+              <label for="borderRepeat">边线重复</label>
+              <select id="borderRepeat">
+                <option value="stretch">stretch</option>
+                <option value="repeat">repeat</option>
+                <option value="round">round</option>
+              </select>
+            </div>
+          </div>
+          <div class="border-frame" id="borderFrame">
+            <strong>一张植物学观察卡</strong>
+            <p>边框来自 linear-gradient，而不是额外的图片文件。边缘可拉伸、重复或取整平铺。</p>
+          </div>
+          <pre id="borderCode">border-image-source: linear-gradient(...);
+border-image-slice: 1;
+border-image-width: 12px;
+border-image-repeat: stretch;</pre>
+          <p class="support">注意：border-image 不受 border-radius 圆角裁剪，装饰边框通常需要保持直角。</p>
+        </section>
+
+        <section class="card" aria-labelledby="shadow-title">
+          <h2 id="shadow-title">box-shadow：偏移、模糊与扩散</h2>
+          <p class="desc">四个长度依次表示水平偏移、垂直偏移、模糊半径和扩散半径；颜色支持透明通道。多个阴影用逗号分隔。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="shadowBlur">模糊半径 <output id="shadowBlurValue" for="shadowBlur">26 px</output></label>
+              <input id="shadowBlur" type="range" min="0" max="60" step="2" value="26" />
+            </div>
+            <div class="control">
+              <label for="shadowSpread">扩散半径 <output id="shadowSpreadValue" for="shadowSpread">0 px</output></label>
+              <input id="shadowSpread" type="range" min="-12" max="18" step="1" value="0" />
+            </div>
+            <label class="check-control"><input id="shadowInset" type="checkbox" /> 内阴影 inset</label>
+          </div>
+          <div class="shadow-stage">
+            <div class="shadow-box" id="shadowBox">阴影卡片<br /><span style="font-size: .75rem; font-weight: 500;">box-shadow</span></div>
+          </div>
+          <pre id="shadowCode">box-shadow: 14px 18px 26px 0px rgb(43 65 29 / .28);</pre>
+        </section>
+
+        <section class="card" aria-labelledby="filter-title">
+          <h2 id="filter-title">filter：对元素整体做滤镜</h2>
+          <p class="desc">多个滤镜函数按顺序应用。blur、brightness、contrast、saturate 与 hue-rotate 可组合成复古、柔和或高对比风格。</p>
+          <div class="filter-art">
+            <svg id="filterSvg" viewBox="0 0 520 330" role="img" aria-label="由山脉、太阳和树木组成的可滤镜插画">
+              <rect width="520" height="330" fill="#e9dfbf" />
+              <circle cx="390" cy="84" r="48" fill="#d89b37" />
+              <path d="M0 245 118 112l93 102 85-124 224 170v70H0Z" fill="#648b45" />
+              <path d="m0 280 146-102 105 92 112-73 157 89v44H0Z" fill="#355c28" />
+              <path d="M80 330c20-78 58-115 116-119 61-5 104 44 132 119Z" fill="#d8cba8" />
+              <g fill="#28491e">
+                <path d="m170 190-35 91h70Z" /><path d="m170 150-29 78h58Z" />
+                <path d="m340 205-30 77h60Z" /><path d="m340 171-25 67h50Z" />
+              </g>
+              <g stroke="#f8f3df" stroke-width="4" stroke-linecap="round" opacity=".8">
+                <path d="M45 55h42M30 73h57M405 145h55M386 163h75" />
+              </g>
+            </svg>
+          </div>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="filterBrightness">亮度 <output id="brightnessValue" for="filterBrightness">100%</output></label>
+              <input id="filterBrightness" type="range" min="50" max="150" step="5" value="100" />
+            </div>
+            <div class="control">
+              <label for="filterContrast">对比度 <output id="contrastValue" for="filterContrast">100%</output></label>
+              <input id="filterContrast" type="range" min="50" max="180" step="5" value="100" />
+            </div>
+            <div class="control">
+              <label for="filterSaturate">饱和度 <output id="saturateValue" for="filterSaturate">100%</output></label>
+              <input id="filterSaturate" type="range" min="0" max="220" step="5" value="100" />
+            </div>
+            <div class="control">
+              <label for="filterHue">色相旋转 <output id="hueValue" for="filterHue">0°</output></label>
+              <input id="filterHue" type="range" min="0" max="360" step="5" value="0" />
+            </div>
+            <button type="button" id="filterReset">重置滤镜</button>
+          </div>
+          <pre id="filterCode">filter: blur(0px) brightness(100%) contrast(100%) saturate(100%) hue-rotate(0deg);</pre>
+        </section>
+
+        <section class="card wide" aria-labelledby="backdrop-title">
+          <h2 id="backdrop-title">backdrop-filter：模糊元素背后的内容</h2>
+          <p class="desc">普通 <code>filter</code> 处理元素自身，<code>backdrop-filter</code> 则采样并处理元素背后的画面，常用于毛玻璃、吸顶导航和图片遮罩。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="backdropBlur">背景模糊 <output id="backdropBlurValue" for="backdropBlur">10 px</output></label>
+              <input id="backdropBlur" type="range" min="0" max="24" step="1" value="10" />
+            </div>
+            <label class="check-control"><input id="backdropToggle" type="checkbox" checked /> 启用 backdrop-filter</label>
+          </div>
+          <div class="backdrop-stage" id="backdropStage">
+            <div class="backdrop-word" aria-hidden="true">FROST</div>
+            <div class="glass-card"><strong>磨砂玻璃卡片</strong><p>背后纹理被模糊，文字与边框仍保持清晰。调整模糊半径观察采样区域。</p></div>
+          </div>
+          <pre id="backdropCode">background: rgb(255 253 247 / .25);
+backdrop-filter: blur(10px) saturate(135%);</pre>
+          <p class="support" id="backdropSupport">正在检测 backdrop-filter 支持情况…</p>
+          <p class="property-note">毛玻璃卡片需要半透明背景才能看见背后效果；同时保证文字与卡片背景的对比度。Safari 旧版本可能需要 <code>-webkit-backdrop-filter</code> 前缀。</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const bgSize = document.querySelector('#bgSize');
+    const bgBlend = document.querySelector('#bgBlend');
+    const bgRepeat = document.querySelector('#bgRepeat');
+    const backgroundStage = document.querySelector('#backgroundStage');
+    function updateBackground() {
+      backgroundStage.style.setProperty('--bg-size', `${bgSize.value}px ${bgSize.value}px`);
+      backgroundStage.style.setProperty('--bg-blend', bgBlend.value);
+      backgroundStage.style.setProperty('--bg-repeat', bgRepeat.value);
+      document.querySelector('#bgSizeValue').textContent = `${bgSize.value} px`;
+      document.querySelector('#backgroundCode').textContent = `background-size: ${bgSize.value}px ${bgSize.value}px, ${bgSize.value}px ${bgSize.value}px, 100% 100%;\nbackground-blend-mode: normal, ${bgBlend.value}, soft-light;\nbackground-repeat: ${bgRepeat.value};`;
+    }
+    [bgSize, bgBlend, bgRepeat].forEach(input => input.addEventListener('input', updateBackground));
+    document.querySelector('#bgReset').addEventListener('click', () => {
+      bgSize.value = 180; bgBlend.value = 'multiply'; bgRepeat.value = 'repeat'; updateBackground();
+    });
+    updateBackground();
+
+    const borderWidth = document.querySelector('#borderWidth');
+    const borderRepeat = document.querySelector('#borderRepeat');
+    function updateBorder() {
+      document.querySelector('#borderFrame').style.setProperty('--border-width', `${borderWidth.value}px`);
+      document.querySelector('#borderFrame').style.setProperty('--border-repeat', borderRepeat.value);
+      document.querySelector('#borderWidthValue').textContent = `${borderWidth.value} px`;
+      document.querySelector('#borderCode').textContent = `border-image-slice: 1;\nborder-image-width: ${borderWidth.value}px;\nborder-image-repeat: ${borderRepeat.value};`;
+    }
+    [borderWidth, borderRepeat].forEach(input => input.addEventListener('input', updateBorder));
+    updateBorder();
+
+    const shadowBlur = document.querySelector('#shadowBlur');
+    const shadowSpread = document.querySelector('#shadowSpread');
+    const shadowInset = document.querySelector('#shadowInset');
+    const shadowBox = document.querySelector('#shadowBox');
+    function updateShadow() {
+      shadowBox.style.setProperty('--shadow-blur', `${shadowBlur.value}px`);
+      shadowBox.style.setProperty('--shadow-spread', `${shadowSpread.value}px`);
+      shadowBox.classList.toggle('inset', shadowInset.checked);
+      document.querySelector('#shadowBlurValue').textContent = `${shadowBlur.value} px`;
+      document.querySelector('#shadowSpreadValue').textContent = `${shadowSpread.value} px`;
+      document.querySelector('#shadowCode').textContent = `box-shadow: ${shadowInset.checked ? 'inset ' : ''}14px 18px ${shadowBlur.value}px ${shadowSpread.value}px rgb(43 65 29 / .28);`;
+    }
+    [shadowBlur, shadowSpread, shadowInset].forEach(input => input.addEventListener('input', updateShadow));
+    updateShadow();
+
+    const filterControls = {
+      blur: document.querySelector('#filterBlur'),
+      brightness: document.querySelector('#filterBrightness'),
+      contrast: document.querySelector('#filterContrast'),
+      saturate: document.querySelector('#filterSaturate'),
+      hue: document.querySelector('#filterHue')
+    };
+    const filterSvg = document.querySelector('#filterSvg');
+    function updateFilter() {
+      const b = Number(filterControls.blur.value);
+      const br = filterControls.brightness.value;
+      const c = filterControls.contrast.value;
+      const s = filterControls.saturate.value;
+      const h = filterControls.hue.value;
+      filterSvg.style.setProperty('--filter-blur', `${b}px`);
+      filterSvg.style.setProperty('--filter-brightness', `${br}%`);
+      filterSvg.style.setProperty('--filter-contrast', `${c}%`);
+      filterSvg.style.setProperty('--filter-saturate', `${s}%`);
+      filterSvg.style.setProperty('--filter-hue', `${h}deg`);
+      document.querySelector('#filterBlurValue').textContent = `${b} px`;
+      document.querySelector('#brightnessValue').textContent = `${br}%`;
+      document.querySelector('#contrastValue').textContent = `${c}%`;
+      document.querySelector('#saturateValue').textContent = `${s}%`;
+      document.querySelector('#hueValue').textContent = `${h}°`;
+      document.querySelector('#filterCode').textContent = `filter: blur(${b}px) brightness(${br}%) contrast(${c}%) saturate(${s}%) hue-rotate(${h}deg);`;
+    }
+    Object.values(filterControls).forEach(input => input.addEventListener('input', updateFilter));
+    document.querySelector('#filterReset').addEventListener('click', () => {
+      const defaults = { blur: 0, brightness: 100, contrast: 100, saturate: 100, hue: 0 };
+      Object.entries(defaults).forEach(([key, value]) => { filterControls[key].value = value; });
+      updateFilter();
+    });
+    updateFilter();
+
+    const backdropBlur = document.querySelector('#backdropBlur');
+    const backdropToggle = document.querySelector('#backdropToggle');
+    const backdropStage = document.querySelector('#backdropStage');
+    function updateBackdrop() {
+      backdropStage.style.setProperty('--backdrop-blur', `${backdropBlur.value}px`);
+      backdropStage.classList.toggle('no-backdrop', !backdropToggle.checked);
+      document.querySelector('#backdropBlurValue').textContent = `${backdropBlur.value} px`;
+      document.querySelector('#backdropCode').textContent = `background: rgb(255 253 247 / .25);\nbackdrop-filter: ${backdropToggle.checked ? `blur(${backdropBlur.value}px) saturate(135%)` : 'none'};`;
+    }
+    [backdropBlur, backdropToggle].forEach(input => input.addEventListener('input', updateBackdrop));
+    updateBackdrop();
+
+    const supportsBackdrop = CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)');
+    document.querySelector('#backdropSupport').textContent = supportsBackdrop
+      ? '当前浏览器支持 backdrop-filter。移动端可留意滚动性能和合成层数量。'
+      : '当前浏览器不支持 backdrop-filter；示例保留半透明卡片作为可读的回退效果。';
+  </script>
+</body>
+</html>

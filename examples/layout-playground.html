@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS 布局实验台</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 2rem; font: 14px/1.6 system-ui, sans-serif; color: #24261f; background: #f4f1e9; }
+    main { max-width: 70rem; margin: auto; }
+    h1 { margin-block-start: 0; }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid #d7d3c8; border-radius: .75rem; background: #fbfaf6; }
+    .controls label { display: flex; flex: 1 1 12rem; flex-wrap: wrap; align-items: center; gap: .5rem; }
+    .controls input { min-width: 6rem; max-width: 100%; flex: 1; accent-color: #3d601c; }
+    button, select { padding: .5rem .75rem; border: 1px solid #24261f; border-radius: .4rem; background: white; }
+    button[aria-pressed="true"] { background: #c8f35c; }
+    .stage-wrap { margin-block-start: 1.5rem; container-type: inline-size; }
+    #stage { min-height: 24rem; padding: 1.5rem; border: 2px dashed #aaa697; border-radius: 1rem; background: #fbfaf6; }
+    #stage.flex { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 1rem; }
+    #stage.grid { display: grid; gap: 1rem; }
+    .item { min-width: 0; padding: 1.25rem; border: 1px solid #24261f; border-radius: .6rem; background: #e4dcfa; overflow-wrap: anywhere; }
+    .item:nth-child(2n) { background: #dcecf5; }
+    .item:nth-child(3n) { background: #e6f4c9; }
+    #stage.grid .item.featured { grid-column: span 2; background: #c8f35c; }
+    #stage.flex .item.featured { flex-grow: 2; }
+    #stage.flex .item { flex: 1 1 9rem; }
+    #stage.grid.single { grid-template-columns: minmax(0, 1fr); }
+    #stage.grid.single .item.featured { grid-column: auto; }
+    pre { padding: 1rem; overflow-x: auto; border-radius: .6rem; background: #22251f; color: #d4d7cc; }
+    @container (max-width: 36rem) {
+      #stage.grid:not(.single) { grid-template-columns: minmax(0, 1fr); }
+      #stage.grid:not(.single) .item.featured { grid-column: auto; }
+    }
+    @media (max-width: 40rem) {
+      body { padding: 1rem; }
+      main { min-width: 0; }
+      .controls { align-items: stretch; }
+      .controls button { flex: 1 1 auto; }
+      .controls label { flex-basis: 100%; min-width: 0; }
+      .controls input { min-width: 0; }
+      pre { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p><a href="index.html">← 返回示例画廊</a></p>
+  <h1>布局实验台</h1>
+  <p>切换布局模式、列数与跨列项目，观察容器查询如何随组件宽度改变规则。</p>
+  <div class="controls">
+    <button type="button" data-layout="flex" aria-pressed="false">Flexbox</button>
+    <button type="button" data-layout="grid" aria-pressed="true">Grid</button>
+    <button type="button" id="toggleFeatured" aria-pressed="true">跨列 / 放大项目</button>
+    <button type="button" id="singleColumn" aria-pressed="false">强制单列</button>
+    <label>容器宽度 <input id="width" type="range" min="35" max="100" value="100" /> <output id="widthValue">100%</output></label>
+  </div>
+  <div class="stage-wrap">
+    <div id="stage" class="grid">
+      <div class="item featured" data-featured><strong>01 · featured</strong><p>这个项目在 Grid 中跨两列，在 Flex 中获得两倍放大系数。</p></div>
+      <div class="item"><strong>02</strong><p>普通项目</p></div>
+      <div class="item"><strong>03</strong><p>普通项目</p></div>
+      <div class="item"><strong>04</strong><p>普通项目</p></div>
+    </div>
+  </div>
+  <pre id="code"></pre>
+</main>
+<script>
+  const stage = document.querySelector('#stage');
+  const code = document.querySelector('#code');
+  const buttons = [...document.querySelectorAll('[data-layout]')];
+  const featuredButton = document.querySelector('#toggleFeatured');
+  const singleButton = document.querySelector('#singleColumn');
+  const width = document.querySelector('#width');
+  let mode = 'grid';
+
+  function render() {
+    stage.className = `${mode}${singleButton.getAttribute('aria-pressed') === 'true' && mode === 'grid' ? ' single' : ''}`;
+    buttons.forEach(button => button.setAttribute('aria-pressed', button.dataset.layout === mode));
+    code.textContent = mode === 'grid'
+      ? `.container {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 1rem;\n}\n.featured { grid-column: span 2; }\n\n@container (max-width: 36rem) {\n  .container { grid-template-columns: minmax(0, 1fr); }\n  .featured { grid-column: auto; }\n}`
+      : `.container {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 1rem;\n}\n.item { flex: 1 1 9rem; }\n.featured { flex-grow: 2; }`;
+  }
+
+  buttons.forEach(button => button.addEventListener('click', () => {
+    mode = button.dataset.layout;
+    render();
+  }));
+  featuredButton.addEventListener('click', () => {
+    const enabled = featuredButton.getAttribute('aria-pressed') !== 'true';
+    featuredButton.setAttribute('aria-pressed', enabled);
+    document.querySelector('[data-featured]').classList.toggle('featured', enabled);
+    render();
+  });
+  singleButton.addEventListener('click', () => {
+    const enabled = singleButton.getAttribute('aria-pressed') !== 'true';
+    singleButton.setAttribute('aria-pressed', enabled);
+    render();
+  });
+  width.addEventListener('input', () => {
+    stage.style.width = `${width.value}%`;
+    document.querySelector('#widthValue').textContent = `${width.value}%`;
+  });
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>表单状态与自定义控件 · 平台特性示例</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1e;
+      --green-soft: #e5ecd9;
+      --ink: #263022;
+      --muted: #66705f;
+      --line: #d8d5c9;
+      --danger: #a43d32;
+      --danger-soft: #f9e7e2;
+      --accent-color: #3f6b2a;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .shell { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 64px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 32px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .04em; }
+    .brand::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--green); box-shadow: 20px 0 0 #b8c79e; margin-right: 20px; }
+    .hero { padding: clamp(24px, 5vw, 52px); border: 1px solid var(--line); border-radius: 28px; background: linear-gradient(135deg, var(--surface), #ecebdc); }
+    .eyebrow { margin: 0 0 10px; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 760px; margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.12; letter-spacing: -.04em; }
+    .hero p:last-child { max-width: 700px; margin: 18px 0 0; color: var(--muted); }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 24px; margin-top: 24px; align-items: start; }
+    .panel { padding: clamp(20px, 4vw, 32px); border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
+    .panel + .panel { margin-top: 24px; }
+    h2 { margin: 0 0 8px; font-size: 1.35rem; letter-spacing: -.02em; }
+    h3 { margin: 24px 0 12px; font-size: 1rem; }
+    .intro { margin: 0 0 24px; color: var(--muted); }
+    code, .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; }
+    code { padding: .12em .35em; border-radius: 5px; background: var(--green-soft); color: var(--green-dark); }
+    .field { margin-bottom: 20px; }
+    .field label, .group-label { display: block; margin-bottom: 8px; font-weight: 700; }
+    .hint { display: block; margin-top: 7px; color: var(--muted); font-size: .86rem; }
+    input[type="text"], input[type="email"] {
+      width: 100%; min-height: 48px; padding: 11px 14px; border: 1px solid #b9bcae; border-radius: 12px;
+      background: #fffefb; color: var(--ink); font: inherit; transition: border-color .2s, box-shadow .2s;
+    }
+    input[type="text"]::placeholder, input[type="email"]::placeholder { color: #92978a; opacity: 1; }
+    input[type="text"]:focus, input[type="email"]:focus { border-color: var(--green); }
+    input:valid { border-color: #7d9a67; }
+    .field.has-error input { border-color: var(--danger); background: #fff9f7; }
+    .error-text { min-height: 1.4em; margin: 6px 0 0; color: var(--danger); font-size: .84rem; }
+    @supports selector(:user-invalid) {
+      input:user-invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgb(164 61 50 / 10%); }
+    }
+    .choice-list { display: grid; gap: 12px; }
+    .choice { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+    .choice input { flex: 0 0 auto; }
+    .choice input[type="checkbox"], .choice input[type="radio"] {
+      appearance: none; width: 22px; height: 22px; margin: 0; border: 2px solid #8d9782; border-radius: 6px;
+      display: grid; place-content: center; background: #fffefb; cursor: pointer; transition: background .16s, border-color .16s;
+    }
+    .choice input[type="radio"] { border-radius: 50%; }
+    .choice input[type="checkbox"]::before {
+      content: ""; width: 10px; height: 6px; border-left: 2px solid white; border-bottom: 2px solid white;
+      transform: translateY(-1px) rotate(-45deg) scale(0); transition: transform .12s;
+    }
+    .choice input[type="checkbox"]:checked { border-color: var(--green); background: var(--green); }
+    .choice input[type="checkbox"]:checked::before { transform: translateY(-1px) rotate(-45deg) scale(1); }
+    .choice input[type="checkbox"]:indeterminate { border-color: var(--green); background: var(--green); }
+    .choice input[type="checkbox"]:indeterminate::before { width: 11px; height: 2px; border: 0; background: white; transform: none; }
+    .choice input[type="radio"]::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--green); transform: scale(0); }
+    .choice input[type="radio"]:checked { border-color: var(--green); }
+    .choice input[type="radio"]:checked::before { transform: scale(1); }
+    .choice input:checked + .choice-text { color: var(--green-dark); }
+    .choice input:default { box-shadow: 0 0 0 3px #dce6cf; }
+    .native-accent { accent-color: var(--accent-color); }
+    .switch-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 15px 0; border-top: 1px solid var(--line); }
+    .switch-copy strong, .switch-copy small { display: block; }
+    .switch-copy small { color: var(--muted); }
+    .switch {
+      appearance: none; position: relative; flex: 0 0 auto; width: 50px; height: 28px; margin: 0; border: 0; border-radius: 999px;
+      background: #b8bdb0; cursor: pointer; transition: background .2s;
+    }
+    .switch::before { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgb(0 0 0 / 20%); transition: transform .2s; }
+    .switch:checked { background: var(--green); }
+    .switch:checked::before { transform: translateX(22px); }
+    .range-label { display: flex; justify-content: space-between; gap: 16px; font-weight: 700; }
+    .range-label output { color: var(--green); font-variant-numeric: tabular-nums; }
+    input[type="range"] { appearance: none; width: 100%; height: 28px; margin: 8px 0 0; background: transparent; cursor: pointer; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: linear-gradient(to right, var(--green) var(--range, 40%), #d7dacd var(--range, 40%)); }
+    input[type="range"]::-moz-range-track { height: 6px; border-radius: 99px; background: #d7dacd; }
+    input[type="range"]::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--green); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; margin-top: -8px; border: 3px solid white; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 1px var(--green), 0 2px 5px rgb(0 0 0 / 18%); }
+    input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 3px solid white; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 1px var(--green); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    button { min-height: 44px; padding: 10px 18px; border: 1px solid var(--green); border-radius: 999px; background: var(--green); color: white; font: inherit; font-weight: 700; cursor: pointer; }
+    button:hover { background: var(--green-dark); border-color: var(--green-dark); }
+    button.secondary { background: transparent; color: var(--green-dark); border-color: #a9b39a; }
+    button.secondary:hover { background: var(--green-soft); }
+    button.small { min-height: 38px; padding: 7px 13px; font-size: .86rem; }
+    .form-status { margin: 18px 0 0; padding: 12px 15px; border-radius: 12px; background: var(--green-soft); color: var(--green-dark); font-weight: 650; }
+    .form-status[data-state="error"] { background: var(--danger-soft); color: var(--danger); }
+    .feature-note { padding: 18px; border-left: 3px solid var(--green); border-radius: 0 14px 14px 0; background: #eef1e5; }
+    .feature-note + .feature-note { margin-top: 14px; }
+    .feature-note h3 { margin: 0 0 6px; }
+    .feature-note p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .marker-demo { padding-left: 1.4em; }
+    .marker-demo li { padding-left: .3em; }
+    .marker-demo li::marker { color: var(--green); font-weight: 900; }
+    .status-pill { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 99px; background: var(--green-soft); color: var(--green-dark); font-size: .78rem; font-weight: 700; }
+    @media (max-width: 780px) { .layout { grid-template-columns: 1fr; } .topbar { align-items: flex-start; } }
+    @media (max-width: 480px) { .shell { width: min(100% - 20px, 1080px); } .panel { border-radius: 16px; } .actions button { flex: 1 1 auto; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a href="../index.html">← 返回示例索引</a>
+      <span class="brand">表单实验室</span>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">Forms / Native controls</p>
+      <h1>让浏览器状态，成为界面的一部分。</h1>
+      <p>控件保留原生语义与键盘行为，只调整外观。提交表单后，<code>required</code>、<code>type="email"</code> 与 <code>pattern</code> 会参与校验。</p>
+    </section>
+
+    <main class="layout">
+      <div>
+        <form class="panel" id="demoForm" novalidate>
+          <h2>注册一份植物观察记录</h2>
+          <p class="intro">试试先直接提交，再修改输入。支持 <code>:user-invalid</code> 的浏览器只在用户交互后提示错误。</p>
+
+          <div class="field" data-field>
+            <label for="observer">观察者昵称</label>
+            <input id="observer" name="observer" type="text" placeholder="例如：小苔" required minlength="2" pattern="[一-龥A-Za-z0-9_ ]{2,20}" aria-describedby="observerHint observerError">
+            <span class="hint" id="observerHint">2–20 个字符，可使用中文、字母、数字、空格或下划线。</span>
+            <p class="error-text" id="observerError" aria-live="polite"></p>
+          </div>
+
+          <div class="field" data-field>
+            <label for="email">电子邮箱</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required aria-describedby="emailHint emailError">
+            <span class="hint" id="emailHint">::placeholder 设置提示颜色，原生约束负责校验。</span>
+            <p class="error-text" id="emailError" aria-live="polite"></p>
+          </div>
+
+          <h3>选择控件</h3>
+          <div class="choice-list">
+            <label class="choice"><input type="checkbox" name="updates" checked><span class="choice-text">接收季节观察提醒</span></label>
+            <label class="choice"><input type="checkbox" name="native" class="native-accent"><span class="choice-text">原生 checkbox · 观察 accent-color</span></label>
+          </div>
+
+          <fieldset style="border:0;padding:0;margin:20px 0 0">
+            <legend class="group-label">常用观察时段 · :default 标记初始项</legend>
+            <div class="choice-list">
+              <label class="choice"><input type="radio" name="period" value="morning" checked><span class="choice-text">清晨</span></label>
+              <label class="choice"><input type="radio" name="period" value="dusk"><span class="choice-text">黄昏</span></label>
+            </div>
+          </fieldset>
+
+          <div class="switch-row">
+            <div class="switch-copy"><strong id="switchLabel">安静模式</strong><small>使用 role="switch" 表达开关状态</small></div>
+            <input class="switch" id="quietMode" type="checkbox" role="switch" aria-labelledby="switchLabel">
+          </div>
+
+          <h3>分组选择 · :indeterminate</h3>
+          <div class="choice-list" id="plantGroup">
+            <label class="choice"><input id="plantParent" type="checkbox" aria-label="选择全部植物"><span class="choice-text">全部植物</span></label>
+            <label class="choice"><input class="plant-child" type="checkbox" value="蕨类" checked><span class="choice-text">蕨类</span></label>
+            <label class="choice"><input class="plant-child" type="checkbox" value="苔藓"><span class="choice-text">苔藓</span></label>
+            <label class="choice"><input class="plant-child" type="checkbox" value="野花" checked><span class="choice-text">野花</span></label>
+          </div>
+          <div class="actions">
+            <button class="secondary small" id="mixedButton" type="button">设为部分选中</button>
+            <button class="secondary small" id="allButton" type="button">全选植物</button>
+          </div>
+
+          <h3><label for="radius">观察半径</label></h3>
+          <div class="range-label"><span>1–50 公里</span><output id="radiusOutput" for="radius">20 km</output></div>
+          <input id="radius" type="range" min="1" max="50" value="20" aria-label="观察半径，单位公里">
+          <span class="hint">自定义轨道与滑块，同时保留方向键、Home、End 操作。</span>
+
+          <div class="actions">
+            <button type="submit">提交并校验</button>
+            <button class="secondary" type="reset">重置为默认值</button>
+          </div>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite">尚未提交。所有控件均可使用 Tab 与空格键操作。</p>
+        </form>
+
+        <section class="panel" aria-labelledby="markerTitle">
+          <h2 id="markerTitle">::marker 列表标记</h2>
+          <p class="intro">标记属于列表项本身，仍可被辅助技术识别为列表。</p>
+          <ol class="marker-demo">
+            <li>先观察叶形，再记录颜色</li>
+            <li>拍摄时避免踩踏植株</li>
+            <li>离开前带走全部垃圾</li>
+          </ol>
+        </section>
+      </div>
+
+      <aside>
+        <section class="panel" aria-labelledby="statesTitle">
+          <h2 id="statesTitle">状态选择器速查</h2>
+          <div class="feature-note"><h3><code>:checked</code> / <code>:indeterminate</code></h3><p>选中与部分选中是不同状态；后者由 JS 设置属性，无法仅靠点击表达。</p></div>
+          <div class="feature-note"><h3><code>:valid</code> / <code>:invalid</code></h3><p>立即反映原生约束，因此空必填项一开始就可能是 invalid。</p></div>
+          <div class="feature-note"><h3><code>:user-invalid</code></h3><p>更适合表单提示：等用户实际输入或提交后再显示错误。</p></div>
+          <div class="feature-note"><h3><code>:default</code></h3><p>匹配 HTML 中带 <code>checked</code> 的初始项；重置表单可以清楚看到差异。</p></div>
+          <div class="feature-note"><h3><code>:focus-visible</code></h3><p>键盘导航时显示清晰焦点，鼠标点击通常不显示额外轮廓。</p></div>
+          <span class="status-pill" id="supportPill">正在检测 :user-invalid…</span>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const form = document.querySelector('#demoForm');
+    const status = document.querySelector('#formStatus');
+    const fields = [...form.querySelectorAll('[data-field]')];
+    const parent = document.querySelector('#plantParent');
+    const children = [...document.querySelectorAll('.plant-child')];
+    const radius = document.querySelector('#radius');
+    const radiusOutput = document.querySelector('#radiusOutput');
+
+    document.querySelector('#supportPill').textContent = CSS.supports('selector(:user-invalid)')
+      ? '✓ 当前浏览器支持 :user-invalid'
+      : '当前浏览器使用提交后 class 回退';
+
+    function syncParent() {
+      const checkedCount = children.filter(child => child.checked).length;
+      parent.checked = checkedCount === children.length;
+      parent.indeterminate = checkedCount > 0 && checkedCount < children.length;
+    }
+
+    function syncRange() {
+      const percent = ((radius.value - radius.min) / (radius.max - radius.min)) * 100;
+      radius.style.setProperty('--range', percent + '%');
+      radiusOutput.value = radius.value + ' km';
+    }
+
+    children.forEach(child => child.addEventListener('change', syncParent));
+    parent.addEventListener('change', () => {
+      children.forEach(child => { child.checked = parent.checked; });
+      parent.indeterminate = false;
+    });
+    document.querySelector('#mixedButton').addEventListener('click', () => {
+      children[0].checked = true;
+      children[1].checked = false;
+      children[2].checked = true;
+      syncParent();
+    });
+    document.querySelector('#allButton').addEventListener('click', () => {
+      children.forEach(child => { child.checked = true; });
+      syncParent();
+    });
+    radius.addEventListener('input', syncRange);
+    syncParent();
+    syncRange();
+
+    function validateField(input) {
+      const container = input.closest('[data-field]');
+      const error = container.querySelector('.error-text');
+      const valid = input.checkValidity();
+      container.classList.toggle('has-error', !valid);
+      input.setAttribute('aria-invalid', String(!valid));
+      error.textContent = valid ? '' : input.validity.valueMissing ? '请填写此项。' : input.validationMessage;
+      return valid;
+    }
+
+    fields.forEach(field => {
+      const input = field.querySelector('input');
+      input.addEventListener('blur', () => {
+        if (form.dataset.submitted || input.value) validateField(input);
+      });
+      input.addEventListener('input', () => {
+        if (form.dataset.submitted) validateField(input);
+      });
+    });
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      form.dataset.submitted = 'true';
+      const inputs = fields.map(field => field.querySelector('input'));
+      const results = inputs.map(validateField);
+      if (results.every(Boolean)) {
+        status.dataset.state = 'success';
+        status.textContent = '校验通过！这份观察记录已准备好提交。';
+      } else {
+        status.dataset.state = 'error';
+        status.textContent = '还有 ' + results.filter(result => !result).length + ' 项需要修改，请检查红色提示。';
+        inputs[results.indexOf(false)].focus();
+      }
+    });
+
+    form.addEventListener('reset', () => {
+      delete form.dataset.submitted;
+      fields.forEach(field => {
+        field.classList.remove('has-error');
+        field.querySelector('.error-text').textContent = '';
+        field.querySelector('input').removeAttribute('aria-invalid');
+      });
+      status.dataset.state = 'success';
+      status.textContent = '已恢复 HTML 中的默认值，包括 :default 单选项。';
+      requestAnimationFrame(() => { syncParent(); syncRange(); });
+    });
+  </script>
+</body>
+</html>

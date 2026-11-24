@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>CSS 示例画廊 · 30 个可运行 Demo</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f1e9;
+      --surface: #fffdf8;
+      --text: #24261f;
+      --muted: #676b60;
+      --line: #d7d3c8;
+      --accent: #3f6b2a;
+      --accent-soft: #e6f1d5;
+      --code: #22251f;
+      --code-text: #eef2e9;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3.5rem);
+      font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    a { color: var(--accent); text-underline-offset: .18em; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+    main { max-width: 74rem; margin-inline: auto; }
+    .eyebrow { margin: 0; color: var(--accent); font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: .4rem 0 .8rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.1; letter-spacing: -.04em; }
+    .lede { max-width: 48rem; margin: 0; color: var(--muted); font-size: 1.08rem; }
+    .summary { display: flex; flex-wrap: wrap; gap: .65rem; margin-block: 1.5rem; padding: 0; list-style: none; }
+    .summary li { padding: .35rem .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .9rem; }
+    nav { position: sticky; top: 0; z-index: 10; display: flex; gap: .45rem; overflow-x: auto; margin-block: 1.5rem; padding-block: .75rem; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(10px); }
+    nav a { flex: 0 0 auto; padding: .4rem .7rem; border-radius: .45rem; text-decoration: none; }
+    nav a:hover { background: var(--accent-soft); }
+    section { margin-block: 2.5rem; scroll-margin-top: 5rem; }
+    h2 { margin-block-end: .35rem; font-size: 1.45rem; }
+    .section-note { margin-block-start: 0; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
+    .card { position: relative; display: flex; min-width: 0; flex-direction: column; gap: .55rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: .9rem; background: var(--surface); text-decoration: none; color: inherit; box-shadow: 0 2px 0 color-mix(in srgb, var(--line) 45%, transparent); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+    .card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 9%, transparent); }
+    .card strong { font-size: 1.05rem; }
+    .card p { margin: 0; color: var(--muted); font-size: .92rem; }
+    .card .tag { align-self: flex-start; margin-block-start: auto; padding: .18rem .5rem; border-radius: .35rem; background: var(--accent-soft); color: var(--accent); font-size: .76rem; font-weight: 700; }
+    .card .arrow { position: absolute; top: 1rem; right: 1rem; color: var(--accent); }
+    footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-block-start: 3rem; padding-block-start: 1.5rem; border-block-start: 1px solid var(--line); color: var(--muted); }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #181c16; --surface: #22271f; --text: #eef2e9; --muted: #b7bdaf; --line: #3c4336; --accent: #a9ce8c; --accent-soft: #304026; --code: #11140f; --code-text: #eef2e9; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .card { transition: none; } .card:hover { transform: none; } }
+    @media (forced-colors: active) { .card, .summary li { border: 1px solid CanvasText; } .card .tag { border: 1px solid CanvasText; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">CSS Demo Library</p>
+    <h1>30 个可运行示例</h1>
+    <p class="lede">从层叠和盒模型，到 Grid、容器查询、滚动动画和 Web Components。每个页面都可独立打开，并配有可见的控件、状态和属性说明。</p>
+    <ul class="summary" aria-label="示例统计">
+      <li>8 个主题分组</li><li>27 个新增演示</li><li>无构建工具</li><li>无外部资源</li><li>支持键盘与减弱动态</li>
+    </ul>
+    <p><a href="README.md">查看 Markdown 覆盖矩阵</a> · <a href="../docs/README.md">返回 CSS 学习手记</a></p>
+  </header>
+
+  <nav aria-label="主题导航">
+    <a href="#foundations">基础</a><a href="#visual">视觉</a><a href="#layout">布局</a><a href="#responsive">响应式</a><a href="#motion">动效</a><a href="#forms">表单</a><a href="#modern">现代特性</a><a href="#engineering">工程</a>
+  </nav>
+
+  <section id="foundations">
+    <h2>01 · 基础</h2>
+    <p class="section-note">先理解样式如何竞争、盒子如何计算，再讨论视觉效果。</p>
+    <div class="grid">
+      <a class="card" href="foundations/cascade-layers-theme.html"><span class="arrow" aria-hidden="true">↗</span><strong>层叠、层与主题</strong><p>切换层顺序、覆盖声明和全局关键字，观察最终样式。</p><span class="tag">@layer · revert-layer</span></a>
+      <a class="card" href="foundations/box-model-margin.html"><span class="arrow" aria-hidden="true">↗</span><strong>盒模型与 margin 折叠</strong><p>对比 content-box / border-box，并隔离父子 margin。</p><span class="tag">box-sizing · flow-root</span></a>
+      <a class="card" href="foundations/selectors-playground.html"><span class="arrow" aria-hidden="true">↗</span><strong>选择器实验台</strong><p>用真实节点观察组合器、结构伪类与功能伪类。</p><span class="tag">:has · :is · :user-invalid</span></a>
+      <a class="card" href="foundations/custom-properties.html"><span class="arrow" aria-hidden="true">↗</span><strong>自定义属性与类型注册</strong><p>观察变量继承、局部覆盖和可插值属性。</p><span class="tag">var() · @property</span></a>
+    </div>
+  </section>
+
+  <section id="visual">
+    <h2>02 · 视觉</h2>
+    <p class="section-note">颜色、文字、背景与裁剪共同决定界面的可读性和质感。</p>
+    <div class="grid">
+      <a class="card" href="visual/typography-lab.html"><span class="arrow" aria-hidden="true">↗</span><strong>排版实验室</strong><p>字号、行高、截断、竖排和逻辑属性。</p><span class="tag">text-wrap · writing-mode</span></a>
+      <a class="card" href="visual/color-blend-theme.html"><span class="arrow" aria-hidden="true">↗</span><strong>颜色、混合与主题</strong><p>OKLCH、color-mix、currentColor 与隔离混合。</p><span class="tag">color-mix · isolation</span></a>
+      <a class="card" href="visual/background-border-filter.html"><span class="arrow" aria-hidden="true">↗</span><strong>背景、边框与滤镜</strong><p>多层背景、边框图片、阴影和 backdrop-filter。</p><span class="tag">border-image · filter</span></a>
+      <a class="card" href="visual/filters-masks-clip.html"><span class="arrow" aria-hidden="true">↗</span><strong>裁剪、遮罩与阴影</strong><p>对比几何裁剪、透明度遮罩与两类阴影。</p><span class="tag">clip-path · mask</span></a>
+      <a class="card" href="visual/shape-multicol.html"><span class="arrow" aria-hidden="true">↗</span><strong>多列与形状环绕</strong><p>用 columns 和 shape-outside 实现真正的文本流。</p><span class="tag">columns · shape-outside</span></a>
+    </div>
+  </section>
+
+  <section id="layout">
+    <h2>03 · 布局</h2>
+    <p class="section-note">选择正确的格式化上下文，比不断叠加定位和负 margin 更可靠。</p>
+    <div class="grid">
+      <a class="card" href="layout/positioning-stacking.html"><span class="arrow" aria-hidden="true">↗</span><strong>定位与层叠上下文</strong><p>四种定位、sticky 阈值与 z-index 的边界。</p><span class="tag">sticky · z-index · isolation</span></a>
+      <a class="card" href="layout/flex-patterns.html"><span class="arrow" aria-hidden="true">↗</span><strong>Flexbox 模式</strong><p>伸缩、换行、对齐、顺序与内容最小尺寸。</p><span class="tag">flex · gap · min-width</span></a>
+      <a class="card" href="layout/grid-patterns.html"><span class="arrow" aria-hidden="true">↗</span><strong>Grid 模式</strong><p>命名区域、自动轨道、dense 与 subgrid。</p><span class="tag">minmax · subgrid</span></a>
+      <a class="card" href="layout/scroll-snap.html"><span class="arrow" aria-hidden="true">↗</span><strong>滚动吸附轨道</strong><p>真实滚动、停止点、滚动链与滚动条样式。</p><span class="tag">scroll-snap · overscroll</span></a>
+      <a class="card" href="layout-playground.html"><span class="arrow" aria-hidden="true">↗</span><strong>布局实验台</strong><p>在同一容器中切换 Flex、Grid 和跨列项目。</p><span class="tag">interactive playground</span></a>
+      <a class="card" href="container-query-card.html"><span class="arrow" aria-hidden="true">↗</span><strong>容器查询卡片</strong><p>同一组件在侧栏和主栏中自动改变布局。</p><span class="tag">@container · cqi</span></a>
+    </div>
+  </section>
+
+  <section id="responsive">
+    <h2>04 · 响应式</h2>
+    <p class="section-note">响应式不仅由窗口宽度决定，也与设备能力、用户偏好和安全区有关。</p>
+    <div class="grid">
+      <a class="card" href="responsive/media-preference.html"><span class="arrow" aria-hidden="true">↗</span><strong>媒体特性与用户偏好</strong><p>查看 hover、pointer、深色、对比度等匹配状态。</p><span class="tag">@media · prefers-*</span></a>
+      <a class="card" href="responsive/fluid-units.html"><span class="arrow" aria-hidden="true">↗</span><strong>流式单位与函数</strong><p>组合 rem、vw、clamp 和容器单位建立尺度。</p><span class="tag">clamp · cqi · calc</span></a>
+      <a class="card" href="responsive/safe-area-viewport.html"><span class="arrow" aria-hidden="true">↗</span><strong>视口高度与安全区</strong><p>理解 svh、lvh、dvh 和 env 的适用边界。</p><span class="tag">dvh · safe-area</span></a>
+    </div>
+  </section>
+
+  <section id="motion">
+    <h2>05 · 动效</h2>
+    <p class="section-note">动效要说明状态变化，同时尊重用户的减弱动态偏好。</p>
+    <div class="grid">
+      <a class="card" href="motion/transform-origin.html"><span class="arrow" aria-hidden="true">↗</span><strong>变换原点与 3D</strong><p>比较不同 transform-origin 的运动轨迹。</p><span class="tag">transform · perspective</span></a>
+      <a class="card" href="motion/transitions-scroll-timeline.html"><span class="arrow" aria-hidden="true">↗</span><strong>过渡、时间轴与滚动动画</strong><p>从基础缓动到 scroll/view 时间轴。</p><span class="tag">transition · animation-timeline</span></a>
+      <a class="card" href="animation-playground.html"><span class="arrow" aria-hidden="true">↗</span><strong>动效实验台</strong><p>transform 过渡与 Grid 0fr → 1fr 折叠。</p><span class="tag">reduced-motion</span></a>
+    </div>
+  </section>
+
+  <section id="forms">
+    <h2>06 · 表单与原生 UI</h2>
+    <p class="section-note">优先保留 HTML 能力，用 CSS 表达焦点、校验和状态。</p>
+    <div class="grid">
+      <a class="card" href="forms/form-states.html"><span class="arrow" aria-hidden="true">↗</span><strong>表单状态实验台</strong><p>复选、单选、开关、滑块与提交后的校验状态。</p><span class="tag">:user-invalid · :indeterminate</span></a>
+      <a class="card" href="forms/native-ui.html"><span class="arrow" aria-hidden="true">↗</span><strong>原生 UI 组件</strong><p>dialog、popover、details、表格和计数器。</p><span class="tag">::backdrop · counters</span></a>
+    </div>
+  </section>
+
+  <section id="modern">
+    <h2>07 · 现代特性</h2>
+    <p class="section-note">用能力检测引入新特性，并保证不支持时的基础体验。</p>
+    <div class="grid">
+      <a class="card" href="modern/scope-nesting-has.html"><span class="arrow" aria-hidden="true">↗</span><strong>嵌套、scope 与 :has</strong><p>按 DOM 子树和祖先状态组织组件样式。</p><span class="tag">@scope · nesting · :has</span></a>
+      <a class="card" href="modern/anchor-positioning.html"><span class="arrow" aria-hidden="true">↗</span><strong>锚点定位</strong><p>浮层跟随按钮，并在边缘自动尝试回退位置。</p><span class="tag">anchor() · position-try</span></a>
+      <a class="card" href="modern/view-transition.html"><span class="arrow" aria-hidden="true">↗</span><strong>视图过渡</strong><p>在页面状态切换中共享标题并制作连续过渡。</p><span class="tag">View Transitions API</span></a>
+      <a class="card" href="modern/scroll-driven-animation.html"><span class="arrow" aria-hidden="true">↗</span><strong>滚动驱动动画</strong><p>用阅读进度和进入视口范围驱动动画。</p><span class="tag">scroll() · view()</span></a>
+    </div>
+  </section>
+
+  <section id="engineering">
+    <h2>08 · 工程</h2>
+    <p class="section-note">关注样式边界、渲染成本和真实交付环境。</p>
+    <div class="grid">
+      <a class="card" href="engineering/webcomponents.html"><span class="arrow" aria-hidden="true">↗</span><strong>Web Components 样式边界</strong><p>host、slotted、part 和 Shadow DOM 变量。</p><span class="tag">:host · ::part()</span></a>
+      <a class="card" href="engineering/performance-containment.html"><span class="arrow" aria-hidden="true">↗</span><strong>性能容器与长列表</strong><p>观察 content-visibility 和 contain 的收益与副作用。</p><span class="tag">content-visibility · contain</span></a>
+      <a class="card" href="engineering/print-layout.html"><span class="arrow" aria-hidden="true">↗</span><strong>打印与分页布局</strong><p>A4、分页、表头、孤行和打印颜色。</p><span class="tag">@page · break-inside</span></a>
+    </div>
+  </section>
+
+  <footer>
+    <span>30 个独立 HTML · 无外部资源 · 可直接打开</span>
+    <span><a href="../docs/07-reference/27-additional-properties.md">补充属性与专题</a> · <a href="../docs/GLOSSARY.md">术语表</a></span>
+  </footer>
+</main>
+</body>
+</html>

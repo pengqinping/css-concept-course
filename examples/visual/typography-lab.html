@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS 字体与文字排版实验室</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #25301f;
+      --muted: #69715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1d;
+      --green-soft: #e2ead7;
+      --line: #d8d3c5;
+      --amber: #d49a3a;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    button, input, select { font: inherit; }
+    button, select, input[type="range"] { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+
+    :focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 3px;
+    }
+
+    ::selection { background: #cfdcba; color: var(--green-dark); }
+
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { text-decoration-thickness: 2px; }
+
+    .skip-link {
+      position: absolute;
+      inset-block-start: -5rem;
+      inset-inline-start: 1rem;
+      z-index: 10;
+      padding: .6rem 1rem;
+      border-radius: 8px;
+      background: var(--green-dark);
+      color: white;
+    }
+
+    .skip-link:focus { inset-block-start: 1rem; }
+
+    .page { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; padding-block: 1.5rem 4rem; }
+
+    .topbar { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; justify-content: space-between; }
+    .back-link { font-weight: 700; }
+    .top-note { color: var(--muted); font-size: .9rem; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(240px, .6fr);
+      gap: 2rem;
+      align-items: end;
+      margin-block: 2.2rem 2rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 .7rem;
+      color: var(--green);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 15ch;
+      margin: 0;
+      font-family: Georgia, "Songti SC", "STSong", serif;
+      font-size: clamp(2.3rem, 7vw, 4.8rem);
+      font-weight: 700;
+      line-height: 1.06;
+      letter-spacing: -.045em;
+      text-wrap: balance;
+    }
+
+    .intro { max-width: 62ch; margin: 1rem 0 0; color: var(--muted); font-size: 1.05rem; }
+
+    .hero-specimen {
+      position: relative;
+      min-height: 190px;
+      padding: 1.2rem;
+      overflow: hidden;
+      border: 1px solid var(--green);
+      border-radius: var(--radius);
+      background: var(--green-soft);
+    }
+
+    .hero-specimen::after {
+      content: "Aa";
+      position: absolute;
+      inset-inline-end: -.08em;
+      inset-block-end: -.3em;
+      color: rgb(63 107 42 / .14);
+      font: 700 9rem/1 Georgia, serif;
+    }
+
+    .hero-specimen p { position: relative; z-index: 1; margin: 0; }
+    .hero-specimen .big { font-size: 2.2rem; line-height: 1.1; letter-spacing: -.04em; }
+    .hero-specimen .small { margin-block-start: 1.2rem; color: var(--green-dark); font-family: ui-monospace, monospace; font-size: .82rem; }
+
+    .toolbar, .card-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .8rem 1rem;
+      align-items: end;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgb(255 253 247 / .75);
+    }
+
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-block-end: .55rem; font-size: .82rem; font-weight: 800; color: var(--green-dark); }
+
+    .control { display: grid; gap: .35rem; flex: 1 1 150px; min-width: 0; }
+    .control > span, .control > label { font-size: .8rem; font-weight: 700; color: var(--muted); }
+    .control output { font-variant-numeric: tabular-nums; color: var(--green-dark); }
+
+    select, input[type="text"] {
+      width: 100%;
+      min-height: 42px;
+      padding: .5rem .7rem;
+      border: 1px solid #bcb8aa;
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--ink);
+    }
+
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+
+    button {
+      min-height: 42px;
+      padding: .5rem .85rem;
+      border: 1px solid #aab29e;
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--green-dark);
+      font-weight: 700;
+    }
+
+    button:hover { border-color: var(--green); background: #f4f7ef; }
+    button[aria-pressed="true"] { border-color: var(--green-dark); background: var(--green); color: white; }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .button-row button { flex: 1 1 auto; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-block-start: 1rem;
+    }
+
+    .card {
+      min-width: 0;
+      padding: clamp(1rem, 3vw, 1.5rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 8px 24px rgb(50 60 40 / .045);
+    }
+
+    .card.wide { grid-column: 1 / -1; }
+    .card h2 { margin: 0; font-size: 1.22rem; letter-spacing: -.02em; }
+    .card h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--green-dark); }
+    .card p { margin-block: .65rem 0; }
+
+    .desc { color: var(--muted); font-size: .92rem; }
+    .desc code, code { padding: .1em .35em; border-radius: 5px; background: #eeeee5; color: #315322; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .88em; }
+
+    .property-note {
+      margin-block-start: 1rem;
+      padding: .75rem .9rem;
+      border-inline-start: 4px solid var(--green);
+      border-radius: 0 9px 9px 0;
+      background: #f0f3e9;
+      color: #4d5944;
+      font-size: .86rem;
+    }
+
+    pre {
+      margin: .8rem 0 0;
+      padding: .9rem;
+      overflow-x: auto;
+      border-radius: 10px;
+      background: #25301f;
+      color: #e8eddf;
+      font: .78rem/1.65 ui-monospace, "SFMono-Regular", Consolas, monospace;
+    }
+
+    .stack-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-block-start: 1rem; }
+    .stack-sample { min-width: 0; padding: 1rem; border: 1px dashed #bdc5b2; border-radius: 12px; background: #f8f8f1; }
+    .stack-sample p { margin: .6rem 0 0; overflow-wrap: anywhere; }
+    .stack-sample.sans { font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", sans-serif; }
+    .stack-sample.serif { font-family: Georgia, "Songti SC", "STSong", "SimSun", serif; }
+    .stack-sample.mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+    .stack-sample .sample-big { font-size: 1.6rem; line-height: 1.2; }
+
+    .type-preview {
+      margin-block-start: 1rem;
+      padding: clamp(1rem, 4vw, 2rem);
+      border: 1px solid #d5ddc9;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fbfaf4, #edf2e6);
+      font-family: var(--sample-family, system-ui, sans-serif);
+      font-size: var(--sample-size, 28px);
+      line-height: var(--sample-leading, 1.55);
+      letter-spacing: var(--sample-tracking, 0em);
+      overflow-wrap: anywhere;
+    }
+
+    .type-preview strong { color: var(--green); }
+
+    .numbers {
+      width: 100%;
+      margin-block-start: 1rem;
+      border-collapse: collapse;
+      font-size: 1.02rem;
+    }
+
+    .numbers th, .numbers td { padding: .7rem .5rem; border-block-end: 1px solid var(--line); text-align: end; }
+    .numbers th:first-child, .numbers td:first-child { text-align: start; }
+    .numbers.is-numeric { font-variant-numeric: tabular-nums lining-nums; }
+    .numbers .good { color: var(--green); font-weight: 800; }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-block-start: 1rem; }
+    .compare > div { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: #faf9f3; }
+    .compare h3 { font-size: 1.25rem; line-height: 1.3; }
+    .compare p { font-size: .93rem; }
+    #wrapTarget { text-wrap: var(--wrap-mode, normal); }
+
+    .clamp-box, .ellipsis-box {
+      margin-block-start: .8rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #faf9f3;
+    }
+
+    .clamp-box {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: var(--clamp-lines, 3);
+      line-clamp: var(--clamp-lines, 3);
+      overflow: hidden;
+    }
+
+    .ellipsis-box { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    .vertical-stage {
+      display: flex;
+      justify-content: center;
+      min-height: 270px;
+      margin-block-start: 1rem;
+      padding: 1rem;
+      border: 1px dashed #bfc7b4;
+      border-radius: 12px;
+      background: #f4f6ee;
+    }
+
+    #verticalText {
+      max-width: 100%;
+      padding: .5rem;
+      font-family: Georgia, "Songti SC", serif;
+      font-size: 1.25rem;
+      line-height: 1.8;
+      writing-mode: var(--writing-mode, vertical-rl);
+      text-orientation: var(--text-orientation, mixed);
+    }
+
+    .logical-wrap { margin-block-start: 1rem; padding: 1rem; border: 1px dashed #bfc7b4; border-radius: 12px; }
+    .logical-box {
+      padding-block: 1rem;
+      padding-inline: 1.2rem .7rem;
+      margin-inline-start: var(--logical-offset, 1.5rem);
+      border-inline-start: 6px solid var(--green);
+      border-start-start-radius: 16px;
+      border-end-end-radius: 16px;
+      background: var(--green-soft);
+      inline-size: min(100% - var(--logical-offset, 1.5rem), 360px);
+    }
+
+    .support { margin-block-start: 1rem; color: var(--muted); font-size: .85rem; }
+
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-specimen { min-height: 150px; }
+      .grid { grid-template-columns: 1fr; }
+      .stack-grid { grid-template-columns: 1fr; }
+      .compare { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 420px) {
+      .page { width: min(100% - 1rem, 1120px); }
+      .card { border-radius: 14px; }
+      .toolbar, .card-controls { padding: .8rem; }
+      .control { flex-basis: 100%; }
+      .hero-specimen::after { font-size: 7rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="page">
+    <header class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <span class="top-note">独立示例 · 无外部字体与资源</span>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Typography / 视觉基础 01</p>
+          <h1 id="page-title">字体与文字排版实验室</h1>
+          <p class="intro">调整字号、行高与字距，观察数字排版、换行策略、截断、竖排和逻辑方向属性如何共同影响阅读节奏。</p>
+        </div>
+        <aside class="hero-specimen" aria-label="字体效果预览">
+          <p class="big">好的排版，<br />让内容先被看见。</p>
+          <p class="small">font · line · rhythm · direction</p>
+        </aside>
+      </section>
+
+      <section class="toolbar" aria-labelledby="global-controls-title">
+        <h2 id="global-controls-title" hidden>排版全局控件</h2>
+        <div class="control">
+          <label for="fontFamily">字体栈</label>
+          <select id="fontFamily">
+            <option value="sans">系统无衬线</option>
+            <option value="serif">中文衬线</option>
+            <option value="mono">等宽字体</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="fontSize">字号 <output id="fontSizeValue" for="fontSize">28 px</output></label>
+          <input id="fontSize" type="range" min="18" max="44" step="1" value="28" />
+        </div>
+        <div class="control">
+          <label for="lineHeight">行高 <output id="lineHeightValue" for="lineHeight">1.55</output></label>
+          <input id="lineHeight" type="range" min="1.1" max="2" step="0.05" value="1.55" />
+        </div>
+        <div class="control">
+          <label for="letterSpacing">字距 <output id="letterSpacingValue" for="letterSpacing">0 em</output></label>
+          <input id="letterSpacing" type="range" min="-0.06" max="0.16" step="0.01" value="0" />
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card wide" aria-labelledby="preview-title">
+          <h2 id="preview-title">实时排版样本</h2>
+          <p class="desc">上方控件直接修改 <code>font-family</code>、<code>font-size</code>、<code>line-height</code> 和 <code>letter-spacing</code>。行高使用无单位数值，能随字号等比缩放。</p>
+          <div class="type-preview" id="typePreview">
+            <strong>山川与文字</strong><br />
+            排版不是把文字塞进版面，而是为阅读建立秩序。合适的字号、行高与字距，会让段落呼吸，让标题拥有层次。这里的中文与 ABC 123 会一起响应你的调整。
+          </div>
+          <pre id="metricsCode">font-family: system-ui, sans-serif;
+font-size: 28px;
+line-height: 1.55;
+letter-spacing: 0em;</pre>
+        </section>
+
+        <section class="card" aria-labelledby="stack-title">
+          <h2 id="stack-title">字体栈的回退顺序</h2>
+          <p class="desc"><code>font-family</code> 从左到右寻找可用字体；最后保留通用字体族，避免系统缺少全部指定字体。</p>
+          <div class="stack-grid">
+            <div class="stack-sample sans">
+              <h3>Sans</h3>
+              <p class="sample-big">界面与正文</p>
+              <p>system-ui → Segoe UI → PingFang SC → sans-serif</p>
+            </div>
+            <div class="stack-sample serif">
+              <h3>Serif</h3>
+              <p class="sample-big">人文与标题</p>
+              <p>Georgia → Songti SC → STSong → serif</p>
+            </div>
+            <div class="stack-sample mono">
+              <h3>Mono</h3>
+              <p class="sample-big">0123456789</p>
+              <p>SFMono-Regular → Menlo → Consolas → monospace</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="numeric-title">
+          <h2 id="numeric-title">等宽数字与数字形态</h2>
+          <p class="desc"><code>font-variant-numeric: tabular-nums</code> 让每位数字等宽，<code>lining-nums</code> 统一数字高度，适合表格、价格和计时。</p>
+          <div class="button-row" style="margin-block-start: .9rem;">
+            <button id="numericToggle" type="button" aria-pressed="false">启用等宽数字</button>
+          </div>
+          <table class="numbers" id="numberTable">
+            <caption hidden>不同数字形态对照</caption>
+            <thead><tr><th scope="col">项目</th><th scope="col">普通数字</th><th scope="col">当前样式</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">一月</th><td>1,111.11</td><td class="good">1,111.11</td></tr>
+              <tr><th scope="row">二月</th><td>8,888.88</td><td class="good">8,888.88</td></tr>
+              <tr><th scope="row">三月</th><td>3,333.33</td><td class="good">3,333.33</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="card" aria-labelledby="wrap-title">
+          <h2 id="wrap-title">平衡换行与美观换行</h2>
+          <p class="desc"><code>text-wrap: balance</code> 平衡多行长度，更适合标题；<code>pretty</code> 尝试避免段落末尾的孤立字词。</p>
+          <div class="button-row" style="margin-block-start: .9rem;" role="group" aria-label="选择换行策略">
+            <button type="button" data-wrap="normal" aria-pressed="true">normal</button>
+            <button type="button" data-wrap="balance" aria-pressed="false">balance</button>
+            <button type="button" data-wrap="pretty" aria-pressed="false">pretty</button>
+          </div>
+          <div class="compare" id="wrapTarget">
+            <div>
+              <h3>山间的风穿过树林，光影落在长长的小径上</h3>
+              <p>这是一段用于观察换行位置的中文文字。调整策略后，浏览器会重新分配每一行的长度；支持情况不同，显示可能保持不变。</p>
+            </div>
+            <div>
+              <h3>Typography makes reading feel natural.</h3>
+              <p>换行策略不会改变内容，只改变行尾的断点。标题通常限制在较少的行数内，段落则更关注自然流畅的阅读体验。</p>
+            </div>
+          </div>
+          <p class="support" id="wrapSupport">正在检测 text-wrap 支持情况…</p>
+        </section>
+
+        <section class="card" aria-labelledby="truncate-title">
+          <h2 id="truncate-title">多行截断与单行省略</h2>
+          <p class="desc"><code>line-clamp</code> 配合 WebKit 盒模型截断多行；<code>text-overflow: ellipsis</code> 需要单行、溢出隐藏和 <code>nowrap</code>。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="clampLines">显示行数 <output id="clampLinesValue" for="clampLines">3 行</output></label>
+              <input id="clampLines" type="range" min="1" max="5" step="1" value="3" />
+            </div>
+            <div class="control" style="flex-basis: 100%;">
+              <label for="ellipsisText">单行文本</label>
+              <input id="ellipsisText" type="text" value="这是一段会超出容器宽度的文字，用来观察末尾省略号出现的位置。" />
+            </div>
+          </div>
+          <h3 style="margin-block-start: 1rem;">多行 line-clamp</h3>
+          <div class="clamp-box" id="clampBox">文字排版的目标是让信息清晰、舒适地被阅读。多行截断常用于卡片摘要和列表预览：它保留开头的重要信息，同时避免内容无限撑高容器。需要注意的是，被截断的内容仍然存在于文档中，必要时可为用户提供展开全文的操作。</div>
+          <h3 style="margin-block-start: 1rem;">单行 text-overflow</h3>
+          <div class="ellipsis-box" id="ellipsisBox">这是一段会超出容器宽度的文字，用来观察末尾省略号出现的位置。</div>
+        </section>
+
+        <section class="card" aria-labelledby="vertical-title">
+          <h2 id="vertical-title">竖排与文字方向</h2>
+          <p class="desc"><code>writing-mode</code> 决定文本流向，<code>text-orientation</code> 决定竖排时拉丁字母和数字的朝向。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <fieldset>
+              <legend>writing-mode</legend>
+              <div class="button-row" role="group" aria-label="文字流向">
+                <button type="button" data-writing="horizontal-tb" aria-pressed="false">横排</button>
+                <button type="button" data-writing="vertical-rl" aria-pressed="true">竖排</button>
+              </div>
+            </fieldset>
+            <div class="control">
+              <label for="textOrientation">text-orientation</label>
+              <select id="textOrientation">
+                <option value="mixed">mixed：混合方向</option>
+                <option value="upright">upright：全部直立</option>
+                <option value="sideways">sideways：整体侧转</option>
+              </select>
+            </div>
+          </div>
+          <div class="vertical-stage">
+            <p id="verticalText">春江潮水连海平，ABC 123，文字竖向排列。</p>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="logical-title">
+          <h2 id="logical-title">逻辑属性与书写方向</h2>
+          <p class="desc"><code>inline-start</code>、<code>block-start</code> 等逻辑属性会随 <code>direction</code> 和书写模式自动映射到正确的物理边，不必为 RTL 单独改写。</p>
+          <div class="button-row" style="margin-block-start: .9rem;">
+            <button id="directionToggle" type="button" aria-pressed="false">切换为从右到左（RTL）</button>
+          </div>
+          <div class="logical-wrap">
+            <div class="logical-box" id="logicalBox" dir="ltr">
+              <strong>逻辑方向卡片</strong><br />
+              绿色边框位于 inline-start；较大的内边距也在起始侧。切换方向后，布局会镜像，而 CSS 规则保持不变。
+            </div>
+          </div>
+          <pre id="logicalCode">direction: ltr;
+padding-inline: 1.2rem .7rem;
+margin-inline-start: 1.5rem;
+border-inline-start: 6px solid #3f6b2a;</pre>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const familyMap = {
+      sans: 'system-ui, -apple-system, "Segoe UI", "PingFang SC", sans-serif',
+      serif: 'Georgia, "Songti SC", "STSong", "SimSun", serif',
+      mono: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace'
+    };
+
+    const fontFamily = document.querySelector('#fontFamily');
+    const fontSize = document.querySelector('#fontSize');
+    const lineHeight = document.querySelector('#lineHeight');
+    const letterSpacing = document.querySelector('#letterSpacing');
+    const typePreview = document.querySelector('#typePreview');
+    const metricsCode = document.querySelector('#metricsCode');
+
+    function updateMetrics() {
+      const family = familyMap[fontFamily.value];
+      typePreview.style.setProperty('--sample-family', family);
+      typePreview.style.setProperty('--sample-size', `${fontSize.value}px`);
+      typePreview.style.setProperty('--sample-leading', lineHeight.value);
+      typePreview.style.setProperty('--sample-tracking', `${letterSpacing.value}em`);
+      document.querySelector('#fontSizeValue').textContent = `${fontSize.value} px`;
+      document.querySelector('#lineHeightValue').textContent = Number(lineHeight.value).toFixed(2);
+      document.querySelector('#letterSpacingValue').textContent = `${Number(letterSpacing.value).toFixed(2)} em`;
+      metricsCode.textContent = `font-family: ${family};\nfont-size: ${fontSize.value}px;\nline-height: ${Number(lineHeight.value).toFixed(2)};\nletter-spacing: ${Number(letterSpacing.value).toFixed(2)}em;`;
+    }
+
+    [fontFamily, fontSize, lineHeight, letterSpacing].forEach(input => input.addEventListener('input', updateMetrics));
+    updateMetrics();
+
+    const numericToggle = document.querySelector('#numericToggle');
+    const numberTable = document.querySelector('#numberTable');
+    numericToggle.addEventListener('click', () => {
+      const enabled = numericToggle.getAttribute('aria-pressed') !== 'true';
+      numericToggle.setAttribute('aria-pressed', String(enabled));
+      numericToggle.textContent = enabled ? '关闭等宽数字' : '启用等宽数字';
+      numberTable.classList.toggle('is-numeric', enabled);
+    });
+
+    const wrapTarget = document.querySelector('#wrapTarget');
+    const wrapButtons = [...document.querySelectorAll('[data-wrap]')];
+    wrapButtons.forEach(button => button.addEventListener('click', () => {
+      wrapButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      wrapTarget.style.setProperty('--wrap-mode', button.dataset.wrap);
+    }));
+
+    document.querySelector('#wrapSupport').textContent = CSS.supports('text-wrap', 'balance')
+      ? '当前浏览器支持 text-wrap: balance；pretty 的断点策略可能因浏览器版本而不同。'
+      : '当前浏览器不支持 text-wrap，示例会保持 normal 换行。';
+
+    const clampLines = document.querySelector('#clampLines');
+    const clampBox = document.querySelector('#clampBox');
+    clampLines.addEventListener('input', () => {
+      clampBox.style.setProperty('--clamp-lines', clampLines.value);
+      document.querySelector('#clampLinesValue').textContent = `${clampLines.value} 行`;
+    });
+
+    const ellipsisText = document.querySelector('#ellipsisText');
+    const ellipsisBox = document.querySelector('#ellipsisBox');
+    ellipsisText.addEventListener('input', () => {
+      ellipsisBox.textContent = ellipsisText.value || '请输入一段文字';
+    });
+
+    const verticalText = document.querySelector('#verticalText');
+    const writingButtons = [...document.querySelectorAll('[data-writing]')];
+    writingButtons.forEach(button => button.addEventListener('click', () => {
+      writingButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      verticalText.style.setProperty('--writing-mode', button.dataset.writing);
+    }));
+
+    const textOrientation = document.querySelector('#textOrientation');
+    textOrientation.addEventListener('change', () => {
+      verticalText.style.setProperty('--text-orientation', textOrientation.value);
+    });
+
+    const directionToggle = document.querySelector('#directionToggle');
+    const logicalBox = document.querySelector('#logicalBox');
+    const logicalCode = document.querySelector('#logicalCode');
+    directionToggle.addEventListener('click', () => {
+      const rtl = directionToggle.getAttribute('aria-pressed') !== 'true';
+      directionToggle.setAttribute('aria-pressed', String(rtl));
+      directionToggle.textContent = rtl ? '切换为从左到右（LTR）' : '切换为从右到左（RTL）';
+      logicalBox.dir = rtl ? 'rtl' : 'ltr';
+      logicalCode.textContent = `direction: ${rtl ? 'rtl' : 'ltr'};\npadding-inline: 1.2rem .7rem;\nmargin-inline-start: 1.5rem;\nborder-inline-start: 6px solid #3f6b2a;`;
+    });
+  </script>
+</body>
+</html>

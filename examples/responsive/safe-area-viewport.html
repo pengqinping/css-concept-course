@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>安全区域与稳定视口高度</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #263021;
+      --muted: #66705d;
+      --green: #3f6b2a;
+      --green-soft: #e3ecd9;
+      --lime: #b9d68c;
+      --line: #d6d2c5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    main { width: min(72rem, 100%); margin-inline: auto; }
+    h1, h2, h3, p { margin-block-start: 0; }
+    h1 { max-width: 17ch; margin-bottom: .7rem; font-size: clamp(2rem, 6vw, 3.7rem); line-height: 1.06; letter-spacing: -.045em; }
+    h2 { margin-bottom: .45rem; font-size: 1.2rem; }
+    h3 { margin-bottom: .35rem; font-size: 1rem; }
+    p { color: var(--muted); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    code { font-size: .9em; overflow-wrap: anywhere; }
+    pre { max-width: 100%; margin: 1rem 0 0; padding: 1rem; border-radius: .8rem; color: #edf3e6; background: #263021; font-size: .82rem; line-height: 1.6; overflow-x: auto; }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back { display: inline-flex; gap: .45rem; margin-bottom: 1.4rem; font-weight: 800; text-decoration: none; }
+    .back::before { content: "←"; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .eyebrow { margin-bottom: .5rem; color: var(--green); font-size: .8rem; font-weight: 900; letter-spacing: .14em; }
+    .lead { max-width: 66ch; margin-bottom: 1.8rem; font-size: 1.05rem; }
+    .panel { margin-bottom: 1.2rem; padding: clamp(1.1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: 1.2rem; background: var(--surface); }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .panel-head p { max-width: 65ch; margin-bottom: 1rem; }
+    .tag { flex: none; padding: .25rem .65rem; border-radius: 999px; color: var(--green); background: var(--green-soft); font-size: .76rem; font-weight: 800; }
+    .readout { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; margin: 1rem 0; font-size: .9rem; color: var(--muted); }
+    .readout strong { color: var(--green); font-variant-numeric: tabular-nums; }
+
+    .height-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+    .height-card { min-width: 0; padding: .8rem; border: 1px solid var(--line); border-radius: .9rem; background: var(--paper); }
+    .height-card h3 { margin-bottom: .2rem; }
+    .height-card p { min-height: 2.7rem; margin-bottom: .7rem; font-size: .78rem; line-height: 1.45; }
+    .height-bar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 22vh;
+      min-height: 4rem;
+      padding: .45rem .2rem;
+      border-radius: .55rem;
+      color: #fff;
+      background: var(--green);
+      font-size: .7rem;
+      font-weight: 800;
+      writing-mode: vertical-rl;
+    }
+    .height-bar.svh { background: #557d3f; }
+    .height-bar.lvh { background: #6c914e; }
+    .height-bar.dvh { background: #89a864; }
+    @supports (height: 1svh) { .height-bar.svh { height: 22svh; } }
+    @supports (height: 1lvh) { .height-bar.lvh { height: 22lvh; } }
+    @supports (height: 1dvh) { .height-bar.dvh { height: 22dvh; } }
+
+    .phone-lab { display: grid; grid-template-columns: minmax(15rem, 22rem) minmax(0, 1fr); gap: clamp(1.2rem, 4vw, 2.5rem); align-items: center; }
+    .phone {
+      position: relative;
+      width: 100%;
+      height: 25rem;
+      padding: .65rem;
+      border: 3px solid var(--ink);
+      border-radius: 2.2rem;
+      background: var(--ink);
+      box-shadow: 0 20px 40px rgb(38 48 33 / 16%);
+    }
+    .phone-screen {
+      --large: 356px;
+      --small: 316px;
+      position: relative;
+      height: var(--large);
+      border-radius: 1.55rem;
+      background: #f8f6ee;
+      overflow: hidden;
+    }
+    .browser-chrome {
+      position: absolute;
+      z-index: 2;
+      inset: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      height: var(--toolbar, 40px);
+      padding-inline: .8rem;
+      color: #fff;
+      background: #3f6b2a;
+      font-size: .72rem;
+      font-weight: 800;
+      transition: height 180ms ease;
+    }
+    .browser-chrome::before { content: ""; width: .6rem; height: .6rem; border-radius: 50%; background: var(--lime); }
+    .sim-columns { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: .25rem; padding: .25rem; }
+    .sim-column { position: relative; border-radius: .4rem; background: #e8e4d8; overflow: hidden; }
+    .sim-bar {
+      position: absolute;
+      inset: auto 0 0;
+      display: grid;
+      place-items: end center;
+      padding-bottom: .45rem;
+      color: #fff;
+      background: var(--green);
+      font-size: .62rem;
+      font-weight: 800;
+      transition: height 180ms ease;
+    }
+    .sim-bar.svh { background: #739553; }
+    .sim-bar.lvh { background: #547b3b; }
+    .sim-bar.dvh { background: #98b675; }
+    .lab-controls { display: grid; gap: .7rem; }
+    .lab-controls label { font-size: .9rem; font-weight: 800; }
+    .lab-controls input { width: min(18rem, 100%); accent-color: var(--green); }
+    .button-row { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .4rem; }
+    button {
+      min-height: 2.75rem;
+      padding: .55rem .9rem;
+      border: 1px solid var(--green);
+      border-radius: .65rem;
+      color: var(--green);
+      background: var(--surface);
+      font: inherit;
+      font-size: .88rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    button.primary { color: #fff; background: var(--green); }
+    button:hover { background: var(--green-soft); }
+    button.primary:hover { background: #31541f; }
+
+    .safe-layout { display: grid; grid-template-columns: minmax(15rem, 21rem) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+    .safe-device {
+      --demo-top: 0px;
+      --demo-right: 0px;
+      --demo-bottom: 0px;
+      --demo-left: 0px;
+      min-height: 19rem;
+      padding: 1rem;
+      padding-top: max(1rem, env(safe-area-inset-top, 0px), var(--demo-top));
+      padding-right: max(1rem, env(safe-area-inset-right, 0px), var(--demo-right));
+      padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px), var(--demo-bottom));
+      padding-left: max(1rem, env(safe-area-inset-left, 0px), var(--demo-left));
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: var(--green-soft);
+      transition: padding 180ms ease;
+    }
+    .safe-device.simulated { --demo-top: 3rem; --demo-right: 1.6rem; --demo-bottom: 2.3rem; --demo-left: 1.6rem; }
+    .safe-content { display: grid; min-height: 11rem; place-content: center; padding: 1rem; border: 1px dashed var(--green); border-radius: .8rem; background: var(--surface); text-align: center; }
+    .safe-content strong { color: var(--green); }
+    .safe-content p { margin: .3rem 0 0; font-size: .82rem; }
+    .safe-explainer { min-width: 0; }
+    .safe-explainer p { margin-bottom: .8rem; }
+    .safe-explainer ul { margin: .6rem 0 0; padding-left: 1.2rem; color: var(--muted); }
+    .stable-demo { margin-top: 1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: .9rem; background: var(--paper); }
+    .stable-stage { display: grid; min-height: 50vh; min-height: 50svh; place-items: center; padding: 1rem; border-radius: .7rem; color: #fff; background: var(--green); text-align: center; }
+    .stable-stage strong { display: block; font-size: 1.1rem; }
+
+    @media (max-width: 52rem) {
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+      .height-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .phone-lab, .safe-layout { grid-template-columns: minmax(0, 1fr); }
+      .phone { max-width: 22rem; margin-inline: auto; }
+    }
+    @media (max-width: 30rem) {
+      .panel-head { display: block; }
+      .tag { display: inline-block; margin-bottom: .7rem; }
+      .height-card p { min-height: 3.8rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .browser-chrome, .sim-bar, .safe-device { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="../index.html">返回示例索引</a>
+    <header>
+      <p class="eyebrow">Responsive CSS / 03</p>
+      <h1>别让地址栏偷走最后一屏</h1>
+      <p class="lead">移动端浏览器的工具栏会伸缩，刘海与手势区也会占用空间。用动态视口单位控制沉浸布局，用安全区域变量保护关键内容。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="measure-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="measure-title">真实视口测量仪</h2>
+          <p>在手机上滚动页面，观察工具栏收起时数值变化。桌面端工具栏通常不伸缩，因此各值可能相同。</p>
+        </div>
+        <span class="tag">实时测量</span>
+      </div>
+      <div class="readout">
+        <span><code>innerHeight</code>：<strong id="innerHeight">—</strong></span>
+        <span><code>visualViewport.height</code>：<strong id="visualHeight">—</strong></span>
+        <span><code>clientHeight</code>：<strong id="clientHeight">—</strong></span>
+        <span>屏幕方向：<strong id="orientation">—</strong></span>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="units-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="units-title">vh、svh、lvh、dvh 的实际高度</h2>
+          <p>四根色条都声明为视口高度的 22%。工具栏变化时，<code>dvh</code> 跟随变化，<code>svh</code> 保持最小高度，<code>lvh</code> 保持最大高度。</p>
+        </div>
+        <span class="tag">22% 视口高度</span>
+      </div>
+      <div class="height-grid">
+        <article class="height-card"><h3><code>22vh</code></h3><p>传统大视口，可能超出当前可见区域。</p><div class="height-bar vh" data-height>vh</div></article>
+        <article class="height-card"><h3><code>22svh</code></h3><p>最小视口，工具栏展开时也稳定。</p><div class="height-bar svh" data-height>svh</div></article>
+        <article class="height-card"><h3><code>22lvh</code></h3><p>最大视口，工具栏收起后的高度。</p><div class="height-bar lvh" data-height>lvh</div></article>
+        <article class="height-card"><h3><code>22dvh</code></h3><p>动态视口，随当前可见区域变化。</p><div class="height-bar dvh" data-height>dvh</div></article>
+      </div>
+      <div class="readout"><span>实际渲染高度：<strong id="heightValues">—</strong></span><span>色条设了 4rem 最小高度，极矮视口下差异会被下限掩盖。</span></div>
+    </section>
+
+    <section class="panel" aria-labelledby="sim-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="sim-title">为什么移动端 <code>100vh</code> 会“多一截”？</h2>
+          <p>模拟器把最大视口固定为整块屏幕。绿色浏览器工具栏出现后，<code>100vh</code> 与 <code>100dvh</code> 会延伸到工具栏下面。</p>
+        </div>
+        <span class="tag">交互模拟</span>
+      </div>
+      <div class="phone-lab">
+        <div class="phone" aria-label="移动浏览器工具栏高度模拟器">
+          <div class="phone-screen" id="phoneScreen">
+            <div class="sim-columns" aria-hidden="true">
+              <div class="sim-column"><div class="sim-bar" data-sim="vh">100vh</div></div>
+              <div class="sim-column"><div class="sim-bar svh" data-sim="svh">100svh</div></div>
+              <div class="sim-column"><div class="sim-bar lvh" data-sim="lvh">100lvh</div></div>
+              <div class="sim-column"><div class="sim-bar dvh" data-sim="dvh">100dvh</div></div>
+            </div>
+            <div class="browser-chrome" id="browserChrome">浏览器工具栏</div>
+          </div>
+        </div>
+        <div class="lab-controls">
+          <label for="toolbarHeight">工具栏高度：<output id="toolbarOutput" for="toolbarHeight">40 px</output></label>
+          <input id="toolbarHeight" type="range" min="0" max="110" step="2" value="40" />
+          <div class="button-row">
+            <button class="primary" id="collapseToolbar" type="button">模拟工具栏收起</button>
+            <button id="expandToolbar" type="button">模拟工具栏展开</button>
+          </div>
+          <p><strong>稳定方案：</strong>页面主舞台使用 <code>min-height: 100svh</code>，内部文档自然滚动；只有确实需要“贴住当前可视区域”的沉浸组件才使用 <code>100dvh</code>。</p>
+          <div class="stable-demo">
+            <div class="stable-stage"><div><strong>内容始终从安全位置开始</strong><span>min-height: 50svh 演示</span></div></div>
+          </div>
+          <pre><code>.page-stage {
+  min-height: 100vh;  /* 回退 */
+  min-height: 100svh; /* 稳定主舞台 */
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="safe-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="safe-title">env(safe-area-inset-*)：避开刘海与手势区</h2>
+          <p>安全区域变量只在支持且需要避让的设备上返回非零值。模拟开关可让桌面端也直观看到效果。</p>
+        </div>
+        <span class="tag">viewport-fit=cover</span>
+      </div>
+      <div class="safe-layout">
+        <div>
+          <div class="safe-device" id="safeDevice">
+            <div class="safe-content"><div><strong>关键操作区</strong><p>按钮与正文留在安全 inset 内</p></div></div>
+          </div>
+          <div class="button-row"><button id="safeToggle" type="button" aria-pressed="false">模拟刘海与底部手势区</button></div>
+        </div>
+        <div class="safe-explainer">
+          <p>四边分别读取：<code>safe-area-inset-top</code>、<code>right</code>、<code>bottom</code>、<code>left</code>。不要直接写死数值，因为不同设备与横竖屏的 inset 不同。</p>
+          <p><code>max()</code> 同时保留设计所需的基础留白，并与真实安全区域取较大值。</p>
+          <pre><code>.safe-screen {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}</code></pre>
+          <ul>
+            <li>想要延伸到屏幕边缘时，在 meta 中加 <code>viewport-fit=cover</code>。</li>
+            <li>不支持 <code>env()</code> 的旧浏览器忽略相关声明，基础 <code>1rem</code> 留白仍然可用。</li>
+            <li>不要用固定定位把关闭按钮压在 home 指示条上。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+    const toolbarHeight = $("#toolbarHeight");
+    const toolbarOutput = $("#toolbarOutput");
+    const phoneScreen = $("#phoneScreen");
+    const browserChrome = $("#browserChrome");
+
+    function renderPhone() {
+      const toolbar = Number(toolbarHeight.value);
+      const large = phoneScreen.clientHeight;
+      const small = large - toolbar;
+      toolbarOutput.textContent = `${toolbar} px`;
+      phoneScreen.style.setProperty("--toolbar", `${toolbar}px`);
+      browserChrome.style.opacity = toolbar < 8 ? "0" : "1";
+      document.querySelectorAll("[data-sim]").forEach((bar) => {
+        const kind = bar.dataset.sim;
+        bar.style.height = `${kind === "svh" ? small : large}px`;
+      });
+      $("#collapseToolbar").disabled = toolbar === 0;
+      $("#expandToolbar").disabled = toolbar === 110;
+    }
+
+    toolbarHeight.addEventListener("input", renderPhone);
+    $("#collapseToolbar").addEventListener("click", () => {
+      toolbarHeight.value = "0";
+      renderPhone();
+    });
+    $("#expandToolbar").addEventListener("click", () => {
+      toolbarHeight.value = "110";
+      renderPhone();
+    });
+
+    const safeToggle = $("#safeToggle");
+    safeToggle.addEventListener("click", () => {
+      const enabled = safeToggle.getAttribute("aria-pressed") !== "true";
+      safeToggle.setAttribute("aria-pressed", String(enabled));
+      safeToggle.textContent = enabled ? "关闭安全区域模拟" : "模拟刘海与底部手势区";
+      $("#safeDevice").classList.toggle("simulated", enabled);
+    });
+
+    function measure() {
+      $("#innerHeight").textContent = `${window.innerHeight} px`;
+      $("#visualHeight").textContent = `${Math.round(window.visualViewport?.height ?? window.innerHeight)} px`;
+      $("#clientHeight").textContent = `${document.documentElement.clientHeight} px`;
+      $("#orientation").textContent = window.innerWidth >= window.innerHeight ? "横向" : "纵向";
+      const values = [...document.querySelectorAll("[data-height]")].map((bar) => `${bar.textContent} ${Math.round(bar.getBoundingClientRect().height)}px`);
+      $("#heightValues").textContent = values.join(" / ");
+      renderPhone();
+    }
+
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    measure();
+  </script>
+</body>
+</html>

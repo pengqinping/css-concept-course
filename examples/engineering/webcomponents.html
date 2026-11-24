@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Web Components：Shadow DOM 封装与表单</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #24301f;
+      --muted: #68715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1e;
+      --green-soft: #e4ecd9;
+      --line: #d9d6ca;
+      --clay: #b9633f;
+      --shadow: 0 18px 45px rgb(47 59 38 / 9%);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgb(63 107 42 / 8%), transparent 26rem),
+        var(--paper);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { max-width: 72rem; margin: 0 auto; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: .65rem; font-size: clamp(2rem, 6vw, 3.8rem); line-height: 1.08; letter-spacing: -.045em; }
+    h2 { margin-bottom: 1rem; font-size: clamp(1.3rem, 3vw, 1.8rem); }
+    h3 { margin-bottom: .5rem; font-size: 1.05rem; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid var(--clay);
+      outline-offset: 3px;
+    }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; margin-bottom: 2rem; font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin-bottom: .8rem; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .lede { max-width: 48rem; color: var(--muted); font-size: clamp(1rem, 2vw, 1.15rem); }
+    code, pre, output { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .12em .35em; border-radius: .3rem; background: var(--green-soft); color: var(--green-dark); font-size: .9em; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(17rem, .75fr); gap: 1.5rem; align-items: start; margin-top: 2rem; }
+    .panel { padding: clamp(1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: 1.25rem; background: rgb(255 253 247 / 88%); box-shadow: var(--shadow); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 1.25rem; }
+    button, select {
+      min-height: 2.75rem;
+      padding: .6rem .9rem;
+      border: 1px solid var(--line);
+      border-radius: .7rem;
+      color: var(--ink);
+      background: var(--surface);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--green); }
+    button[aria-pressed="true"] { border-color: var(--green); color: #fff; background: var(--green); }
+    button.primary { border-color: var(--green); color: #fff; background: var(--green); }
+    button.primary:hover { background: var(--green-dark); }
+    .swatches { display: flex; flex-wrap: wrap; gap: .55rem; margin: .8rem 0 1.4rem; }
+    .swatch { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .5rem; }
+    .swatch::before { content: ""; width: .85rem; height: .85rem; border: 2px solid rgb(255 255 255 / 75%); border-radius: 50%; background: var(--swatch); box-shadow: 0 0 0 1px rgb(0 0 0 / 12%); }
+    .stage { --card-accent: var(--green); --card-radius: 1.25rem; display: grid; gap: 1rem; }
+    .stage.forest { --card-accent: #3f6b2a; }
+    .stage.clay { --card-accent: #b9633f; --card-radius: .55rem; }
+    .stage.moss { --card-accent: #747b35; --card-radius: 1.8rem; }
+
+    demo-card { display: block; min-width: 0; }
+    demo-card::part(surface) { transition: border-color 180ms ease, box-shadow 180ms ease; }
+    .part-demo demo-card::part(surface) { border-color: var(--clay); box-shadow: 0 0 0 4px rgb(185 99 63 / 15%); }
+    .part-demo demo-card::part(action) { letter-spacing: .06em; text-transform: uppercase; }
+
+    .definition-list { display: grid; gap: 0; margin: 0; }
+    .definition-list div { display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); gap: 1rem; padding: .9rem 0; border-bottom: 1px solid var(--line); }
+    .definition-list div:first-child { padding-top: 0; }
+    .definition-list div:last-child { border-bottom: 0; padding-bottom: 0; }
+    dt { font-weight: 800; }
+    dd { margin: 0; color: var(--muted); }
+    .event-log { min-height: 8.5rem; max-height: 14rem; margin: 0; padding: 1rem; overflow: auto; border-radius: .85rem; color: #e8eddf; background: #24301f; font-size: .82rem; line-height: 1.65; white-space: pre-wrap; }
+    .form-result { margin-top: 1rem; padding: .9rem 1rem; border: 1px dashed #aeb8a2; border-radius: .75rem; background: var(--green-soft); font-size: .86rem; overflow-wrap: anywhere; }
+    .form-result:empty { display: none; }
+    .hint { margin: .75rem 0 0; color: var(--muted); font-size: .88rem; }
+    pre { margin: 1.5rem 0 0; padding: 1.2rem; overflow-x: auto; border-radius: 1rem; color: #e8eddf; background: #24301f; font-size: .82rem; line-height: 1.65; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .unsupported { margin-top: 1rem; padding: 1rem; border: 1px solid var(--clay); border-radius: .8rem; color: #7d351e; background: #fff0e8; }
+
+    @media (max-width: 56rem) {
+      .layout { grid-template-columns: 1fr; }
+      .definition-list div { grid-template-columns: 1fr; gap: .2rem; }
+    }
+    @media (max-width: 32rem) {
+      body { padding: 1rem .8rem 2rem; }
+      .toolbar > * { flex: 1 1 100%; }
+      .swatches { display: grid; grid-template-columns: 1fr; }
+      .swatch { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <a class="back-link" href="../index.html">返回示例索引</a>
+  <header>
+    <p class="eyebrow">CSS 工程 · 01</p>
+    <h1>Shadow DOM 是封装，不是孤岛</h1>
+    <p class="lede">自定义元素把结构、样式和行为收进影子树；通过插槽、Parts、CSS 自定义属性和组合事件，边界两侧仍能安全协作。</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="demo-title">
+      <h2 id="demo-title">可交互卡片</h2>
+      <div class="toolbar" role="group" aria-label="卡片变体">
+        <button type="button" data-variant="default" aria-pressed="true">默认</button>
+        <button type="button" data-variant="compact" aria-pressed="false">紧凑</button>
+        <button type="button" data-variant="outlined" aria-pressed="false">描边</button>
+        <button type="button" id="partToggle" aria-pressed="false">切换 ::part()</button>
+      </div>
+      <p class="hint">主题色通过父级 CSS 自定义属性传入 Shadow DOM；变体只改属性，不侵入内部结构。</p>
+      <div class="swatches" role="group" aria-label="主题色">
+        <button class="swatch" type="button" data-theme="forest" style="--swatch:#3f6b2a" aria-pressed="true">森林绿</button>
+        <button class="swatch" type="button" data-theme="clay" style="--swatch:#b9633f" aria-pressed="false">陶土色</button>
+        <button class="swatch" type="button" data-theme="moss" style="--swatch:#747b35" aria-pressed="false">苔藓色</button>
+      </div>
+
+      <form id="demoForm" class="stage forest" aria-label="订阅偏好">
+        <demo-card id="profileCard" name="subscription" value="yes" label="森林来信订阅卡片" variant="default">
+          <h3 slot="title">森林来信</h3>
+          <span slot="tag">每月一期</span>
+          <p>收到关于 CSS、排版与可访问性的实践笔记。示例中的复选框状态会同步到宿主元素的表单值。</p>
+          <p>使用 <code>Tab</code> 进入内部控件，<code>Space</code> 勾选，<code>Enter</code> 发送事件。</p>
+        </demo-card>
+      </form>
+      <div class="toolbar" style="margin-top:1rem;margin-bottom:0">
+        <button class="primary" type="submit" form="demoForm">读取 FormData</button>
+        <button type="reset" form="demoForm">重置表单</button>
+      </div>
+      <output id="formResult" class="form-result" aria-live="polite"></output>
+      <p id="supportMessage" class="unsupported" hidden>当前浏览器缺少自定义元素或 ElementInternals 支持；请使用较新的浏览器查看完整交互。</p>
+    </section>
+
+    <aside class="panel" aria-labelledby="api-title">
+      <h2 id="api-title">边界契约</h2>
+      <dl class="definition-list">
+        <div><dt><code>:host</code></dt><dd>在影子树内为宿主元素设置布局、字体和默认变量。</dd></div>
+        <div><dt><code>:host([variant])</code></dt><dd>按外部属性切换变体，属性是组件公开 API 的一部分。</dd></div>
+        <div><dt><code>::slotted()</code></dt><dd>只匹配被分发进来的节点；深层后代需由页面样式自行管理。</dd></div>
+        <div><dt><code>::part()</code></dt><dd>外部只能修改显式标记 <code>part="surface"</code> 等少数样式入口。</dd></div>
+        <div><dt>自定义属性</dt><dd><code>--card-accent</code> 与 <code>--card-radius</code> 自然继承进影子树，可局部覆盖。</dd></div>
+        <div><dt>组合事件</dt><dd><code>bubbles: true</code> 与 <code>composed: true</code> 让事件穿过 Shadow DOM。</dd></div>
+        <div><dt>表单语义</dt><dd>宿主声明 <code>formAssociated</code>，用 <code>setFormValue()</code> 参与外层表单。</dd></div>
+      </dl>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:1.5rem" aria-labelledby="events-title">
+    <h2 id="events-title">事件记录</h2>
+    <pre id="eventLog" class="event-log" role="status" aria-live="polite">等待操作：组件事件会显示在这里。</pre>
+  </section>
+
+  <pre aria-label="核心 CSS 代码"><code>:host {
+  display: block;
+  border-radius: var(--card-radius, 1.25rem);
+  color: var(--card-accent, #3f6b2a);
+}
+:host([variant="compact"]) { --inside-space: .8rem; }
+::slotted(h3) { margin: 0; font-size: 1.35rem; }
+::slotted([slot="tag"]) {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-accent) 13%, transparent);
+}
+.surface { border: 1px solid color-mix(in srgb, var(--card-accent) 32%, #d9d6ca); }
+
+/* 页面侧：只暴露明确的设计令牌 */
+.stage { --card-accent: #3f6b2a; --card-radius: 1.25rem; }
+demo-card::part(surface) { box-shadow: 0 16px 30px rgb(40 60 30 / 8%); }</code></pre>
+</main>
+
+<script>
+  const supportMessage = document.querySelector('#supportMessage');
+  const supportsComponent = 'customElements' in window && 'attachShadow' in Element.prototype;
+  const supportsFormIntegration = typeof HTMLElement.prototype.attachInternals === 'function';
+
+  if (supportsComponent) {
+    class DemoCard extends HTMLElement {
+      static formAssociated = supportsFormIntegration;
+      static observedAttributes = ['checked', 'variant', 'value'];
+
+      constructor() {
+        super();
+        this.internals = typeof this.attachInternals === 'function' ? this.attachInternals() : null;
+        this.actionCount = 0;
+        this.initialChecked = this.hasAttribute('checked');
+        const accent = this.getAttribute('accent') || '#3f6b2a';
+        const root = this.attachShadow({ mode: 'open' });
+        root.innerHTML = `
+          <style>
+            :host {
+              display: block;
+              min-width: 0;
+              font: inherit;
+              color: #24301f;
+              --accent: var(--card-accent, ${accent});
+              --space: 1.35rem;
+              --radius: var(--card-radius, 1.25rem);
+            }
+            :host([hidden]) { display: none; }
+            :host([variant="compact"]) { --space: .85rem; }
+            :host([variant="outlined"]) { --space: 1.1rem; }
+            :host(:focus-within) { outline: 3px solid color-mix(in srgb, var(--accent) 30%, transparent); outline-offset: 4px; border-radius: var(--radius); }
+            *, *::before, *::after { box-sizing: border-box; }
+            .surface {
+              padding: var(--space);
+              border: 1px solid #d9d6ca;
+              border-color: color-mix(in srgb, var(--accent) 35%, #d9d6ca);
+              border-radius: var(--radius);
+              background: #fffdf7;
+              background: color-mix(in srgb, var(--accent) 5%, #fffdf7);
+            }
+            :host([variant="outlined"]) .surface {
+              border-width: 2px;
+              background: transparent;
+              box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--accent) 7%, transparent);
+            }
+            header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; }
+            ::slotted(h3) { margin: 0; color: var(--accent); font-size: 1.3rem; line-height: 1.25; letter-spacing: -.02em; }
+            ::slotted([slot="tag"]) { flex: none; padding: .25rem .6rem; border-radius: 999px; color: var(--accent); background: color-mix(in srgb, var(--accent) 13%, transparent); font-size: .75rem; font-weight: 800; white-space: nowrap; }
+            ::slotted(p) { margin: .65rem 0; color: #5d6756; line-height: 1.7; }
+            ::slotted(p:last-child) { margin-bottom: 0; }
+            ::slotted(code) { padding: .1em .3em; border-radius: .25rem; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: .88em; }
+            footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, var(--accent) 20%, #d9d6ca); }
+            label { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; font-weight: 700; cursor: pointer; }
+            input { width: 1.15rem; height: 1.15rem; margin: 0; accent-color: var(--accent); }
+            input:focus-visible { outline: 3px solid #b9633f; outline-offset: 3px; }
+            button {
+              min-height: 2.6rem;
+              padding: .55rem .9rem;
+              border: 1px solid var(--accent);
+              border-radius: .65rem;
+              color: #fff;
+              background: var(--accent);
+              font: inherit;
+              font-size: .9rem;
+              font-weight: 800;
+              cursor: pointer;
+            }
+            button:hover { filter: brightness(.92); }
+            button:focus-visible { outline: 3px solid #b9633f; outline-offset: 3px; }
+            .state { margin: .8rem 0 0; color: #68715f; font-size: .8rem; }
+            @media (max-width: 28rem) {
+              :host { --space: 1rem; }
+              header { flex-direction: column; gap: .55rem; }
+              footer { align-items: stretch; flex-direction: column; }
+              button { width: 100%; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              *, *::before, *::after { transition-duration: .01ms !important; }
+            }
+          </style>
+          <article class="surface" part="surface">
+            <header>
+              <slot name="title"></slot>
+              <slot name="tag"></slot>
+            </header>
+            <slot></slot>
+            <footer>
+              <label>
+                <input part="consent" type="checkbox" aria-describedby="state">
+                <span>接收更新</span>
+              </label>
+              <button part="action" type="button">发送偏好</button>
+            </footer>
+            <p class="state" id="state" aria-live="polite">尚未订阅</p>
+          </article>
+        `;
+        this.checkbox = root.querySelector('input');
+        this.state = root.querySelector('.state');
+        this.button = root.querySelector('button');
+
+        this.checkbox.checked = this.initialChecked;
+        this.checkbox.addEventListener('change', () => {
+          this.syncValue();
+          this.dispatchEvent(new CustomEvent('demo-consent', {
+            bubbles: true,
+            composed: true,
+            detail: { checked: this.checkbox.checked, value: this.value }
+          }));
+        });
+        this.button.addEventListener('click', () => {
+          this.actionCount += 1;
+          this.state.textContent = `已发送 ${this.actionCount} 次，当前为${this.checkbox.checked ? '订阅' : '未订阅'}状态`;
+          this.dispatchEvent(new CustomEvent('demo-action', {
+            bubbles: true,
+            composed: true,
+            detail: { count: this.actionCount, checked: this.checkbox.checked, variant: this.getAttribute('variant') || 'default' }
+          }));
+        });
+      }
+
+      connectedCallback() {
+        if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
+        if (this.hasAttribute('label') && !this.hasAttribute('aria-label')) {
+          this.setAttribute('aria-label', this.getAttribute('label'));
+        }
+        this.form = this.closest('form');
+        const nativeFormLinked = this.internals && this.form && this.internals.form === this.form;
+        if (!nativeFormLinked && !this.fallbackInput) {
+          this.fallbackInput = document.createElement('input');
+          this.fallbackInput.type = 'hidden';
+          this.fallbackInput.name = this.getAttribute('name') || '';
+          this.fallbackInput.setAttribute('aria-hidden', 'true');
+          this.fallbackInput.tabIndex = -1;
+          this.append(this.fallbackInput);
+        }
+        if (this.fallbackInput && !this.resetHandler) {
+          this.resetHandler = () => requestAnimationFrame(() => this.resetState());
+          this.form?.addEventListener('reset', this.resetHandler);
+        }
+        this.syncValue();
+      }
+
+      disconnectedCallback() {
+        if (this.form && this.resetHandler) {
+          this.form.removeEventListener('reset', this.resetHandler);
+          this.resetHandler = null;
+        }
+      }
+
+      attributeChangedCallback(name, oldValue, newValue) {
+        if (!this.checkbox) return;
+        if (name === 'checked') {
+          this.checkbox.checked = newValue !== null;
+          this.initialChecked = newValue !== null;
+          this.syncValue();
+        }
+        if (name === 'value' || name === 'checked') this.syncValue();
+      }
+
+      get value() {
+        return this.checkbox.checked ? (this.getAttribute('value') || 'yes') : 'none';
+      }
+
+      set value(value) {
+        this.setAttribute('value', value);
+        this.checkbox.checked = value !== 'none' && value !== '';
+        this.syncValue();
+      }
+
+      syncValue() {
+        const value = this.checkbox.checked ? (this.getAttribute('value') || 'yes') : 'none';
+        if (this.internals && !this.fallbackInput) {
+          this.internals.setFormValue(value, value);
+        } else if (this.fallbackInput) {
+          if (!this.fallbackInput.defaultValue) this.fallbackInput.defaultValue = value;
+          this.fallbackInput.value = value;
+        }
+        this.state.textContent = this.checkbox.checked ? '已选择接收更新' : '尚未订阅';
+      }
+
+      resetState() {
+        this.checkbox.checked = this.initialChecked;
+        this.actionCount = 0;
+        this.syncValue();
+      }
+
+      formResetCallback() {
+        this.resetState();
+      }
+    }
+
+    customElements.define('demo-card', DemoCard);
+
+    const form = document.querySelector('#demoForm');
+    const stage = form;
+    const card = document.querySelector('#profileCard');
+    const formResult = document.querySelector('#formResult');
+    const eventLog = document.querySelector('#eventLog');
+    const variantButtons = [...document.querySelectorAll('[data-variant]')];
+    const themeButtons = [...document.querySelectorAll('[data-theme]')];
+    const partToggle = document.querySelector('#partToggle');
+
+    function logEvent(name, detail) {
+      const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      eventLog.textContent = `[${time}] ${name}\n${JSON.stringify(detail, null, 2)}\n\n${eventLog.textContent}`;
+    }
+
+    variantButtons.forEach(button => button.addEventListener('click', () => {
+      card.setAttribute('variant', button.dataset.variant);
+      variantButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      logEvent('attributeChanged', { variant: button.dataset.variant });
+    }));
+
+    themeButtons.forEach(button => button.addEventListener('click', () => {
+      stage.classList.remove('forest', 'clay', 'moss');
+      stage.classList.add(button.dataset.theme);
+      themeButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      logEvent('custom-property', { theme: button.dataset.theme });
+    }));
+
+    partToggle.addEventListener('click', () => {
+      const active = partToggle.getAttribute('aria-pressed') !== 'true';
+      partToggle.setAttribute('aria-pressed', String(active));
+      stage.classList.toggle('part-demo', active);
+      partToggle.textContent = active ? '关闭 ::part()' : '切换 ::part()';
+    });
+
+    card.addEventListener('demo-consent', event => logEvent('demo-consent', event.detail));
+    card.addEventListener('demo-action', event => logEvent('demo-action', event.detail));
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
+      formResult.textContent = `FormData → subscription = ${JSON.stringify(data.subscription)}`;
+      logEvent('submit', data);
+    });
+
+    form.addEventListener('reset', () => {
+      requestAnimationFrame(() => {
+        formResult.textContent = '表单已重置：订阅状态回到初始值。';
+        logEvent('formReset', { subscription: new FormData(form).get('subscription') });
+      });
+    });
+
+    if (!supportsFormIntegration) {
+      supportMessage.hidden = false;
+      supportMessage.textContent = '当前浏览器缺少 attachInternals()：Shadow DOM 与事件照常工作，表单值由隐藏输入降级同步。';
+    }
+  } else {
+    supportMessage.hidden = false;
+  }
+</script>
+</body>
+</html>

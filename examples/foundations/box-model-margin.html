@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>盒模型与 margin · CSS 基础示例</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #252a22;
+      --muted: #68705f;
+      --green: #3f6b2a;
+      --green-soft: #e6eddf;
+      --amber: #b96f35;
+      --line: #d8d4c9;
+      --content: #fffdf7;
+      --padding: #e8b36b;
+      --border: #3f6b2a;
+      --margin: #e4d8c6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back-link { display: inline-block; margin: 1.25rem 0 0 1.25rem; font-weight: 700; }
+    main { width: min(70rem, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+    header { max-width: 54rem; margin-bottom: 1.5rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.2; color: var(--green); }
+    h2 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    h3 { margin: .25rem 0; font-size: 1rem; }
+    p { margin: .5rem 0; }
+    .lede, .hint, .caption { color: var(--muted); }
+    .panel {
+      margin-top: 1rem;
+      padding: clamp(1rem, 3vw, 1.5rem);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: var(--card);
+      box-shadow: 0 8px 24px rgb(63 107 42 / 5%);
+    }
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .demo-box { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .tag { display: inline-block; margin-bottom: .5rem; padding: .15rem .5rem; border-radius: 999px; color: var(--green); background: var(--green-soft); font-size: .78rem; font-weight: 800; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    code { padding: .08em .3em; border-radius: .25rem; background: #eeeae0; font-size: .9em; }
+    pre { margin: .75rem 0 0; padding: 1rem; overflow-x: auto; border-radius: .65rem; color: #eef3e8; background: #273024; font-size: .85rem; }
+    pre code { padding: 0; color: inherit; background: none; }
+    button, input { font: inherit; }
+    button {
+      min-height: 2.75rem;
+      padding: .55rem .9rem;
+      border: 1px solid var(--green);
+      border-radius: .6rem;
+      color: var(--green);
+      background: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: var(--green-soft); }
+    button[aria-pressed="true"] { color: white; background: var(--green); }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #d59a3a; outline-offset: 3px; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1rem 0; }
+    .status { min-height: 1.65em; font-weight: 700; color: var(--green); }
+    fieldset { display: flex; flex-wrap: wrap; gap: .65rem; margin: 1rem 0; padding: .75rem; border: 1px solid var(--line); border-radius: .75rem; }
+    legend { padding: 0 .35rem; font-weight: 700; }
+    .radio-label { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .55rem; border-radius: .4rem; cursor: pointer; }
+    .radio-label:has(input:checked) { color: white; background: var(--green); }
+    .legend { display: flex; flex-wrap: wrap; gap: .65rem 1rem; margin: .75rem 0; font-size: .88rem; }
+    .legend span { display: inline-flex; align-items: center; gap: .4rem; }
+    .legend i { width: .9rem; height: .9rem; border: 1px solid rgb(0 0 0 / 15%); border-radius: .2rem; }
+    .legend .c { background: var(--content); }
+    .legend .p { background: var(--padding); }
+    .legend .b { background: var(--border); }
+    .legend .m { background: var(--margin); }
+
+    /* 外层米色是 margin 的可视化区域；两个盒子使用相同的声明宽度和高度。 */
+    .model-shell {
+      padding: 1rem;
+      border: 1px dashed #b9aa93;
+      border-radius: .8rem;
+      background: var(--margin);
+    }
+    .model-box {
+      width: 14rem;
+      max-width: calc(100% - 3.5rem);
+      height: 10rem;
+      margin-inline: auto;
+      padding: 1.25rem;
+      border: .5rem solid var(--border);
+      background: var(--padding);
+    }
+    .model-box.content-box { box-sizing: content-box; }
+    .model-box.border-box { box-sizing: border-box; }
+    .content-area {
+      display: grid;
+      height: 100%;
+      place-items: center;
+      padding: .5rem;
+      border: 1px dashed #a9a397;
+      border-radius: .35rem;
+      background: var(--content);
+      text-align: center;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+    .formula { margin-top: .75rem; font-size: .9rem; }
+    .formula strong { color: var(--green); }
+
+    .percent-parent {
+      width: 100%;
+      padding: 1rem;
+      border: 2px dashed var(--green);
+      border-radius: .75rem;
+      background: var(--green-soft);
+    }
+    .percent-child {
+      width: 50%;
+      padding: 10%;
+      border: 4px solid var(--amber);
+      background: var(--padding);
+      transition: width 240ms ease, padding 240ms ease;
+    }
+    .percent-child.border-box { box-sizing: border-box; }
+    .percent-child span { display: block; padding: .35rem; border-radius: .3rem; background: rgb(255 253 247 / 82%); font-weight: 700; text-align: center; }
+
+    .negative-track {
+      display: flex;
+      padding: 2rem 1rem;
+      border: 1px dashed #b9aa93;
+      border-radius: .75rem;
+      background: var(--margin);
+      overflow: hidden;
+    }
+    .negative-card {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 6rem;
+      padding: 1rem .6rem;
+      border: 2px solid var(--green);
+      border-radius: .6rem;
+      background: var(--card);
+      text-align: center;
+      transition: margin-left 240ms ease;
+    }
+    .negative-card:nth-child(2) { background: #f6e4ca; }
+    .negative-card:nth-child(3) { background: var(--green-soft); }
+    .negative-track.is-negative .negative-card + .negative-card { margin-left: -2.5rem; }
+
+    .isolation-demo {
+      outline: 1px dashed #8e9687;
+      border-radius: .6rem;
+      background: #f8f6ef;
+    }
+    .isolation-demo > div {
+      height: 3rem;
+      margin-block: 1rem;
+      display: block;
+      line-height: 3rem;
+      border-radius: .4rem;
+      color: white;
+      background: var(--green);
+      font-weight: 700;
+      text-align: center;
+    }
+    .isolation-demo.flow-root { display: flow-root; }
+    .isolation-demo.layout-contained { contain: layout; }
+    .note { margin-top: .75rem; padding: .75rem 1rem; border-left: 4px solid var(--amber); border-radius: 0 .5rem .5rem 0; background: #fbf0df; }
+    @media (max-width: 46rem) {
+      .grid.two, .grid.three { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../index.html">返回示例索引</a>
+  <main>
+    <header>
+      <h1>盒模型与 margin</h1>
+      <p class="lede">声明宽度不一定等于占位宽度。先分清 <code>box-sizing</code>，再处理百分比、负 margin 与块级布局里的 margin 折叠。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="model-title">
+      <span class="tag">01 · box-sizing</span>
+      <h2 id="model-title">同样的 width，不同的占位尺寸</h2>
+      <div class="legend" aria-label="盒模型区域图例">
+        <span><i class="c"></i>content</span>
+        <span><i class="p"></i>padding</span>
+        <span><i class="b"></i>border</span>
+        <span><i class="m"></i>margin 外侧</span>
+      </div>
+      <div class="grid two">
+        <article class="demo-box">
+          <h3>content-box（默认）</h3>
+          <div class="model-shell">
+            <div class="model-box content-box">
+              <div class="content-area">内容宽 14rem<br>高 10rem</div>
+            </div>
+          </div>
+          <p class="formula"><strong>占位：14 + 2.5 + 1 = 17.5rem</strong><br>高度：10 + 2.5 + 1 = 13.5rem</p>
+          <pre><code>.box {
+  box-sizing: content-box;
+  width: 14rem;
+  height: 10rem;
+  padding: 1.25rem;
+  border: .5rem solid;
+}</code></pre>
+        </article>
+        <article class="demo-box">
+          <h3>border-box</h3>
+          <div class="model-shell">
+            <div class="model-box border-box">
+              <div class="content-area">内容宽 10.5rem<br>高 6.5rem</div>
+            </div>
+          </div>
+          <p class="formula"><strong>占位：14rem × 10rem</strong><br>padding 与 border 从声明尺寸中扣除</p>
+          <pre><code>.box {
+  box-sizing: border-box;
+  width: 14rem;
+  height: 10rem;
+  padding: 1.25rem;
+  border: .5rem solid;
+}</code></pre>
+        </article>
+      </div>
+      <p class="note">margin 不参与 <code>box-sizing</code> 的计算；它始终在 border box 之外。实际 margin 是透明的，这里用米色底板帮助观察。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="percent-title">
+      <span class="tag">02 · 百分比</span>
+      <h2 id="percent-title">百分比 padding 按父容器宽度计算</h2>
+      <p>即使子元素 <code>width: 50%</code>，<code>padding: 10%</code> 仍按父容器的内容宽度计算，而不是按自己的宽度计算。</p>
+      <div class="percent-parent">
+        <div class="percent-child" id="percent-child"><span>50% 宽 + 10% padding</span></div>
+      </div>
+      <div class="controls">
+        <button type="button" id="percent-toggle" aria-pressed="false" aria-controls="percent-child">切换为 border-box</button>
+        <output class="status" id="percent-status" aria-live="polite">content-box：总宽度约为父容器的 70%，再加 8px 边框。</output>
+      </div>
+      <pre><code>.parent { width: 100%; }
+.child {
+  width: 50%;
+  padding: 10%; /* 相对父容器内容宽度 */
+  border: 4px solid;
+  box-sizing: content-box;
+}</code></pre>
+    </section>
+
+    <section class="panel" aria-labelledby="negative-title">
+      <span class="tag">03 · 负 margin</span>
+      <h2 id="negative-title">负 margin 让元素反向占用空间</h2>
+      <p>开启后，第二、第三张卡片各自向左移动 2.5rem，产生有意的层叠效果。</p>
+      <div class="negative-track" id="negative-track">
+        <div class="negative-card">第一张<br><code>margin-left: 0</code></div>
+        <div class="negative-card">第二张<br><code>margin-left: -2.5rem</code></div>
+        <div class="negative-card">第三张<br><code>margin-left: -2.5rem</code></div>
+      </div>
+      <div class="controls">
+        <button type="button" id="negative-toggle" aria-pressed="false" aria-controls="negative-track">应用负 margin</button>
+        <output class="status" id="negative-status" aria-live="polite">当前：正常排列。</output>
+      </div>
+      <p class="hint">负 margin 不会改变 DOM 顺序或键盘焦点顺序，但可能造成文本重叠，应检查小屏与缩放场景。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="collapse-title">
+      <span class="tag">04 · margin 折叠</span>
+      <h2 id="collapse-title">用 flow-root 或 contain:layout 隔离折叠</h2>
+      <p>子块上下各有 1rem margin。普通块布局中，首尾 margin 会与父元素折叠并“穿出”父框；建立独立格式化上下文后，margin 留在父框内。</p>
+      <fieldset>
+        <legend>选择父容器布局方式</legend>
+        <label class="radio-label"><input type="radio" name="isolation" value="normal" checked>普通块</label>
+        <label class="radio-label"><input type="radio" name="isolation" value="flow-root">flow-root</label>
+        <label class="radio-label"><input type="radio" name="isolation" value="contain">contain:layout</label>
+      </fieldset>
+      <div class="grid two">
+        <div class="demo-box">
+          <h3>父框（虚线）与子块</h3>
+          <div class="isolation-demo" id="isolation-demo">
+            <div>子块 · margin-block: 1rem</div>
+          </div>
+          <output class="status" id="isolation-status" aria-live="polite">普通块：margin 穿出父框，父框高度为 3rem。</output>
+        </div>
+        <div class="demo-box">
+          <h3>为什么会不同</h3>
+          <p><code>display: flow-root</code> 建立块级格式化上下文（BFC）；<code>contain: layout</code> 建立布局包含，也能阻止子元素 margin 与外界折叠。</p>
+          <p class="hint">父元素的 <code>border</code> 或 <code>padding</code> 本身能阻止首尾 margin 穿过父框；<code>outline</code> 不会，这里只用它做标记。<code>flow-root</code> 与布局包含也能隔离父子 margin；兄弟 margin 仍可在 BFC 内折叠。</p>
+          <pre><code>/* 方案一 */
+.parent { display: flow-root; }
+
+/* 方案二 */
+.parent { contain: layout; }</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const percentToggle = document.querySelector('#percent-toggle');
+    const percentChild = document.querySelector('#percent-child');
+    const percentStatus = document.querySelector('#percent-status');
+    const negativeToggle = document.querySelector('#negative-toggle');
+    const negativeTrack = document.querySelector('#negative-track');
+    const negativeStatus = document.querySelector('#negative-status');
+    const isolationDemo = document.querySelector('#isolation-demo');
+    const isolationStatus = document.querySelector('#isolation-status');
+
+    percentToggle.addEventListener('click', () => {
+      const borderBox = percentToggle.getAttribute('aria-pressed') !== 'true';
+      percentToggle.setAttribute('aria-pressed', String(borderBox));
+      percentToggle.textContent = borderBox ? '切换为 content-box' : '切换为 border-box';
+      percentChild.classList.toggle('border-box', borderBox);
+      percentStatus.textContent = borderBox
+        ? 'border-box：总宽度固定为父容器的 50%，padding 从宽度中扣除。'
+        : 'content-box：总宽度约为父容器的 70%，再加 8px 边框。';
+    });
+
+    negativeToggle.addEventListener('click', () => {
+      const active = negativeToggle.getAttribute('aria-pressed') !== 'true';
+      negativeToggle.setAttribute('aria-pressed', String(active));
+      negativeToggle.textContent = active ? '取消负 margin' : '应用负 margin';
+      negativeTrack.classList.toggle('is-negative', active);
+      negativeStatus.textContent = active ? '当前：卡片向左重叠 2.5rem。' : '当前：正常排列。';
+    });
+
+    document.querySelectorAll('input[name="isolation"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        isolationDemo.className = `isolation-demo${input.value === 'normal' ? '' : ` ${input.value === 'flow-root' ? 'flow-root' : 'layout-contained'}`}`;
+        const messages = {
+          normal: '普通块：margin 穿出父框，父框高度为 3rem。',
+          'flow-root': 'flow-root：margin 留在父框内，父框高度为 5rem。',
+          contain: 'contain:layout：margin 留在父框内，父框高度为 5rem。'
+        };
+        isolationStatus.textContent = messages[input.value];
+      });
+    });
+  </script>
+</body>
+</html>

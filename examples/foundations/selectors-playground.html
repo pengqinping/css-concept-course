@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>选择器实验场 · CSS 基础示例</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #252a22;
+      --muted: #68705f;
+      --green: #3f6b2a;
+      --green-soft: #e6eddf;
+      --amber: #b96f35;
+      --amber-soft: #f7e7d2;
+      --red: #a83f36;
+      --line: #d8d4c9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back-link { display: inline-block; margin: 1.25rem 0 0 1.25rem; font-weight: 700; }
+    main { width: min(70rem, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+    header { max-width: 54rem; margin-bottom: 1.5rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.2; color: var(--green); }
+    h2 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    h3 { margin: .25rem 0; font-size: 1rem; }
+    p { margin: .5rem 0; }
+    .lede, .hint, .caption { color: var(--muted); }
+    .panel {
+      margin-top: 1rem;
+      padding: clamp(1rem, 3vw, 1.5rem);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: var(--card);
+      box-shadow: 0 8px 24px rgb(63 107 42 / 5%);
+    }
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .demo-box { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .tag { display: inline-block; margin-bottom: .5rem; padding: .15rem .5rem; border-radius: 999px; color: var(--green); background: var(--green-soft); font-size: .78rem; font-weight: 800; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    code { padding: .08em .3em; border-radius: .25rem; background: #eeeae0; font-size: .9em; }
+    pre { margin: .75rem 0 0; padding: 1rem; overflow-x: auto; border-radius: .65rem; color: #eef3e8; background: #273024; font-size: .85rem; }
+    pre code { padding: 0; color: inherit; background: none; }
+    button, input { font: inherit; }
+    button {
+      min-height: 2.75rem;
+      padding: .55rem .9rem;
+      border: 1px solid var(--green);
+      border-radius: .6rem;
+      color: var(--green);
+      background: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: var(--green-soft); }
+    button[aria-pressed="true"] { color: white; background: var(--green); }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #d59a3a; outline-offset: 3px; }
+    .control-group { display: flex; flex-wrap: wrap; gap: .65rem; margin: 1rem 0; }
+    .status { min-height: 1.65em; font-weight: 700; color: var(--green); }
+    .note { margin-top: .75rem; padding: .75rem 1rem; border-left: 4px solid var(--amber); border-radius: 0 .5rem .5rem 0; background: #fbf0df; }
+
+    .tree { padding: 1rem; border: 1px dashed #b9aa93; border-radius: .75rem; background: var(--amber-soft); }
+    .branch { padding: .8rem; border: 1px solid #d5b98e; border-radius: .6rem; background: #fffaf1; }
+    .branch p, .branch span, .branch i { display: block; margin: .45rem 0; padding: .55rem .7rem; border: 1px solid #c9c4b8; border-radius: .45rem; background: var(--card); }
+    .ancestor { padding: .55rem; border-left: 3px solid #b9aa93; }
+    .marker { width: fit-content; color: white !important; background: #68705f !important; font-style: normal; font-size: .82rem; }
+    .mode-descendant .branch .descendant,
+    .mode-child .branch > .child,
+    .mode-adjacent .marker + .adjacent,
+    .mode-sibling .marker ~ .general {
+      border-color: var(--green);
+      color: white;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgb(63 107 42 / 15%);
+      font-weight: 800;
+    }
+    .mode-adjacent .marker + .adjacent::after { content: " ← 紧跟参照元素"; font-size: .78rem; }
+    .mode-sibling .marker ~ .general::after { content: " ← 同一父级中的后续兄弟"; font-size: .78rem; }
+
+    .structural-list { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+    .structural-list li { padding: .55rem .75rem; border: 1px solid var(--line); border-radius: .45rem; background: var(--card); }
+    .structural-list li:first-child { border-color: var(--green); color: var(--green); background: var(--green-soft); font-weight: 800; }
+    .structural-list li:nth-child(2n) { border-style: dashed; border-color: var(--amber); }
+    .structural-list li:last-child { box-shadow: inset 4px 0 var(--amber); }
+    .only-list { margin: .75rem 0 0; padding: .75rem; border: 1px dashed #b9aa93; border-radius: .55rem; list-style: none; background: var(--amber-soft); }
+    .only-list > li:only-child { padding: .6rem; border: 2px solid var(--green); border-radius: .45rem; background: var(--green-soft); font-weight: 800; }
+
+    .functional-card { padding: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--card); }
+    .functional-card + .functional-card { margin-top: .75rem; }
+    .badge { display: inline-block; margin-left: .35rem; padding: .05rem .45rem; border-radius: 999px; color: white; background: var(--amber); font-size: .72rem; font-weight: 800; }
+    :is(.tone-green, .tone-amber) .fn-title { color: var(--green); }
+    :where(.tone-green, .tone-amber) { border-radius: 1rem; }
+    .functional-card:not(.is-muted) .fn-title { text-decoration: underline; text-decoration-color: #d59a3a; text-underline-offset: .22em; }
+    .functional-card:has(.badge) { border: 2px solid var(--green); background: #f2f7ed; }
+    .functional-card:has(.badge)::after { content: "✓ :has() 发现徽标"; display: block; margin-top: .5rem; color: var(--green); font-size: .82rem; font-weight: 800; }
+    .functional-card.is-muted { opacity: .48; filter: saturate(.4); }
+
+    .focus-form { display: grid; gap: .75rem; }
+    .field { display: grid; gap: .3rem; }
+    .field label { font-weight: 700; }
+    .field input {
+      width: 100%;
+      min-height: 2.75rem;
+      padding: .55rem .7rem;
+      border: 2px solid #b9b5aa;
+      border-radius: .55rem;
+      color: var(--ink);
+      background: white;
+    }
+    .field input:focus { outline: 2px solid #c9c4b8; outline-offset: 2px; }
+    .field input:focus-visible, .focus-form button:focus-visible { outline: 4px solid var(--green); outline-offset: 3px; }
+    .validation-input:user-invalid { border-color: var(--red); background: #fff0ed; box-shadow: 0 0 0 3px rgb(168 63 54 / 12%); }
+    .validation-input:user-invalid + .field-hint { color: var(--red); font-weight: 700; }
+    .field-hint { color: var(--muted); font-size: .86rem; }
+    .focus-form button { justify-self: start; }
+    @media (max-width: 44rem) { .grid.two { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../index.html">返回示例索引</a>
+  <main>
+    <header>
+      <h1>选择器实验场</h1>
+      <p class="lede">选择器不是“猜哪个元素”，而是在真实 DOM 上描述关系、位置、状态与内容。用按钮切换组合器高亮，再用 Tab 键观察焦点状态。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="combinators-title">
+      <span class="tag">01 · 组合器</span>
+      <h2 id="combinators-title">后代、子元素、相邻与兄弟</h2>
+      <div class="control-group" role="group" aria-label="选择要高亮的组合器">
+        <button type="button" data-mode="descendant" aria-pressed="true">后代 A B</button>
+        <button type="button" data-mode="child" aria-pressed="false">子元素 A &gt; B</button>
+        <button type="button" data-mode="adjacent" aria-pressed="false">相邻 A + B</button>
+        <button type="button" data-mode="sibling" aria-pressed="false">兄弟 A ~ B</button>
+      </div>
+      <output class="status" id="combinator-status" aria-live="polite">后代：.branch 内任意层级的 .descendant。</output>
+      <div class="grid two">
+        <div class="demo-box">
+          <h3>真实 DOM</h3>
+          <div class="tree mode-descendant" id="selector-tree">
+            <section class="branch">
+              <div class="ancestor">
+                <span class="descendant">后代目标：位于 .branch 内部</span>
+              </div>
+              <p class="child">直接子目标：父级就是 .branch</p>
+              <i class="marker">参照元素 .marker</i>
+              <p class="adjacent">相邻兄弟目标</p>
+              <p class="general">后续兄弟目标</p>
+            </section>
+          </div>
+        </div>
+        <div class="demo-box">
+          <h3>当前规则</h3>
+          <pre><code id="combinator-code">/* 后代：任意深度 */
+.branch .descendant { ... }</code></pre>
+          <p class="hint">空格是后代组合器；<code>&gt;</code> 只匹配直接子级；<code>+</code> 只匹配紧随其后的一个兄弟；<code>~</code> 匹配后续所有兄弟。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="structural-title">
+      <span class="tag">02 · 结构伪类</span>
+      <h2 id="structural-title">first-child、nth-child 与 only-child</h2>
+      <div class="grid two">
+        <div class="demo-box">
+          <h3>六项列表</h3>
+          <ol class="structural-list">
+            <li>1 · first-child：绿色底</li>
+            <li>2 · nth-child(2n)：虚线边框</li>
+            <li>3 · 普通项</li>
+            <li>4 · nth-child(2n)：虚线边框</li>
+            <li>5 · 普通项</li>
+            <li>6 · last-child：左侧橙色条</li>
+          </ol>
+          <pre><code>li:first-child { ... }
+li:nth-child(2n) { ... }
+li:last-child { ... }</code></pre>
+        </div>
+        <div class="demo-box">
+          <h3>独生子列表</h3>
+          <p>下面的 <code>ul</code> 只有一个 <code>li</code>，因此它同时匹配 first-child、last-child 和 only-child。</p>
+          <ul class="only-list">
+            <li>唯一的子项：li:only-child</li>
+          </ul>
+          <pre><code>.only-list > li:only-child {
+  border: 2px solid #3f6b2a;
+  background: #e6eddf;
+}</code></pre>
+          <p class="hint">结构伪类只看元素位置，不区分元素类型；<code>:nth-child(2n)</code> 的序号从 1 开始。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="functional-title">
+      <span class="tag">03 · 函数伪类</span>
+      <h2 id="functional-title">:is / :where / :not / :has</h2>
+      <div class="grid two">
+        <div class="demo-box">
+          <div class="functional-card tone-green">
+            <h3 class="fn-title">普通卡片 <span class="badge">徽标</span></h3>
+            <p class="caption"><code>:is()</code> 匹配类列表，<code>:where()</code> 提供零优先级样式，<code>:not()</code> 排除弱化卡片，<code>:has()</code> 检测内部徽标。</p>
+          </div>
+          <div class="functional-card tone-amber">
+            <h3 class="fn-title">另一张卡片</h3>
+            <p class="caption">没有徽标，所以不会出现 <code>:has(.badge)</code> 的绿色外框。</p>
+          </div>
+          <div class="functional-card tone-green is-muted" id="muted-card">
+            <h3 class="fn-title">可弱化卡片</h3>
+            <p class="caption">加上 <code>.is-muted</code> 后，<code>:not(.is-muted)</code> 不再匹配标题。</p>
+          </div>
+          <div class="control-group">
+            <button type="button" id="mute-toggle" aria-pressed="false" aria-controls="muted-card">弱化第三张卡片</button>
+          </div>
+        </div>
+        <div class="demo-box">
+          <pre><code>:is(.tone-green, .tone-amber) .fn-title {
+  color: #3f6b2a;
+}
+
+/* :where() 整组优先级为 0 */
+:where(.tone-green, .tone-amber) {
+  border-radius: 1rem;
+}
+
+.fn-card:not(.is-muted) .fn-title {
+  text-decoration: underline;
+}
+
+/* 向前看子元素，不再只靠类名 */
+.fn-card:has(.badge) {
+  border: 2px solid #3f6b2a;
+}</code></pre>
+          <p class="note"><code>:is()</code> 与 <code>:not()</code> 的优先级取参数中最具体的一项；<code>:where()</code> 始终为零。<code>:has()</code> 的优先级由 <code>:has()</code> 本身及其参数共同决定。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="states-title">
+      <span class="tag">04 · 交互状态</span>
+      <h2 id="states-title">:focus-visible 与 :user-invalid</h2>
+      <div class="grid two">
+        <div class="demo-box">
+          <h3>键盘焦点</h3>
+          <form class="focus-form">
+            <div class="field">
+              <label for="focus-name">用 Tab 聚焦这个输入框</label>
+              <input id="focus-name" name="name" type="text" placeholder="点击或按 Tab 键">
+            </div>
+            <button type="button">继续 Tab 到按钮</button>
+          </form>
+          <p class="hint">键盘导航时显示粗绿框；鼠标聚焦时只保留细灰框。<code>:focus-visible</code> 让浏览器按输入方式选择合适的焦点提示。</p>
+          <pre><code>input:focus {
+  outline: 2px solid #c9c4b8;
+}
+input:focus-visible {
+  outline: 4px solid #3f6b2a;
+}</code></pre>
+        </div>
+        <div class="demo-box">
+          <h3>用户造成的无效状态</h3>
+          <form class="focus-form" novalidate>
+            <div class="field">
+              <label for="email">邮箱（必填）</label>
+              <input class="validation-input" id="email" name="email" type="email" required aria-describedby="email-hint" placeholder="name@example.com">
+              <span class="field-hint" id="email-hint">输入错误格式，再按 Tab 离开，观察红色提示。</span>
+            </div>
+          </form>
+          <p class="hint"><code>:user-invalid</code> 只在用户交互后匹配无效控件；页面刚加载时，即使值为空，也不会立刻显示错误样式。</p>
+          <pre><code>input:user-invalid {
+  border-color: #a83f36;
+  background: #fff0ed;
+}</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const selectorTree = document.querySelector('#selector-tree');
+    const modeButtons = [...document.querySelectorAll('[data-mode]')];
+    const combinatorStatus = document.querySelector('#combinator-status');
+    const combinatorCode = document.querySelector('#combinator-code');
+    const muteToggle = document.querySelector('#mute-toggle');
+    const mutedCard = document.querySelector('#muted-card');
+
+    const modes = {
+      descendant: {
+        label: '后代：.branch 内任意层级的 .descendant。',
+        code: '/* 后代：任意深度 */\n.branch .descendant { ... }'
+      },
+      child: {
+        label: '子元素：.branch 的直接子级 .child。',
+        code: '/* 子元素：只匹配直接子级 */\n.branch > .child { ... }'
+      },
+      adjacent: {
+        label: '相邻：紧跟 .marker 之后的一个 .adjacent。',
+        code: '/* 相邻兄弟：只匹配紧邻的下一个 */\n.marker + .adjacent { ... }'
+      },
+      sibling: {
+        label: '兄弟：.marker 之后的所有 .general。',
+        code: '/* 后续兄弟：匹配所有后续同级元素 */\n.marker ~ .general { ... }'
+      }
+    };
+
+    modeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.dataset.mode;
+        selectorTree.className = `tree mode-${mode}`;
+        modeButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        combinatorStatus.textContent = modes[mode].label;
+        combinatorCode.textContent = modes[mode].code;
+      });
+    });
+
+    muteToggle.addEventListener('click', () => {
+      const muted = muteToggle.getAttribute('aria-pressed') !== 'true';
+      muteToggle.setAttribute('aria-pressed', String(muted));
+      muteToggle.textContent = muted ? '恢复第三张卡片' : '弱化第三张卡片';
+      mutedCard.classList.toggle('is-muted', muted);
+    });
+  </script>
+</body>
+</html>

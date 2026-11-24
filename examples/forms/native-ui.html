@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>原生 UI 组件 · 平台特性示例</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9; --surface: #fffdf7; --green: #3f6b2a; --green-dark: #2d4d1e;
+      --green-soft: #e5ecd9; --ink: #263022; --muted: #66705f; --line: #d8d5c9;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    :focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .shell { width: min(1060px, calc(100% - 32px)); margin: auto; padding: 28px 0 64px; }
+    .topbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .brand { font-weight: 800; color: var(--green); letter-spacing: .08em; }
+    .hero { padding: clamp(24px, 5vw, 48px); border: 1px solid var(--line); border-radius: 28px; background: var(--surface); }
+    .eyebrow { margin: 0 0 10px; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .15em; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.12; letter-spacing: -.04em; }
+    .hero p:last-child { max-width: 720px; margin: 16px 0 0; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 22px; align-items: start; }
+    .panel { min-width: 0; padding: clamp(20px, 4vw, 30px); border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
+    .wide { grid-column: 1 / -1; }
+    h2 { margin: 0 0 8px; font-size: 1.3rem; }
+    p.intro { margin: 0 0 20px; color: var(--muted); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .12em .35em; border-radius: 5px; background: var(--green-soft); color: var(--green-dark); font-size: .86em; }
+    pre { margin: 16px 0 0; padding: 14px; overflow-x: auto; border-radius: 12px; background: #273223; color: #eff4e7; font-size: .8rem; line-height: 1.55; }
+    button { min-height: 44px; padding: 9px 18px; border: 1px solid var(--green); border-radius: 999px; background: var(--green); color: white; font: inherit; font-weight: 700; cursor: pointer; }
+    button:hover { background: var(--green-dark); }
+    button.secondary { background: transparent; color: var(--green-dark); border-color: #a9b39a; }
+    button.secondary:hover { background: var(--green-soft); }
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    dialog { width: min(460px, calc(100% - 32px)); padding: 28px; border: 1px solid #bcc5ad; border-radius: 22px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 80px rgb(32 48 26 / 24%); }
+    dialog::backdrop { background: rgb(30 42 24 / 48%); backdrop-filter: blur(4px); }
+    dialog.dialog-fallback { position: fixed; z-index: 50; top: 50%; left: 50%; margin: 0; transform: translate(-50%, -50%); }
+    .dialog-backdrop-fallback { position: fixed; inset: 0; z-index: 49; background: rgb(30 42 24 / 48%); }
+    dialog h2 { margin-bottom: 12px; }
+    dialog p { color: var(--muted); }
+    dialog .button-row { justify-content: flex-end; margin-top: 22px; }
+    [popover] { width: min(360px, calc(100% - 32px)); margin: 0; padding: 22px; border: 1px solid #b8c1a8; border-radius: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 18px 55px rgb(35 51 28 / 20%); }
+    [popover] h2 { font-size: 1.1rem; }
+    [popover] p { margin-bottom: 0; color: var(--muted); }
+    .fallback-popover { position: fixed; z-index: 20; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .fallback-scrim { position: fixed; inset: 0; z-index: 19; border: 0; border-radius: 0; background: rgb(30 42 24 / 25%); }
+    details { margin: 0; border: 1px solid var(--line); border-radius: 14px; background: #fbfaf3; }
+    details + details { margin-top: 12px; }
+    summary { padding: 15px 18px; cursor: pointer; font-weight: 750; }
+    summary:hover { color: var(--green); }
+    .details-body { padding: 0 18px 18px; color: var(--muted); }
+    @supports selector(::details-content) {
+      details { interpolate-size: allow-keywords; overflow: clip; }
+      details::details-content { block-size: 0; overflow: clip; opacity: 0; transition: block-size .3s ease, opacity .3s ease, content-visibility .3s allow-discrete; }
+      details[open]::details-content { block-size: auto; opacity: 1; }
+    }
+    .table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; min-width: 620px; table-layout: fixed; border-collapse: collapse; background: #fffefb; }
+    caption { padding: 12px; text-align: left; color: var(--muted); font-size: .88rem; }
+    th, td { padding: 13px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { background: var(--green-soft); color: var(--green-dark); font-size: .86rem; }
+    th:nth-child(1) { width: 24%; } th:nth-child(2) { width: 46%; } th:nth-child(3) { width: 30%; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .steps { margin: 0; padding: 0; list-style: none; counter-reset: field-step; }
+    .steps li { position: relative; min-height: 44px; padding: 8px 0 12px 48px; counter-increment: field-step; }
+    .steps li::before { content: counter(field-step); position: absolute; left: 0; top: 7px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: white; font-weight: 800; }
+    .steps strong { display: block; }
+    .steps span { color: var(--muted); font-size: .9rem; }
+    .status { margin: 14px 0 0; color: var(--green-dark); font-size: .86rem; font-weight: 700; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a href="../index.html">← 返回示例索引</a><span class="brand">原生 UI 工具箱</span></header>
+    <section class="hero">
+      <p class="eyebrow">HTML first / Zero dependency</p>
+      <h1>能交给浏览器的，就不要重写。</h1>
+      <p>Dialog 管理模态焦点，Popover 提供轻量浮层，Details 保留折叠语义。新浏览器增强动画，旧浏览器仍然可用。</p>
+    </header>
+
+    <main class="grid">
+      <section class="panel" aria-labelledby="dialogTitle">
+        <h2 id="dialogTitle">Dialog 模态框</h2>
+        <p class="intro"><code>&lt;dialog&gt;</code> 自带顶部图层、焦点约束与 Escape 关闭；<code>::backdrop</code> 只负责遮罩。</p>
+        <button id="openDialog" type="button">打开观察确认框</button>
+        <p class="status" id="dialogStatus" role="status">模态框当前关闭</p>
+        <pre>&lt;dialog id="confirm"&gt;
+  &lt;form method="dialog"&gt;
+    &lt;button&gt;确认&lt;/button&gt;
+  &lt;/form&gt;
+&lt;/dialog&gt;</pre>
+      </section>
+
+      <section class="panel" aria-labelledby="popoverTitle">
+        <h2 id="popoverTitle">Popover 轻量浮层</h2>
+        <p class="intro">使用 <code>popovertarget</code> 声明关系，支持点击外部关闭。脚本会检测 API，缺失时显示可关闭的居中回退层。</p>
+        <div class="button-row">
+          <button type="button" popovertarget="plantPopover" aria-controls="plantPopover" aria-expanded="false">查看养护提示</button>
+          <button class="secondary" type="button" popovertarget="shortPopover" aria-controls="shortPopover" aria-expanded="false">打开短浮层</button>
+        </div>
+        <p class="status" id="popoverStatus" role="status">正在检测 Popover…</p>
+        <pre>&lt;button popovertarget="tip"&gt;提示&lt;/button&gt;
+&lt;div id="tip" popover&gt;…&lt;/div&gt;</pre>
+      </section>
+
+      <section class="panel" aria-labelledby="detailsTitle">
+        <h2 id="detailsTitle">Details 与 Summary</h2>
+        <p class="intro">原生支持键盘展开与折叠；支持 <code>::details-content</code> 时增加高度过渡。</p>
+        <details open>
+          <summary>什么是 ::details-content？</summary>
+          <div class="details-body">它表示 summary 之外的内部内容盒。配合 <code>interpolate-size: allow-keywords</code>，可以在 <code>block-size: 0</code> 与 <code>auto</code> 之间过渡，而不需要测量像素高度。</div>
+        </details>
+        <details>
+          <summary>为什么仍然需要原生元素？</summary>
+          <div class="details-body">语义、焦点、屏幕阅读器状态与浏览器行为都由平台提供。自定义 div 要补齐这些能力，代码更多且更容易遗漏边界情况。</div>
+        </details>
+      </section>
+
+      <section class="panel" aria-labelledby="counterTitle">
+        <h2 id="counterTitle">CSS 计数器</h2>
+        <p class="intro"><code>counter-reset</code> 建立计数域，<code>counter-increment</code> 递增，<code>counter()</code> 生成内容。</p>
+        <ol class="steps">
+          <li><strong>确定计数范围</strong><span>在列表容器重置计数器。</span></li>
+          <li><strong>按顺序递增</strong><span>每个列表项增加一次。</span></li>
+          <li><strong>生成视觉标记</strong><span>用 ::before 输出，不改变列表语义。</span></li>
+        </ol>
+        <pre>.steps { counter-reset: field-step; }
+.steps li { counter-increment: field-step; }
+.steps li::before {
+  content: counter(field-step);
+}</pre>
+      </section>
+
+      <section class="panel wide" aria-labelledby="tableTitle">
+        <h2 id="tableTitle">固定布局与折叠边框</h2>
+        <p class="intro"><code>table-layout: fixed</code> 按列宽分配空间，长内容不会撑乱布局；<code>border-collapse: collapse</code> 合并相邻单元格边框。窄屏时由外层容器横向滚动。</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="可横向滚动的特性对照表">
+          <table>
+            <caption>原生能力对照：优先语义，再逐步增强</caption>
+            <thead><tr><th scope="col">特性</th><th scope="col">平台提供</th><th scope="col">增强部分</th></tr></thead>
+            <tbody>
+              <tr><td>Dialog</td><td>模态、焦点管理、Escape</td><td>backdrop 模糊与圆角</td></tr>
+              <tr><td>Popover</td><td>显示状态、轻关闭</td><td>内容设计与定位</td></tr>
+              <tr><td>Details</td><td>展开状态与键盘交互</td><td>::details-content 动画</td></tr>
+              <tr><td>Table</td><td>表头与数据语义</td><td>固定列宽与响应式滚动</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="plantPopover" popover>
+    <h2>蕨类养护提示</h2>
+    <p>明亮散射光、保持土壤微湿，避免空调直吹。原生 Popover 可使用 Esc 关闭。</p>
+  </div>
+  <div id="shortPopover" popover>
+    <h2>轻量浮层</h2>
+    <p>Popover 不会像 Dialog 一样让背景失效，也不会自动把焦点锁在内部。</p>
+  </div>
+
+  <dialog id="confirmDialog" aria-labelledby="confirmHeading">
+    <h2 id="confirmHeading">记录这次观察？</h2>
+    <p>提交后将生成一份本地记录。本示例不会发送网络请求，也不会保存个人信息。</p>
+    <form method="dialog" class="button-row">
+      <button value="cancel" formnovalidate>取消</button>
+      <button value="confirm">确认记录</button>
+    </form>
+  </dialog>
+
+  <script>
+    const dialog = document.querySelector('#confirmDialog');
+    const dialogStatus = document.querySelector('#dialogStatus');
+    const openDialogButton = document.querySelector('#openDialog');
+    const supportsDialog = typeof dialog.showModal === 'function' && typeof dialog.close === 'function';
+    let dialogBackdrop = null;
+    dialogStatus.textContent = supportsDialog ? '模态框当前关闭 · 原生 Dialog' : '模态框当前关闭 · JS 回退';
+
+    function updateDialogStatus() {
+      dialogStatus.textContent = (dialog.returnValue === 'confirm' ? '已确认：观察记录已生成（仅演示）' : '已取消，未生成记录') + (supportsDialog ? '' : ' · JS 回退');
+    }
+    function closeDialog(value = 'cancel') {
+      if (supportsDialog) { dialog.close(value); return; }
+      dialog.removeAttribute('open');
+      dialog.classList.remove('dialog-fallback');
+      dialog.returnValue = value;
+      if (dialogBackdrop) { dialogBackdrop.remove(); dialogBackdrop = null; }
+      document.body.style.overflow = '';
+      updateDialogStatus();
+      openDialogButton.focus();
+    }
+    openDialogButton.addEventListener('click', () => {
+      if (supportsDialog) { dialog.showModal(); return; }
+      dialog.setAttribute('open', '');
+      dialog.classList.add('dialog-fallback');
+      dialogBackdrop = document.createElement('div');
+      dialogBackdrop.className = 'dialog-backdrop-fallback';
+      dialogBackdrop.setAttribute('aria-hidden', 'true');
+      document.body.append(dialogBackdrop);
+      document.body.style.overflow = 'hidden';
+      dialog.querySelector('button').focus();
+    });
+    dialog.addEventListener('close', updateDialogStatus);
+    dialog.querySelectorAll('button[value]').forEach(button => {
+      button.addEventListener('click', () => { if (!supportsDialog) closeDialog(button.value); });
+    });
+    dialog.addEventListener('click', event => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeDialog('cancel');
+    });
+    document.addEventListener('keydown', event => {
+      if (supportsDialog || !dialog.hasAttribute('open')) return;
+      if (event.key === 'Escape') { closeDialog('cancel'); return; }
+      if (event.key !== 'Tab') return;
+      const focusable = [...dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+
+    const popoverStatus = document.querySelector('#popoverStatus');
+    const hasPopover = 'popover' in HTMLElement.prototype;
+    const controls = [...document.querySelectorAll('[popovertarget]')];
+    const popovers = controls.map(control => document.getElementById(control.getAttribute('popovertarget')));
+    popoverStatus.textContent = hasPopover ? '✓ 使用原生 Popover API' : '回退模式：使用 hidden 与居中浮层';
+    let fallbackScrim = null;
+
+    function syncExpanded(control, open) { control.setAttribute('aria-expanded', String(open)); }
+
+    popovers.forEach(popover => {
+      const control = controls.find(item => item.getAttribute('popovertarget') === popover.id);
+      popover.addEventListener('toggle', event => syncExpanded(control, event.newState === 'open'));
+      if (!hasPopover) {
+        popover.hidden = true;
+        popover.classList.add('fallback-popover');
+        control.addEventListener('click', event => {
+          event.preventDefault();
+          const willOpen = popover.hidden;
+          popovers.forEach(other => {
+            other.hidden = true;
+            syncExpanded(controls.find(item => item.getAttribute('popovertarget') === other.id), false);
+          });
+          if (!willOpen) {
+            if (fallbackScrim) fallbackScrim.hidden = true;
+            return;
+          }
+          if (!fallbackScrim) {
+            fallbackScrim = document.createElement('button');
+            fallbackScrim.type = 'button';
+            fallbackScrim.className = 'fallback-scrim';
+            fallbackScrim.setAttribute('aria-label', '关闭浮层');
+            fallbackScrim.addEventListener('click', () => { popover.hidden = true; fallbackScrim.hidden = true; syncExpanded(control, false); });
+            document.body.append(fallbackScrim);
+          }
+          fallbackScrim.hidden = false;
+          popover.hidden = false;
+          syncExpanded(control, true);
+          popover.querySelector('h2').setAttribute('tabindex', '-1');
+          popover.querySelector('h2').focus({ preventScroll: true });
+        });
+      }
+    });
+
+    if (!hasPopover) {
+      document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        const openPopover = popovers.find(popover => !popover.hidden);
+        if (!openPopover) return;
+        const control = controls.find(item => item.getAttribute('popovertarget') === openPopover.id);
+        openPopover.hidden = true;
+        if (fallbackScrim) fallbackScrim.hidden = true;
+        syncExpanded(control, false);
+        control.focus();
+      });
+    }
+  </script>
+</body>
+</html>

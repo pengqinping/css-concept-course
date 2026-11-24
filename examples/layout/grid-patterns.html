@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grid 布局模式：网格线、区域与自适应</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(76rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .65rem; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.15; letter-spacing: -.035em; }
+    h2 { margin: 0 0 .35rem; font-size: 1.35rem; line-height: 1.3; }
+    h3 { margin: 0 0 .3rem; font-size: 1rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 49rem; color: var(--muted); font-size: 1.05rem; }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .description { max-width: 48rem; color: var(--muted); }
+    .heading-wrap { display: flex; gap: .75rem; align-items: start; }
+    .section-no { display: inline-grid; place-items: center; flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 50%; background: var(--green); color: #fff; font-weight: 800; }
+    code { padding: .08em .32em; border-radius: .3rem; background: var(--green-soft); color: var(--green-dark); font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .controls { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: end; margin: 1.1rem 0; }
+    .control-group { display: grid; gap: .3rem; }
+    .control-group > span, .control-group > label { color: var(--muted); font-size: .8rem; font-weight: 750; }
+    .button-group { display: flex; flex-wrap: wrap; gap: .35rem; }
+    button, select { min-height: 2.65rem; padding: .5rem .8rem; border: 1px solid #aeb7a4; border-radius: .65rem; background: #fff; color: var(--ink); font: inherit; font-size: .9rem; font-weight: 650; cursor: pointer; }
+    button:hover, select:hover { border-color: var(--green); background: #f7faef; }
+    button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
+    select { min-width: 10rem; }
+    .line-ruler { display: grid; grid-template-columns: 11rem minmax(0, 1fr); margin: 0 0 .35rem; color: var(--green-dark); font: .75rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .line-ruler span { padding: .2rem .45rem; border-radius: .3rem; background: var(--green-soft); text-align: center; }
+    .named-grid { display: grid; grid-template-columns: [side-start] 11rem [side-end main-start] minmax(0, 1fr) [main-end]; grid-template-rows: [header-start] auto [header-end content-start] minmax(11rem, 1fr) [content-end footer-start] auto [footer-end]; grid-template-areas: "header header" "sidebar main" "footer footer"; gap: .75rem; padding: 1rem; border: 2px solid #aeb7a4; border-radius: .9rem; background: #f8f6ef; }
+    .grid-box { display: grid; place-items: center; min-width: 0; padding: 1rem; border: 2px solid var(--green-dark); border-radius: .7rem; background: var(--green-soft); color: var(--green-dark); text-align: center; }
+    .grid-box small { display: block; margin-top: .2rem; font: .76rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .grid-box.header { grid-area: header; min-height: 4.5rem; background: var(--green); color: #fff; }
+    .grid-box.sidebar { grid-area: sidebar; background: var(--amber-soft); border-color: #7a4716; color: #70400f; }
+    .grid-box.main { grid-area: main; }
+    .grid-box.footer { grid-area: footer; min-height: 3.5rem; background: #e5e0f0; border-color: #62517c; color: #49375f; }
+    .named-grid.by-lines { grid-template-areas: none; }
+    .named-grid.by-lines .header { grid-column: side-start / main-end; grid-row: header-start / header-end; }
+    .named-grid.by-lines .sidebar { grid-column: side-start / side-end; grid-row: content-start / content-end; }
+    .named-grid.by-lines .main { grid-column: main-start / main-end; grid-row: content-start / content-end; }
+    .named-grid.by-lines .footer { grid-column: side-start / main-end; grid-row: footer-start / footer-end; }
+    .stage-shell { padding: clamp(.7rem, 2vw, 1.1rem); border: 2px solid #aeb7a4; border-radius: .9rem; background-color: #f8f6ef; background-image: linear-gradient(#e7e2d5 1px, transparent 1px), linear-gradient(90deg, #e7e2d5 1px, transparent 1px); background-size: 1.5rem 1.5rem; }
+    .auto-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--track-min, 12rem)), 1fr)); gap: .8rem; min-height: 12rem; }
+    .auto-card { min-width: 0; min-height: 8rem; padding: 1rem; border: 2px solid var(--green-dark); border-radius: .75rem; background: var(--green-soft); color: var(--green-dark); }
+    .auto-card:nth-child(3n + 2) { background: var(--amber-soft); border-color: #7a4716; color: #70400f; }
+    .auto-card:nth-child(3n) { background: #e5e0f0; border-color: #62517c; color: #49375f; }
+    .auto-card p { margin: 0; font-size: .88rem; }
+    .dense-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 4.5rem; grid-auto-flow: row; gap: .6rem; padding: 1rem; border: 2px solid #aeb7a4; border-radius: .9rem; background: #f8f6ef; }
+    .dense-grid.is-dense { grid-auto-flow: row dense; }
+    .dense-item { display: grid; place-items: center; min-width: 0; padding: .4rem; border: 2px solid var(--green-dark); border-radius: .55rem; background: var(--green-soft); color: var(--green-dark); text-align: center; font-size: .86rem; font-weight: 750; }
+    .dense-item.large { grid-column: span 2; grid-row: span 2; background: var(--green); color: #fff; }
+    .dense-item.wide { grid-column: span 2; background: var(--amber-soft); border-color: #7a4716; color: #70400f; }
+    .dense-item.hole-filler { background: #e5e0f0; border-color: #62517c; color: #49375f; }
+    .subgrid-parent { display: grid; grid-template-columns: 7.5rem repeat(2, minmax(0, 1fr)); gap: .7rem; }
+    .subgrid-row { grid-column: 1 / -1; display: grid; grid-template-columns: 7.5rem repeat(2, minmax(0, 1fr)); gap: .7rem; padding: .7rem; border: 1px solid #aeb7a4; border-radius: .75rem; background: #f8f6ef; }
+    .subgrid-cell { min-width: 0; padding: .7rem; border-radius: .5rem; background: var(--green-soft); color: var(--green-dark); font-size: .86rem; overflow-wrap: anywhere; }
+    .subgrid-cell:first-child { display: grid; place-items: center; background: var(--green); color: #fff; font-weight: 800; }
+    .subgrid-cell:nth-child(3) { background: var(--amber-soft); color: #70400f; }
+    @supports (grid-template-columns: subgrid) {
+      .subgrid-row { grid-template-columns: subgrid; gap: 0; padding: 0; border: 0; background: transparent; }
+      .subgrid-row .subgrid-cell { border-radius: .55rem; }
+    }
+    .status-line { min-height: 1.7em; margin: .8rem 0 0; color: var(--green-dark); font-weight: 650; }
+    .tip { padding: .75rem .9rem; border-left: 4px solid var(--green); border-radius: 0 .55rem .55rem 0; background: var(--green-soft); color: var(--green-dark); font-size: .9rem; }
+    .property-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; margin-top: 1rem; }
+    .property-card { padding: .9rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .property-card p { margin: 0; color: var(--muted); font-size: .9rem; }
+    pre { margin: 1rem 0 0; padding: 1rem; overflow: auto; border-radius: .75rem; background: #263021; color: #edf2e5; font: .82rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; }
+    details { margin-top: 1rem; }
+    summary { width: fit-content; cursor: pointer; color: var(--green-dark); font-weight: 750; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 48rem) {
+      .named-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "header" "main" "sidebar" "footer"; }
+      .named-grid.by-lines .grid-box { grid-column: 1; grid-row: auto; }
+      .line-ruler { grid-template-columns: 1fr; }
+      .line-ruler span:last-child { display: none; }
+      .dense-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 42rem) {
+      .page { width: min(100% - 1rem, 76rem); padding-top: 1rem; }
+      .topbar { align-items: start; margin-bottom: 1.2rem; }
+      .control-group { flex: 1 1 9rem; }
+      .button-group button { flex: 1 1 auto; }
+      select { width: 100%; min-width: 0; }
+      .subgrid-parent, .subgrid-row { grid-template-columns: minmax(0, 1fr); }
+      .subgrid-row { gap: .7rem; padding: .7rem; border: 1px solid #aeb7a4; background: #f8f6ef; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <p class="eyebrow">Layout / 03</p>
+    </div>
+    <header>
+      <p class="eyebrow">CSS Grid Patterns</p>
+      <h1>Grid：从命名区域到自适应</h1>
+      <p class="lead">先看网格线和命名区域如何共同描述页面骨架，再调整轨道最小宽度、切换密集排列，最后用 <code>subgrid</code> 对齐嵌套内容。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="named-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">1</span>
+        <div>
+          <h2 id="named-title">命名网格线与命名区域</h2>
+          <p class="description"><code>grid-template-columns / rows</code> 定义轨道；方括号给线命名，<code>grid-template-areas</code> 则把矩形区域命名为 header、sidebar 等，便于整体重排。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="placementToggle" aria-pressed="false">按命名区域放置</button>
+      </div>
+      <div class="line-ruler" aria-hidden="true"><span>[side-start] → [side-end]</span><span>[main-start] → [main-end]</span></div>
+      <div class="named-grid">
+        <div class="grid-box header"><div><strong>header</strong><small>grid-area: header · 跨两列</small></div></div>
+        <div class="grid-box sidebar"><div><strong>sidebar</strong><small>左侧 11rem 轨道</small></div></div>
+        <div class="grid-box main"><div><strong>main</strong><small>minmax(0, 1fr) 吸收剩余空间</small></div></div>
+        <div class="grid-box footer"><div><strong>footer</strong><small>grid-area: footer</small></div></div>
+      </div>
+      <p class="status-line" id="namedStatus" role="status" aria-live="polite">当前用 grid-area 按命名区域放置四个项目。</p>
+      <p class="tip">命名线适合精确放置：<code>grid-column: main-start / main-end</code>。命名区域适合骨架：窄屏只需改写区域字符串为 <code>"header" "main" "sidebar" "footer"</code>，四个项目本身不必移动。点击按钮可在两种等价放置方式之间切换。</p>
+      <details>
+        <summary>查看命名网格完整代码</summary>
+        <pre><code>.layout {
+  display: grid;
+  grid-template-columns:
+    [side-start] 11rem [side-end main-start]
+    minmax(0, 1fr) [main-end];
+  grid-template-rows:
+    [header-start] auto [header-end content-start]
+    minmax(11rem, 1fr) [content-end footer-start]
+    auto [footer-end];
+  grid-template-areas:
+    "header header"
+    "sidebar main"
+    "footer footer";
+  gap: .75rem;
+}
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }</code></pre>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="auto-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">2</span>
+        <div>
+          <h2 id="auto-title">auto-fit + minmax 自适应卡片</h2>
+          <p class="description"><code>repeat(auto-fit, minmax(min(100%, 12rem), 1fr))</code> 会根据容器宽度自动决定列数；有剩余空间时各列平分，过窄时单列也不会溢出。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <label for="trackMin">轨道最小宽度</label>
+          <select id="trackMin">
+            <option value="8rem">8rem · 更多列</option>
+            <option value="12rem" selected>12rem · 默认</option>
+            <option value="17rem">17rem · 更少列</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <span>项目数量</span>
+          <div class="button-group">
+            <button type="button" id="removeCard" aria-label="移除最后一张卡片">移除一张</button>
+            <button type="button" id="addCard">添加一张</button>
+          </div>
+        </div>
+      </div>
+      <div class="stage-shell"><div class="auto-grid" id="autoGrid"></div></div>
+      <p class="status-line" id="autoStatus" role="status" aria-live="polite"></p>
+      <p class="tip"><code>auto-fit</code> 会折叠空轨道，让现有项目拉伸填满；若想保留空轨道，把 <code>auto-fit</code> 换成 <code>auto-fill</code>。<code>min(100%, 12rem)</code> 避免最小轨道在极窄容器中溢出。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="span-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">3</span>
+        <div>
+          <h2 id="span-title">跨轨道与 auto-flow: dense</h2>
+          <p class="description">大卡片占两列两行，随后的小卡片会遇到它留下的空洞。开启 <code>dense</code> 后，浏览器会回填较早的空洞，而不是继续向后寻找空位。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="denseToggle" aria-pressed="false">grid-auto-flow: row</button>
+      </div>
+      <div class="dense-grid" id="denseGrid">
+        <div class="dense-item large">01<br>span 2 × 2</div>
+        <div class="dense-item">02</div>
+        <div class="dense-item wide">03 · span 2</div>
+        <div class="dense-item">04</div>
+        <div class="dense-item hole-filler">05</div>
+        <div class="dense-item">06</div>
+        <div class="dense-item">07</div>
+        <div class="dense-item">08</div>
+        <div class="dense-item">09</div>
+      </div>
+      <p class="status-line" id="denseStatus" role="status" aria-live="polite"></p>
+      <p class="tip">切换前后观察 04、05 的位置。<code>span 2</code> 表示跨越两个轨道；<code>dense</code> 只改变自动放置策略，不改变 DOM 顺序。它可能让视觉顺序与阅读顺序不一致，关键内容不要依赖回填来理解。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="subgrid-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">4</span>
+        <div>
+          <h2 id="subgrid-title">subgrid：让子网格继承父轨道</h2>
+          <p class="description">每张卡片的内部网格跨越父网格全部列。支持时，<code>grid-template-columns: subgrid</code> 让三列严格对齐父网格，并自动继承父级的 gap。</p>
+        </div>
+      </div>
+      <p class="status-line" id="subgridStatus" role="status" aria-live="polite"></p>
+      <div class="subgrid-parent">
+        <div class="subgrid-row">
+          <div class="subgrid-cell">标题列</div>
+          <div class="subgrid-cell">内容 A：这一列应与上一行内容列完全对齐。</div>
+          <div class="subgrid-cell">状态列</div>
+        </div>
+        <div class="subgrid-row">
+          <div class="subgrid-cell">标题列</div>
+          <div class="subgrid-cell">内容 B：父网格列宽变化时，两张卡片同步变化。</div>
+          <div class="subgrid-cell">状态列</div>
+        </div>
+        <div class="subgrid-row">
+          <div class="subgrid-cell">标题列</div>
+          <div class="subgrid-cell">内容 C：嵌套项目不再各自计算一套列轨道。</div>
+          <div class="subgrid-cell">状态列</div>
+        </div>
+      </div>
+      <p class="tip">示例使用 <code>@supports (grid-template-columns: subgrid)</code>：不支持时回退为相同的显式三列，布局仍可用。行方向也可使用 <code>grid-template-rows: subgrid</code>，但需要父网格先定义相应行轨道。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="reference-title">
+      <h2 id="reference-title">Grid 速查</h2>
+      <div class="property-grid">
+        <article class="property-card"><h3>fr 与 minmax</h3><p><code>1fr</code> 分享剩余空间；<code>minmax(0, 1fr)</code> 把最小尺寸设为 0，避免长内容撑破轨道。</p></article>
+        <article class="property-card"><h3>隐式网格</h3><p>项目多于显式轨道时会生成隐式轨道，尺寸由 <code>grid-auto-columns / rows</code> 决定。</p></article>
+        <article class="property-card"><h3>span</h3><p><code>grid-column: span 2</code> 跨越两列；<code>grid-row: span 2</code> 跨越两行，不必知道具体线号。</p></article>
+        <article class="property-card"><h3>auto-flow</h3><p><code>row</code> 按行放置；<code>column</code> 按列放置；追加 <code>dense</code> 会尝试回填空洞。</p></article>
+        <article class="property-card"><h3>subgrid</h3><p>子项跨父网格轨道后，可让自身的一个轴继承父网格轨道，实现跨卡片对齐。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const namedGrid = document.querySelector('.named-grid');
+      const placementToggle = document.querySelector('#placementToggle');
+      const namedStatus = document.querySelector('#namedStatus');
+      placementToggle.addEventListener('click', () => {
+        const byLines = placementToggle.getAttribute('aria-pressed') !== 'true';
+        placementToggle.setAttribute('aria-pressed', String(byLines));
+        placementToggle.textContent = byLines ? '按命名线放置' : '按命名区域放置';
+        namedGrid.classList.toggle('by-lines', byLines);
+        namedStatus.textContent = byLines
+          ? (window.matchMedia('(max-width: 48rem)').matches
+            ? '已切换到命名线放置；当前窄屏响应式规则会将项目覆盖为单列。'
+            : '当前用 grid-column / grid-row 引用 [side-start]、[main-start] 等命名线。')
+          : '当前用 grid-area 按命名区域放置四个项目。';
+      });
+
+      const autoGrid = document.querySelector('#autoGrid');
+      const trackMin = document.querySelector('#trackMin');
+      const autoStatus = document.querySelector('#autoStatus');
+      let cardCount = 7;
+
+      function renderAutoCards() {
+        autoGrid.replaceChildren();
+        for (let index = 1; index <= cardCount; index += 1) {
+          const card = document.createElement('article');
+          card.className = 'auto-card';
+          const title = document.createElement('h3');
+          title.textContent = `卡片 ${String(index).padStart(2, '0')}`;
+          const text = document.createElement('p');
+          text.textContent = '轨道会随容器宽度自动增减，不需要为每个断点写列数。';
+          card.append(title, text);
+          autoGrid.append(card);
+        }
+        autoGrid.style.setProperty('--track-min', trackMin.value);
+        document.querySelector('#removeCard').disabled = cardCount <= 1;
+        document.querySelector('#addCard').disabled = cardCount >= 12;
+        autoStatus.textContent = `当前 ${cardCount} 张卡片，轨道最小宽度 ${trackMin.value}；auto-fit 会自动选择能容纳的列数。`;
+      }
+      trackMin.addEventListener('change', renderAutoCards);
+      document.querySelector('#removeCard').addEventListener('click', () => { cardCount -= 1; renderAutoCards(); });
+      document.querySelector('#addCard').addEventListener('click', () => { cardCount += 1; renderAutoCards(); });
+
+      const denseGrid = document.querySelector('#denseGrid');
+      const denseToggle = document.querySelector('#denseToggle');
+      const denseStatus = document.querySelector('#denseStatus');
+      function renderDense() {
+        const dense = denseToggle.getAttribute('aria-pressed') === 'true';
+        denseGrid.classList.toggle('is-dense', dense);
+        denseToggle.textContent = `grid-auto-flow: row${dense ? ' dense' : ''}`;
+        denseStatus.textContent = dense
+          ? 'dense 已开启：后面的小卡片会尝试填入 01 与 03 留下的早期空洞。'
+          : 'row 模式：自动放置光标只向后移动，遇到放不下的位置就留下空洞。';
+      }
+      denseToggle.addEventListener('click', () => {
+        denseToggle.setAttribute('aria-pressed', String(denseToggle.getAttribute('aria-pressed') !== 'true'));
+        renderDense();
+      });
+
+      const supportsSubgrid = CSS.supports('grid-template-columns', 'subgrid');
+      document.querySelector('#subgridStatus').textContent = supportsSubgrid
+        ? '当前浏览器支持 subgrid：三行卡片正在继承父网格列轨道与间距。'
+        : '当前浏览器不支持 subgrid：已自动回退到显式三列，保持列宽一致。';
+
+      renderAutoCards();
+      renderDense();
+    })();
+  </script>
+</body>
+</html>

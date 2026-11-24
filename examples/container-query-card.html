@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>容器查询组件示例</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root { font-family: system-ui, sans-serif; color: #24261f; background: #f4f1e9; }
+    body { margin: 0; padding: 2rem; }
+    main { max-width: 72rem; margin: auto; }
+    h1 { margin-block-start: 0; }
+    .dashboard { display: grid; grid-template-columns: 18rem minmax(0, 1fr); gap: 1.5rem; }
+    .column { container-type: inline-size; }
+    .column h2 { margin-block-start: 0; font-size: 1rem; color: #686b61; }
+    .card { padding: 1rem; border: 1px solid #d7d3c8; border-radius: .9rem; background: #fbfaf6; }
+    .card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: .6rem; background: #e9e4d7; }
+    .card h3 { margin: .75rem 0 .4rem; }
+    .card p { margin: 0; color: #686b61; }
+    @container (min-width: 30rem) {
+      .card { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1rem; align-items: center; }
+      .card h3 { margin-block-start: 0; }
+    }
+    @container (max-width: 14rem) {
+      .card { padding: .65rem; }
+      .card h3 { font-size: .9rem; }
+    }
+    @media (max-width: 48rem) {
+      body { padding: 1rem; }
+      .dashboard { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p><a href="index.html">← 返回示例画廊</a></p>
+  <h1>容器查询组件示例</h1>
+  <p>同一张卡片放在窄侧栏和宽主栏中，会根据自己的可用宽度自动重排。缩放浏览器或调整布局观察变化。</p>
+  <div class="dashboard">
+    <section class="column">
+      <h2>窄侧栏 · 纵向卡片</h2>
+      <article class="card">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect width='640' height='360' fill='%238262d7'/%3E%3Ccircle cx='510' cy='90' r='80' fill='%23c8f35c'/%3E%3C/svg%3E" alt="紫色几何封面" />
+        <div><h3>组件自适应</h3><p>宽度由祖先容器决定，而不是屏幕宽度。</p></div>
+      </article>
+    </section>
+    <section class="column">
+      <h2>宽主栏 · 横向卡片</h2>
+      <article class="card">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect width='640' height='360' fill='%2370a9d8'/%3E%3Ccircle cx='510' cy='90' r='80' fill='%23f3d35c'/%3E%3C/svg%3E" alt="蓝色几何封面" />
+        <div><h3>同一份组件样式</h3><p>容器达到 30rem 后，卡片切换为图片与文字并排。</p></div>
+      </article>
+    </section>
+  </div>
+</main>
+</body>
+</html>

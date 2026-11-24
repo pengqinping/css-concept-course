@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>媒体特性与用户偏好</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #263021;
+      --muted: #66705d;
+      --green: #3f6b2a;
+      --green-soft: #e3ecd9;
+      --line: #d6d2c5;
+      --shadow: 0 16px 42px rgb(63 107 42 / 9%);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 92% 4%, rgb(63 107 42 / 10%), transparent 24rem),
+        var(--paper);
+    }
+    main { width: min(70rem, 100%); margin-inline: auto; }
+    h1, h2, h3, p { margin-block-start: 0; }
+    h1 { margin-bottom: .6rem; font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.08; letter-spacing: -.04em; }
+    h2 { font-size: 1.1rem; }
+    p { max-width: 68ch; color: var(--muted); }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; overflow-wrap: anywhere; }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: 1.5rem; font-weight: 700; text-decoration: none; }
+    .back::before { content: "←"; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .eyebrow { margin-bottom: .5rem; color: var(--green); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .lead { margin-bottom: 2rem; font-size: clamp(1rem, 2vw, 1.15rem); }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .feature, .demo-panel, .note {
+      border: 1px solid var(--line);
+      border-radius: 1.15rem;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .feature { min-height: 11rem; padding: 1.25rem; }
+    .feature-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+    .feature h2 { margin-bottom: .45rem; }
+    .feature code { display: block; margin-bottom: .9rem; color: var(--green); }
+    .feature p { margin: 0; font-size: .92rem; }
+    .status {
+      flex: none;
+      min-width: 4.6rem;
+      padding: .28rem .6rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 800;
+      text-align: center;
+    }
+    .status.match { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+    .status.off { color: var(--muted); background: var(--paper); }
+
+    .demo-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 1rem; margin-top: 1rem; }
+    .demo-panel { padding: clamp(1.1rem, 3vw, 1.6rem); }
+    .demo-panel p:last-child { margin-bottom: 0; }
+    .preview {
+      display: grid;
+      min-height: 12rem;
+      place-items: center;
+      margin-block: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: var(--paper);
+      overflow: hidden;
+    }
+    .motion-button {
+      display: grid;
+      justify-items: center;
+      gap: .9rem;
+      min-width: 12rem;
+      min-height: 7rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      color: var(--ink);
+      background: var(--surface);
+      font: inherit;
+      cursor: pointer;
+    }
+    .orbit {
+      position: relative;
+      display: block;
+      width: 4.25rem;
+      height: 4.25rem;
+      border: 2px dashed var(--green);
+      border-radius: 50%;
+      animation: orbit 6s linear infinite;
+    }
+    .orbit::before {
+      content: "";
+      position: absolute;
+      top: -.45rem;
+      left: calc(50% - .45rem);
+      width: .9rem;
+      height: .9rem;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .motion-button.paused .orbit { animation-play-state: paused; }
+    .pointer-target {
+      display: grid;
+      place-items: center;
+      width: 8rem;
+      height: 8rem;
+      border-radius: 1.3rem;
+      color: #fff;
+      background: var(--green);
+      font-weight: 800;
+      transition: transform 220ms ease, border-radius 220ms ease;
+    }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+
+    @media (hover: hover) and (pointer: fine) {
+      .pointer-target:hover { transform: translateY(-.4rem) rotate(-4deg) scale(1.05); border-radius: 50%; }
+    }
+    @media (pointer: coarse) {
+      button { min-height: 3rem; }
+      .pointer-target { width: 9rem; height: 9rem; }
+    }
+    @media (max-width: 48rem) {
+      .feature-grid, .demo-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #171d15;
+        --surface: #20271d;
+        --ink: #edf1e7;
+        --muted: #b5bead;
+        --green: #a9cf87;
+        --green-soft: #2d4123;
+        --line: #45513f;
+        --shadow: 0 16px 42px rgb(0 0 0 / 18%);
+      }
+      .pointer-target { color: #14200f; }
+    }
+    @media (prefers-contrast: more) {
+      :root { --muted: var(--ink); --line: var(--ink); }
+      .feature, .demo-panel { border-width: 2px; }
+      .status { border-width: 2px; }
+    }
+    @media (forced-colors: active) {
+      :root { --paper: Canvas; --surface: Canvas; --ink: CanvasText; --muted: CanvasText; --green: LinkText; --green-soft: Canvas; --line: CanvasText; --shadow: none; }
+      .feature, .demo-panel, .note, .status, .preview, .motion-button { border-color: CanvasText; background: Canvas; color: CanvasText; box-shadow: none; }
+      .status.match { border-color: Highlight; color: HighlightText; background: Highlight; }
+      .orbit { border-color: CanvasText; }
+      .orbit::before, .pointer-target { background: Highlight; color: HighlightText; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+      .orbit { animation: none; }
+      .pointer-target { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="../index.html">返回示例索引</a>
+    <header>
+      <p class="eyebrow">Responsive CSS / 01</p>
+      <h1>先尊重用户的设备与偏好</h1>
+      <p class="lead">媒体查询不只是屏幕宽度。下面的状态会随系统设置实时变化；把深色模式、减少动态效果等偏好当作默认体验的一部分，而不是附加装饰。</p>
+    </header>
+
+    <section class="feature-grid" aria-label="当前媒体特性匹配状态">
+      <article class="feature">
+        <div class="feature-head"><h2>可以悬停</h2><span class="status" aria-live="polite">检测中</span></div>
+        <code>@media (hover: hover)</code>
+        <p data-value>正在读取输入设备能力…</p>
+      </article>
+      <article class="feature">
+        <div class="feature-head"><h2>精确指针</h2><span class="status" aria-live="polite">检测中</span></div>
+        <code>@media (pointer: fine)</code>
+        <p data-value>正在读取指针精度…</p>
+      </article>
+      <article class="feature">
+        <div class="feature-head"><h2>深色模式</h2><span class="status" aria-live="polite">检测中</span></div>
+        <code>@media (prefers-color-scheme: dark)</code>
+        <p data-value>正在读取系统配色…</p>
+      </article>
+      <article class="feature">
+        <div class="feature-head"><h2>增强对比度</h2><span class="status" aria-live="polite">检测中</span></div>
+        <code>@media (prefers-contrast: more)</code>
+        <p data-value>正在读取对比度偏好…</p>
+      </article>
+      <article class="feature">
+        <div class="feature-head"><h2>减少动态效果</h2><span class="status" aria-live="polite">检测中</span></div>
+        <code>@media (prefers-reduced-motion: reduce)</code>
+        <p data-value>正在读取动效偏好…</p>
+      </article>
+      <article class="feature">
+        <div class="feature-head"><h2>强制颜色</h2><span class="status" aria-live="polite">检测中</span></div>
+        <code>@media (forced-colors: active)</code>
+        <p data-value>正在读取系统强制颜色模式…</p>
+      </article>
+    </section>
+
+    <section class="demo-grid" aria-label="偏好效果演示">
+      <article class="demo-panel">
+        <h2>交互能力与触控尺寸</h2>
+        <p>精确指针设备上，右侧方块会在悬停时变化；触控设备则保持稳定，并扩大点击目标。</p>
+        <div class="preview"><div class="pointer-target">悬停或轻触</div></div>
+        <p><code>pointer: coarse</code> 时增大控件，<code>hover: hover</code> 时才依赖悬停反馈。</p>
+      </article>
+      <article class="demo-panel">
+        <h2>可暂停的装饰动画</h2>
+        <p>按钮可用键盘操作；开启“减少动态效果”后，旋转会自动停止。</p>
+        <div class="preview">
+          <button class="motion-button" id="motionToggle" type="button" aria-pressed="true">
+            <span class="orbit" aria-hidden="true"></span>
+            <span id="motionLabel">装饰动画播放中</span>
+          </button>
+        </div>
+        <p>动效不能成为传递信息的唯一方式，状态文字始终保留。</p>
+      </article>
+    </section>
+
+    <aside class="note" style="margin-top:1rem;padding:1.1rem 1.25rem">
+      <strong>实践建议：</strong>先写移动优先的基础样式，再用 <code>min-width</code> 渐进增强；不要用媒体查询检测具体机型，也不要覆盖用户的字体缩放与减少动态效果设置。
+    </aside>
+  </main>
+
+  <script>
+    const configs = [
+      {
+        query: "(hover: hover)",
+        on: "匹配：当前主要输入方式支持悬停。",
+        off: "未匹配：不要依赖 hover 才能发现或操作内容。"
+      },
+      {
+        query: "(pointer: fine)",
+        on: "匹配：主要指针精确，可提供较细致的悬停反馈。",
+        off: "未匹配：主要指针较粗略，应优先保证触控目标足够大。"
+      },
+      {
+        query: "(prefers-color-scheme: dark)",
+        on: "匹配：页面已切换为深色主题。",
+        off: "未匹配：当前使用浅色主题。"
+      },
+      {
+        query: "(prefers-contrast: more)",
+        on: "匹配：已加强边框与文字对比度。",
+        off: "未匹配：当前未请求增强对比度，仍保持 WCAG 可读对比。"
+      },
+      {
+        query: "(prefers-reduced-motion: reduce)",
+        on: "匹配：装饰动画已停用，状态切换保持即时。",
+        off: "未匹配：当前允许适度动效，用户仍可手动暂停。"
+      },
+      {
+        query: "(forced-colors: active)",
+        on: "匹配：已让浏览器使用系统强制颜色映射。",
+        off: "未匹配：当前使用页面自定义配色。"
+      }
+    ];
+
+    const cards = [...document.querySelectorAll(".feature")];
+    function render() {
+      cards.forEach((card, index) => {
+        const media = window.matchMedia(configs[index].query);
+        const status = card.querySelector(".status");
+        status.textContent = media.matches ? "匹配" : "未匹配";
+        status.classList.toggle("match", media.matches);
+        status.classList.toggle("off", !media.matches);
+        card.querySelector("[data-value]").textContent = media.matches
+          ? configs[index].on
+          : configs[index].off;
+      });
+    }
+
+    configs.forEach((config) => {
+      const media = window.matchMedia(config.query);
+      media.addEventListener?.("change", render);
+    });
+    render();
+
+    const motionToggle = document.querySelector("#motionToggle");
+    const motionLabel = document.querySelector("#motionLabel");
+    motionToggle.addEventListener("click", () => {
+      const paused = motionToggle.getAttribute("aria-pressed") !== "false";
+      motionToggle.setAttribute("aria-pressed", String(!paused));
+      motionToggle.classList.toggle("paused", paused);
+      motionLabel.textContent = paused ? "装饰动画已暂停" : "装饰动画播放中";
+    });
+  </script>
+</body>
+</html>

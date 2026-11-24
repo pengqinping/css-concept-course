@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS 动效实验台</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 2rem; font: 14px/1.6 system-ui, sans-serif; color: #24261f; background: #f4f1e9; }
+    main { max-width: 58rem; margin: auto; }
+    h1 { margin-block-start: 0; }
+    .panel { padding: 1.5rem; border: 1px solid #d7d3c8; border-radius: 1rem; background: #fbfaf6; }
+    .controls { display: flex; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
+    button { padding: .6rem .9rem; border: 1px solid #24261f; border-radius: .5rem; background: white; cursor: pointer; }
+    button.primary { background: #c8f35c; }
+    .stage { min-height: 18rem; display: grid; place-items: center; border-radius: .75rem; background: #22251f; }
+    .box { display: grid; place-items: center; width: 8rem; height: 8rem; border-radius: 1.25rem; background: #8262d7; color: white; font-weight: 700; transform: translateX(0) rotate(0) scale(1); transition: transform 500ms cubic-bezier(.2,.8,.2,1), background 300ms; }
+    .box.moved { transform: translateX(5rem) rotate(18deg) scale(1.12); background: #c8f35c; color: #24261f; }
+    .collapse { display: grid; grid-template-rows: 0fr; margin-block-start: 1rem; transition: grid-template-rows 350ms ease; }
+    .collapse > div { overflow: hidden; }
+    .collapse.open { grid-template-rows: 1fr; }
+    .collapse-content { padding: 1rem; border: 1px solid #d7d3c8; border-top: 0; background: #f0ebfa; }
+    code { font-family: ui-monospace, monospace; }
+    pre { padding: 1rem; overflow-x: auto; background: #22251f; color: #d4d7cc; border-radius: .6rem; }
+    @media (max-width: 36rem) { .box.moved { transform: translateX(2rem) rotate(12deg) scale(1.08); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p><a href="index.html">← 返回示例画廊</a></p>
+  <h1>动效实验台</h1>
+  <p>比较 <code>transform</code> 过渡和 Grid 行高折叠。系统开启“减弱动态效果”时，动画会自动降级。</p>
+  <div class="controls">
+    <button type="button" id="move" class="primary" aria-pressed="false">移动方块</button>
+    <button type="button" id="collapse" aria-expanded="false" aria-controls="details">展开内容</button>
+  </div>
+  <div class="panel">
+    <div class="stage"><div class="box" id="box">transform</div></div>
+    <div class="collapse" id="details"><div><div class="collapse-content">这段内容高度未知，但 <code>grid-template-rows: 0fr → 1fr</code> 仍然可以平滑展开。收起时内容不会参与可见布局。</div></div></div>
+  </div>
+  <pre><code>.box {
+  transition: transform 500ms cubic-bezier(.2, .8, .2, 1);
+}
+.box.moved {
+  transform: translateX(5rem) rotate(18deg) scale(1.12);
+}
+
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 350ms ease;
+}
+.collapse.open { grid-template-rows: 1fr; }
+.collapse > div { overflow: hidden; }</code></pre>
+</main>
+<script>
+  const move = document.querySelector('#move');
+  const box = document.querySelector('#box');
+  const collapse = document.querySelector('#collapse');
+  const panel = document.querySelector('#details');
+  move.addEventListener('click', () => {
+    const active = move.getAttribute('aria-pressed') !== 'true';
+    move.setAttribute('aria-pressed', active);
+    move.textContent = active ? '复原方块' : '移动方块';
+    box.classList.toggle('moved', active);
+  });
+  collapse.addEventListener('click', () => {
+    const open = collapse.getAttribute('aria-expanded') !== 'true';
+    collapse.setAttribute('aria-expanded', open);
+    collapse.textContent = open ? '收起内容' : '展开内容';
+    panel.classList.toggle('open', open);
+  });
+</script>
+</body>
+</html>

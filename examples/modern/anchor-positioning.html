@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>锚点定位与浮层回退 · 现代 CSS</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9; --surface: #fffdf7; --green: #3f6b2a; --green-dark: #2d4d1e;
+      --green-soft: #e5ecd9; --ink: #263022; --muted: #66705f; --line: #d8d5c9;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    :focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .shell { width: min(1080px, calc(100% - 32px)); margin: auto; padding: 28px 0 64px; }
+    .topbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .brand { color: var(--green); font-weight: 800; letter-spacing: .08em; }
+    .hero { padding: clamp(24px, 5vw, 48px); border: 1px solid var(--line); border-radius: 28px; background: var(--surface); }
+    .eyebrow { margin: 0 0 10px; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .15em; }
+    h1 { max-width: 800px; margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; letter-spacing: -.04em; }
+    .hero p:last-child { max-width: 740px; margin: 16px 0 0; color: var(--muted); }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 22px; margin-top: 22px; align-items: start; }
+    .workspace > * { min-width: 0; }
+    .panel { min-width: 0; padding: clamp(20px, 4vw, 30px); border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
+    .panel + .panel { margin-top: 22px; }
+    h2 { margin: 0 0 8px; font-size: 1.3rem; }
+    .intro { margin: 0 0 18px; color: var(--muted); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .12em .35em; border-radius: 5px; background: var(--green-soft); color: var(--green-dark); font-size: .86em; }
+    pre { margin: 16px 0 0; padding: 15px; overflow-x: auto; border-radius: 12px; background: #273223; color: #eff4e7; font-size: .78rem; line-height: 1.55; }
+    .position-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    button { min-height: 42px; padding: 8px 15px; border: 1px solid #a9b39a; border-radius: 999px; background: transparent; color: var(--green-dark); font: inherit; font-weight: 700; cursor: pointer; }
+    button:hover, button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+    .anchor-stage { position: relative; height: 360px; overflow: hidden; border: 1px dashed #aeb99f; border-radius: 18px; background-color: #edf0e2; background-image: linear-gradient(#dce2d1 1px, transparent 1px), linear-gradient(90deg, #dce2d1 1px, transparent 1px); background-size: 24px 24px; }
+    .anchor-stage::after { content: "移动目标后，浮层会重新跟随并避开视口边缘"; position: absolute; left: 16px; bottom: 12px; max-width: calc(100% - 32px); color: #6c775f; font-size: .78rem; pointer-events: none; }
+    .anchor-target { position: absolute; z-index: 2; }
+    .anchor-target[data-position="top-left"] { left: 5%; top: 24px; }
+    .anchor-target[data-position="top-right"] { right: 5%; top: 24px; }
+    .anchor-target[data-position="center"] { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+    .anchor-target[data-position="bottom-right"] { right: 5%; bottom: 38px; }
+    .anchor-trigger { box-shadow: 0 5px 14px rgb(45 77 30 / 20%); }
+    .anchor-panel { position: fixed; z-index: 30; top: 16px; left: 16px; width: min(280px, calc(100vw - 32px)); padding: 20px; border: 1px solid #aebb98; border-radius: 16px; background: var(--surface); box-shadow: 0 18px 55px rgb(35 51 28 / 24%); }
+    .anchor-panel[hidden] { display: none; }
+    .anchor-panel h2 { margin: 0 30px 8px 0; font-size: 1.05rem; }
+    .anchor-panel p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .close-panel { position: absolute; top: 8px; right: 8px; width: 36px; min-height: 36px; padding: 0; border: 0; background: transparent; color: var(--green-dark); font-size: 1.3rem; line-height: 1; }
+    .close-panel:hover { background: var(--green-soft); }
+    .status { margin: 14px 0 0; padding: 10px 13px; border-radius: 10px; background: var(--green-soft); color: var(--green-dark); font-size: .86rem; }
+    .explain { padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .explain:last-child { border-bottom: 0; }
+    .explain h3 { margin: 0 0 5px; font-size: .98rem; }
+    .explain p { margin: 0; color: var(--muted); font-size: .88rem; }
+
+    @supports (anchor-name: --demo-anchor) and (position-anchor: --demo-anchor) and (top: anchor(bottom)) and (position-try-fallbacks: --above-left) {
+      .anchor-trigger { anchor-name: --demo-anchor; }
+      .anchor-panel {
+        position-anchor: --demo-anchor;
+        top: anchor(bottom);
+        left: anchor(left);
+        margin: 12px 0 0;
+        position-try-fallbacks: --above-left, --left-below, --above-right, flip-block, flip-inline;
+      }
+      @position-try --above-left {
+        top: auto;
+        bottom: anchor(top);
+        left: anchor(left);
+        margin: 0 0 12px;
+      }
+      @position-try --left-below {
+        top: anchor(bottom);
+        right: anchor(right);
+        left: auto;
+        margin: 12px 0 0;
+      }
+      @position-try --above-right {
+        top: auto;
+        right: anchor(right);
+        bottom: anchor(top);
+        left: auto;
+        margin: 0 0 12px;
+      }
+    }
+
+    @media (max-width: 780px) { .workspace { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .shell { width: min(100% - 20px, 1080px); } .anchor-stage { height: 330px; } .position-controls button { flex: 1 1 calc(50% - 8px); } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a href="../index.html">← 返回示例索引</a><span class="brand">锚点定位实验室</span></header>
+    <section class="hero">
+      <p class="eyebrow">CSS anchor positioning / Safe fallback</p>
+      <h1>让浮层跟着目标，也留在屏幕里。</h1>
+      <p>支持锚点定位时，CSS 使用 <code>anchor()</code> 与 <code>@position-try</code> 自动换边；否则脚本测量按钮与浮层，限制在视口安全区内。</p>
+    </section>
+
+    <main class="workspace">
+      <div>
+        <section class="panel" aria-labelledby="demoTitle">
+          <h2 id="demoTitle">交互演示</h2>
+          <p class="intro">选择位置，然后打开浮层。把按钮移到右下角，可以观察自动回退到上方或左侧。</p>
+          <div class="position-controls" role="group" aria-label="移动锚点按钮">
+            <button type="button" data-position="top-left" aria-pressed="true">左上</button>
+            <button type="button" data-position="top-right" aria-pressed="false">右上</button>
+            <button type="button" data-position="center" aria-pressed="false">居中</button>
+            <button type="button" data-position="bottom-right" aria-pressed="false">右下</button>
+          </div>
+          <div class="anchor-stage">
+            <div class="anchor-target" id="anchorTarget" data-position="top-left">
+              <button class="anchor-trigger" id="anchorTrigger" type="button" aria-expanded="false" aria-controls="anchorPanel">观察这株植物</button>
+            </div>
+          </div>
+          <p class="status" id="anchorStatus" role="status" aria-live="polite">正在检测锚点定位…</p>
+        </section>
+
+        <section class="panel" aria-labelledby="syntaxTitle">
+          <h2 id="syntaxTitle">核心声明</h2>
+          <p class="intro">锚点名称由触发按钮声明，浮层用 position-anchor 引用；候选位置在溢出时依次尝试。</p>
+          <pre>.anchor-trigger {
+  anchor-name: --demo-anchor;
+}
+
+.anchor-panel {
+  position-anchor: --demo-anchor;
+  top: anchor(bottom);
+  left: anchor(left);
+  position-try-fallbacks: --above-left, --left-below;
+}
+
+@position-try --above-left {
+  top: anchor(top);
+  left: anchor(left);
+  transform: translateY(-100%);
+}</pre>
+        </section>
+      </div>
+
+      <aside class="panel" aria-labelledby="propertyTitle">
+        <h2 id="propertyTitle">属性说明</h2>
+        <div class="explain"><h3><code>anchor-name</code></h3><p>为目标注册一个不参与渲染的隐式锚点，元素移动、滚动或改变尺寸时自动更新。</p></div>
+        <div class="explain"><h3><code>position-anchor</code></h3><p>在浮层上引用目标名称，使后续 anchor() 能找到正确元素。</p></div>
+        <div class="explain"><h3><code>anchor(&lt;edge&gt;)</code></h3><p>读取目标的 top、right、bottom、left 或 center 等边，可继续参与 calc()。</p></div>
+        <div class="explain"><h3><code>@position-try</code></h3><p>定义候选布局。浏览器会检查空间，首个能完整容纳浮层的候选才会生效。</p></div>
+        <div class="explain"><h3>回退策略</h3><p>JS 同时考虑视口左右、上下边界，并在滚动、缩放、目标移动后重新定位。基础交互不依赖新 CSS。</p></div>
+      </aside>
+    </main>
+  </div>
+
+  <section class="anchor-panel" id="anchorPanel" role="dialog" aria-labelledby="anchorPanelTitle" hidden>
+    <button class="close-panel" id="closePanel" type="button" aria-label="关闭植物浮层">×</button>
+    <h2 id="anchorPanelTitle">银皇后</h2>
+    <p>耐阴，适合明亮散射光。等表层土壤干燥后再浇水，避免盆底长期积水。</p>
+  </section>
+
+  <script>
+    const trigger = document.querySelector('#anchorTrigger');
+    const target = document.querySelector('#anchorTarget');
+    const panel = document.querySelector('#anchorPanel');
+    const closeButton = document.querySelector('#closePanel');
+    const status = document.querySelector('#anchorStatus');
+    const nativeAnchor = CSS.supports('(anchor-name: --demo-anchor)') &&
+      CSS.supports('(position-anchor: --demo-anchor)') &&
+      CSS.supports('top: anchor(bottom)') &&
+      CSS.supports('(position-try-fallbacks: --above-left)');
+
+    status.textContent = nativeAnchor
+      ? '✓ 原生锚点定位与 @position-try 已启用；JS 保留为定位回退。'
+      : '当前浏览器使用 JS 测量定位；功能与键盘操作保持一致。';
+
+    function placeFallback() {
+      if (panel.hidden || nativeAnchor) return;
+      const targetRect = trigger.getBoundingClientRect();
+      const panelWidth = panel.offsetWidth;
+      const panelHeight = panel.offsetHeight;
+      const gap = 12;
+      const margin = 12;
+      let left = targetRect.left;
+      let top = targetRect.bottom + gap;
+      if (left + panelWidth > window.innerWidth - margin) left = targetRect.right - panelWidth;
+      if (top + panelHeight > window.innerHeight - margin) top = targetRect.top - panelHeight - gap;
+      left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin));
+      top = Math.max(margin, Math.min(top, window.innerHeight - panelHeight - margin));
+      panel.style.left = left + 'px';
+      panel.style.top = top + 'px';
+      panel.style.transform = 'none';
+    }
+
+    function setOpen(open, returnFocus = false) {
+      panel.hidden = !open;
+      trigger.setAttribute('aria-expanded', String(open));
+      if (open) {
+        if (!nativeAnchor) { panel.style.left = ''; panel.style.top = ''; }
+        requestAnimationFrame(() => {
+          placeFallback();
+          closeButton.focus({ preventScroll: true });
+        });
+      } else if (returnFocus) {
+        trigger.focus({ preventScroll: true });
+      }
+    }
+
+    trigger.addEventListener('click', () => setOpen(panel.hidden));
+    closeButton.addEventListener('click', () => setOpen(false, true));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !panel.hidden) setOpen(false, true);
+    });
+    document.addEventListener('pointerdown', event => {
+      const isPositionControl = event.target.closest('.position-controls');
+      if (!panel.hidden && !panel.contains(event.target) && !trigger.contains(event.target) && !isPositionControl) setOpen(false);
+    });
+
+    document.querySelectorAll('[data-position]').forEach(button => {
+      if (button === target) return;
+      button.addEventListener('click', () => {
+        target.dataset.position = button.dataset.position;
+        document.querySelectorAll('.position-controls [data-position]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        status.textContent = (nativeAnchor ? '原生锚点' : 'JS 回退') + '：目标已移动到' + button.textContent + '，' + (panel.hidden ? '打开浮层查看结果。' : '浮层位置已更新。');
+        if (!panel.hidden) requestAnimationFrame(placeFallback);
+      });
+    });
+
+    window.addEventListener('resize', placeFallback, { passive: true });
+    window.addEventListener('scroll', placeFallback, { passive: true });
+  </script>
+</body>
+</html>

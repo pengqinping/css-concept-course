@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS 裁剪、遮罩与投影实验室</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #25301f;
+      --muted: #69715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1d;
+      --green-soft: #e2ead7;
+      --line: #d8d3c5;
+      --amber: #d49a3a;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    button, select, input { font: inherit; }
+    button, select, input[type="range"] { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    ::selection { background: #cfdcba; color: var(--green-dark); }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { text-decoration-thickness: 2px; }
+    .skip-link { position: absolute; inset-block-start: -5rem; inset-inline-start: 1rem; z-index: 10; padding: .6rem 1rem; border-radius: 8px; background: var(--green-dark); color: white; }
+    .skip-link:focus { inset-block-start: 1rem; }
+    .page { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; padding-block: 1.5rem 4rem; }
+    .topbar { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; justify-content: space-between; }
+    .back-link { font-weight: 700; }
+    .top-note { color: var(--muted); font-size: .9rem; }
+
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); gap: 2rem; align-items: end; margin-block: 2.2rem 2rem; }
+    .eyebrow { margin: 0 0 .7rem; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 15ch; margin: 0; font-family: Georgia, "Songti SC", "STSong", serif; font-size: clamp(2.3rem, 7vw, 4.5rem); line-height: 1.06; letter-spacing: -.045em; text-wrap: balance; }
+    .intro { max-width: 62ch; margin: 1rem 0 0; color: var(--muted); font-size: 1.05rem; }
+    .hero-art { min-height: 180px; border: 1px solid var(--green); border-radius: var(--radius); background: linear-gradient(135deg, #3f6b2a, #88a866); clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%); }
+    .hero-art::after { content: ""; display: block; width: 100%; height: 100%; background: radial-gradient(circle at 65% 35%, #f4f1e9 0 13%, transparent 13.5%), linear-gradient(45deg, transparent 45%, rgb(244 241 233 / .55) 45% 55%, transparent 55%); }
+
+    .toolbar, .card-controls { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: end; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: rgb(255 253 247 / .75); }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-block-end: .55rem; font-size: .82rem; font-weight: 800; color: var(--green-dark); }
+    .control { display: grid; gap: .35rem; flex: 1 1 150px; min-width: 0; }
+    .control > span, .control > label { font-size: .8rem; font-weight: 700; color: var(--muted); }
+    .control output { font-variant-numeric: tabular-nums; color: var(--green-dark); }
+    select { width: 100%; min-height: 42px; padding: .5rem .7rem; border: 1px solid #bcb8aa; border-radius: 8px; background: var(--card); color: var(--ink); }
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+    button { min-height: 42px; padding: .5rem .85rem; border: 1px solid #aab29e; border-radius: 999px; background: var(--card); color: var(--green-dark); font-weight: 700; }
+    button:hover { border-color: var(--green); background: #f4f7ef; }
+    button[aria-pressed="true"] { border-color: var(--green-dark); background: var(--green); color: white; }
+    .button-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .button-row button { flex: 1 1 auto; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block-start: 1rem; }
+    .card { min-width: 0; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 8px 24px rgb(50 60 40 / .045); }
+    .card.wide { grid-column: 1 / -1; }
+    .card h2 { margin: 0; font-size: 1.22rem; letter-spacing: -.02em; }
+    .card h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--green-dark); }
+    .card p { margin-block: .65rem 0; }
+    .desc { color: var(--muted); font-size: .92rem; }
+    code { padding: .1em .35em; border-radius: 5px; background: #eeeee5; color: #315322; font: .88em ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .property-note { margin-block-start: 1rem; padding: .75rem .9rem; border-inline-start: 4px solid var(--green); border-radius: 0 9px 9px 0; background: #f0f3e9; color: #4d5944; font-size: .86rem; }
+    pre { margin: .8rem 0 0; padding: .9rem; overflow-x: auto; border-radius: 10px; background: #25301f; color: #e8eddf; font: .78rem/1.65 ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .support { margin-block-start: 1rem; color: var(--muted); font-size: .85rem; }
+
+    .clip-stage { display: grid; place-items: center; min-height: 340px; margin-block-start: 1rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: 14px; background-color: #eeeadd; background-image: linear-gradient(45deg, #ded8c8 25%, transparent 25%), linear-gradient(-45deg, #ded8c8 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ded8c8 75%), linear-gradient(-45deg, transparent 75%, #ded8c8 75%); background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; }
+    .clip-target { position: relative; width: min(100%, 430px); aspect-ratio: 16 / 10; display: grid; place-items: center; overflow: hidden; background:
+      radial-gradient(circle at 70% 26%, #f0c86e 0 12%, transparent 12.5%),
+      linear-gradient(155deg, #dce8cf, #8fa96d 58%, #3f6b2a);
+      clip-path: var(--clip-shape, inset(12% 8% round 28px));
+      color: #203317;
+    }
+    .clip-target::before { content: ""; position: absolute; inset-block-end: -20%; inset-inline-start: -5%; width: 65%; height: 70%; border-radius: 50%; background: rgb(255 253 247 / .45); transform: rotate(-18deg); }
+    .clip-label { position: relative; z-index: 1; padding: .65rem 1rem; border: 1px solid rgb(37 48 31 / .25); border-radius: 999px; background: rgb(255 253 247 / .82); font-weight: 800; }
+    .clip-target.shape-circle { --clip-shape: circle(42% at 50% 50%); }
+    .clip-target.shape-polygon { --clip-shape: polygon(50% 0, 100% 34%, 82% 100%, 18% 100%, 0 34%); }
+    .clip-target.shape-path { aspect-ratio: 430 / 330; --clip-shape: path("M 30 210 C 20 130 85 35 190 22 C 280 8 360 60 402 138 C 435 202 395 296 306 314 C 220 332 140 302 82 274 C 55 260 36 240 30 210 Z"); }
+    .clip-target.shape-inset { --clip-shape: inset(var(--inset-value, 12%) var(--inset-value, 12%) round 28px); }
+    .clip-target.shape-none { --clip-shape: none; }
+
+    .mask-stage { position: relative; min-height: 310px; margin-block-start: 1rem; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background-color: #e9e4d7; background-image: linear-gradient(45deg, #d6d0c1 25%, transparent 25%), linear-gradient(-45deg, #d6d0c1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d6d0c1 75%), linear-gradient(-45deg, transparent 75%, #d6d0c1 75%); background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; }
+    .mask-art { position: absolute; inset: 0; display: grid; place-items: center; background:
+      radial-gradient(circle at 72% 30%, #f1c669 0 13%, transparent 13.5%),
+      linear-gradient(155deg, #f2e6c9, #a8bd87 48%, #3f6b2a);
+      -webkit-mask-image: var(--mask-image, linear-gradient(90deg, transparent 0 15%, #000 15% 85%, transparent 85%));
+      mask-image: var(--mask-image, linear-gradient(90deg, transparent 0 15%, #000 15% 85%, transparent 85%));
+      -webkit-mask-size: var(--mask-size, 100% 100%);
+      mask-size: var(--mask-size, 100% 100%);
+      -webkit-mask-position: var(--mask-position, center);
+      mask-position: var(--mask-position, center);
+      -webkit-mask-repeat: var(--mask-repeat, no-repeat);
+      mask-repeat: var(--mask-repeat, no-repeat);
+      -webkit-mask-composite: var(--mask-webkit-composite, source-over);
+      mask-composite: var(--mask-composite, add);
+    }
+    .mask-word { position: relative; z-index: 1; color: #fffdf7; font: 800 clamp(2.2rem, 9vw, 5.2rem)/1 Georgia, serif; letter-spacing: -.05em; text-shadow: 0 2px 14px rgb(37 48 31 / .28); }
+    .mask-stage::after { content: "棋盘格 = 透明区域"; position: absolute; inset-inline-end: .8rem; inset-block-end: .8rem; padding: .35rem .6rem; border-radius: 7px; background: rgb(255 253 247 / .88); color: #25301f; font-size: .75rem; }
+
+    .shadow-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-block-start: 1rem; }
+    .shadow-sample { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: #f0ecdf; text-align: center; }
+    .shadow-sample h3 { margin-block-end: .8rem; }
+    .leaf-shape { width: min(100%, 210px); aspect-ratio: 1; margin-inline: auto; border-radius: 56% 12% 56% 12%; background: linear-gradient(145deg, #86a85e, #3f6b2a); }
+    .leaf-shape.box { box-shadow: var(--compare-shadow, 14px 18px 18px rgb(36 54 24 / .32)); }
+    .leaf-shape.drop { filter: drop-shadow(var(--compare-shadow, 14px 18px 18px rgb(36 54 24 / .32))); }
+    .shadow-sample p { margin-block-end: 0; color: var(--muted); font-size: .82rem; }
+
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .hero-art { min-height: 150px; }
+    }
+    @media (max-width: 480px) {
+      .page { width: min(100% - 1rem, 1120px); }
+      .card { border-radius: 14px; }
+      .control { flex-basis: 100%; }
+      .clip-stage { min-height: 280px; padding: .8rem; }
+      .clip-target.shape-path { width: min(100%, 300px); }
+      .shadow-compare { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="page">
+    <header class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <span class="top-note">独立示例 · 无外部字体与资源</span>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Mask / 视觉基础 04</p>
+          <h1 id="page-title">裁剪、遮罩与投影</h1>
+          <p class="intro">clip-path 决定元素的几何轮廓，mask 决定像素透明度，drop-shadow 则沿真实轮廓生成投影；它们用途相近，但结果并不相同。</p>
+        </div>
+        <div class="hero-art" role="img" aria-label="多边形裁剪的绿色渐变图形"></div>
+      </section>
+
+      <section class="toolbar" aria-labelledby="controls-title">
+        <h2 id="controls-title" hidden>裁剪与遮罩控件</h2>
+        <div class="control">
+          <label for="maskSize">遮罩尺寸 <output id="maskSizeValue" for="maskSize">100%</output></label>
+          <input id="maskSize" type="range" min="40" max="160" step="5" value="100" />
+        </div>
+        <div class="control">
+          <label for="shadowBlur">投影模糊 <output id="shadowBlurValue" for="shadowBlur">18 px</output></label>
+          <input id="shadowBlur" type="range" min="0" max="36" step="2" value="18" />
+        </div>
+        <div class="control">
+          <label for="shadowOffset">投影偏移 <output id="shadowOffsetValue" for="shadowOffset">14 / 18 px</output></label>
+          <input id="shadowOffset" type="range" min="0" max="28" step="2" value="14" />
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card wide" aria-labelledby="clip-title">
+          <h2 id="clip-title">clip-path：inset / circle / polygon / path</h2>
+          <p class="desc">裁剪路径之外的区域不可见，也不会响应指针事件。基础形状适合规则图形，<code>path()</code> 可描述复杂的贝塞尔曲线。</p>
+          <div class="button-row" style="margin-block-start: 1rem;" role="group" aria-label="选择裁剪形状">
+            <button type="button" data-clip="shape-inset" aria-pressed="true">inset</button>
+            <button type="button" data-clip="shape-circle" aria-pressed="false">circle</button>
+            <button type="button" data-clip="shape-polygon" aria-pressed="false">polygon</button>
+            <button type="button" data-clip="shape-path" aria-pressed="false">path</button>
+            <button type="button" data-clip="shape-none" aria-pressed="false">none</button>
+          </div>
+          <div class="card-controls" style="margin-block-start: .8rem;">
+            <div class="control">
+              <label for="clipInset">inset 内缩 <output id="clipInsetValue" for="clipInset">12%</output></label>
+              <input id="clipInset" type="range" min="0" max="35" step="1" value="12" />
+            </div>
+          </div>
+          <div class="clip-stage">
+            <div class="clip-target shape-inset" id="clipTarget"><span class="clip-label" id="clipLabel">inset()</span></div>
+          </div>
+          <pre id="clipCode">clip-path: inset(12% round 28px);</pre>
+          <p class="support" id="clipSupport">正在检测 clip-path 支持情况…</p>
+        </section>
+
+        <section class="card wide" aria-labelledby="mask-title">
+          <h2 id="mask-title">mask-image：用透明度控制显隐</h2>
+          <p class="desc">遮罩图的黑色代表透明，白色代表显示（默认 luminance 模式）；本示例使用 alpha 通道，不透明处显示，透明处隐藏。棋盘格用于暴露透明区域。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="maskPattern">遮罩图形</label>
+              <select id="maskPattern">
+                <option value="fade">横向渐隐</option>
+                <option value="stripes">重复条纹</option>
+                <option value="circle">圆形窗口</option>
+                <option value="diamond">菱形窗口</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="maskPosition">遮罩位置</label>
+              <select id="maskPosition">
+                <option value="center">center</option>
+                <option value="left">left</option>
+                <option value="right">right</option>
+              </select>
+            </div>
+            <div class="control">
+              <label for="maskComposite">合成方式</label>
+              <select id="maskComposite">
+                <option value="add">add：并集</option>
+                <option value="subtract">subtract：减去</option>
+                <option value="intersect">intersect：交集</option>
+                <option value="exclude">exclude：排除重叠</option>
+              </select>
+            </div>
+          </div>
+          <div class="mask-stage" id="maskStage">
+            <div class="mask-art" id="maskArt"></div>
+            <div class="mask-word" aria-hidden="true">MASK</div>
+          </div>
+          <pre id="maskCode">mask-image: linear-gradient(90deg, transparent, #000);
+mask-size: 100% 100%;
+mask-position: center;
+mask-repeat: no-repeat;
+mask-composite: add;</pre>
+          <p class="support" id="maskSupport">正在检测 mask-composite 支持情况…</p>
+          <p class="property-note"><code>mask-size</code> 控制遮罩图尺寸，<code>mask-position</code> 控制位置。多张遮罩可以用 <code>mask-composite</code> 合并；不同浏览器的旧版 WebKit 属性值命名与标准属性不同。</p>
+        </section>
+
+        <section class="card" aria-labelledby="drop-title">
+          <h2 id="drop-title">filter: drop-shadow()</h2>
+          <p class="desc">投影算法会读取元素渲染后的 alpha 轮廓。对于半透明遮罩、SVG 或不规则形状，它能生成贴合内容的阴影。</p>
+          <div class="shadow-compare">
+            <div class="shadow-sample">
+              <div class="leaf-shape drop" aria-label="贴合轮廓的投影"></div>
+              <p style="margin-block-start: .8rem;">drop-shadow：沿形状轮廓</p>
+            </div>
+            <div class="shadow-sample">
+              <div class="leaf-shape box" aria-label="矩形盒阴影"></div>
+              <p style="margin-block-start: .8rem;">box-shadow：跟随盒模型</p>
+            </div>
+          </div>
+          <pre id="dropCode">.leaf {
+  filter: drop-shadow(14px 18px 18px rgb(36 54 24 / .32));
+}</pre>
+        </section>
+
+        <section class="card" aria-labelledby="box-title">
+          <h2 id="box-title">box-shadow：投影盒模型</h2>
+          <p class="desc"><code>box-shadow</code> 围绕元素的 CSS 盒绘制，性能和可控性通常更好，适合卡片、按钮和输入框。它不会读取遮罩或 SVG 内部的透明细节。</p>
+          <div class="property-note"><strong>如何选择？</strong><br />规则矩形卡片优先 box-shadow；带透明背景的插画、圆角图标和文字水印需要轮廓投影时，再使用 drop-shadow()。两者也可以叠加，形成层次更丰富的阴影。</div>
+          <pre>.card {
+  box-shadow: 14px 18px 18px rgb(36 54 24 / .32);
+}</pre>
+          <p class="support">本页同时应用两种投影并保持参数一致，便于直接比较投影范围。拖动顶部滑块可以观察轮廓与盒模型之间的差异。</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const clipTarget = document.querySelector('#clipTarget');
+    const clipLabel = document.querySelector('#clipLabel');
+    const clipCode = document.querySelector('#clipCode');
+    const clipButtons = [...document.querySelectorAll('[data-clip]')];
+    const clipInset = document.querySelector('#clipInset');
+    let activeClip = 'shape-inset';
+
+    const basePath = 'M 30 210 C 20 130 85 35 190 22 C 280 8 360 60 402 138 C 435 202 395 296 306 314 C 220 332 140 302 82 274 C 55 260 36 240 30 210 Z';
+    const clipValues = {
+      'shape-inset': () => `inset(${clipInset.value}% round 28px)`,
+      'shape-circle': () => 'circle(42% at 50% 50%)',
+      'shape-polygon': () => 'polygon(50% 0, 100% 34%, 82% 100%, 18% 100%, 0 34%)',
+      'shape-path': () => `path("${basePath}")`,
+      'shape-none': () => 'none'
+    };
+
+    function applyResponsivePath() {
+      if (activeClip !== 'shape-path') {
+        clipTarget.style.clipPath = '';
+        return;
+      }
+      const rect = clipTarget.getBoundingClientRect();
+      const scaleX = (rect.width || 430) / 430;
+      const scaleY = (rect.height || 330) / 330;
+      let coordinate = 0;
+      const scaledPath = basePath.replace(/-?\d*\.?\d+/g, value => {
+        const scale = coordinate++ % 2 === 0 ? scaleX : scaleY;
+        return Number((Number(value) * scale).toFixed(2));
+      });
+      clipTarget.style.clipPath = `path("${scaledPath}")`;
+    }
+
+    function updateClip() {
+      ['shape-inset', 'shape-circle', 'shape-polygon', 'shape-path', 'shape-none'].forEach(name => clipTarget.classList.toggle(name, name === activeClip));
+      clipTarget.style.setProperty('--inset-value', `${clipInset.value}%`);
+      clipLabel.textContent = `${activeClip.replace('shape-', '')}()`;
+      clipCode.textContent = `clip-path: ${clipValues[activeClip]()};`;
+      document.querySelector('#clipInsetValue').textContent = `${clipInset.value}%`;
+      clipInset.disabled = activeClip !== 'shape-inset';
+      applyResponsivePath();
+    }
+
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(applyResponsivePath).observe(clipTarget);
+    } else {
+      window.addEventListener('resize', applyResponsivePath);
+    }
+
+    clipButtons.forEach(button => button.addEventListener('click', () => {
+      activeClip = button.dataset.clip;
+      clipButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      updateClip();
+    }));
+    clipInset.addEventListener('input', updateClip);
+    updateClip();
+
+    document.querySelector('#clipSupport').textContent = CSS.supports('clip-path', 'circle(50%)')
+      ? (CSS.supports('clip-path', 'path("M0 0L10 10Z")')
+          ? '当前浏览器支持基础裁剪与 path()。path() 使用像素坐标，缩放容器时需要同步调整路径。'
+          : '当前浏览器支持基础裁剪，但不支持 path()；path 示例可能回退为未裁剪。')
+      : '当前浏览器不支持 clip-path，示例保留未裁剪内容。';
+
+    const maskArt = document.querySelector('#maskArt');
+    const maskStage = document.querySelector('#maskStage');
+    const maskPattern = document.querySelector('#maskPattern');
+    const maskPosition = document.querySelector('#maskPosition');
+    const maskComposite = document.querySelector('#maskComposite');
+    const maskSize = document.querySelector('#maskSize');
+    const maskCode = document.querySelector('#maskCode');
+    const webkitCompositeMap = { add: 'source-over', subtract: 'source-out', intersect: 'source-in', exclude: 'xor' };
+    const maskValues = {
+      fade: 'linear-gradient(90deg, transparent 0 10%, #000 45% 55%, transparent 90% 100%)',
+      stripes: 'repeating-linear-gradient(90deg, #000 0 16px, transparent 16px 32px)',
+      circle: 'radial-gradient(circle at center, #000 0 58%, transparent 59%)',
+      diamond: 'linear-gradient(135deg, transparent 0 35%, #000 35% 65%, transparent 65%), linear-gradient(45deg, transparent 0 35%, #000 35% 65%, transparent 65%)'
+    };
+
+    function updateMask() {
+      const size = `${maskSize.value}% ${maskSize.value}%`;
+      maskArt.style.setProperty('--mask-image', maskValues[maskPattern.value]);
+      maskArt.style.setProperty('--mask-size', size);
+      maskArt.style.setProperty('--mask-position', maskPosition.value);
+      maskArt.style.setProperty('--mask-repeat', 'no-repeat');
+      maskArt.style.setProperty('--mask-composite', maskComposite.value);
+      maskArt.style.setProperty('--mask-webkit-composite', webkitCompositeMap[maskComposite.value]);
+      document.querySelector('#maskSizeValue').textContent = `${maskSize.value}%`;
+      maskCode.textContent = `mask-image: ${maskValues[maskPattern.value]};\nmask-size: ${size};\nmask-position: ${maskPosition.value};\nmask-repeat: no-repeat;\nmask-composite: ${maskComposite.value};`;
+    }
+
+    [maskPattern, maskPosition, maskComposite, maskSize].forEach(input => input.addEventListener('input', updateMask));
+    updateMask();
+
+    const supportsMaskComposite = CSS.supports('mask-composite', 'add') || CSS.supports('-webkit-mask-composite', 'source-over');
+    document.querySelector('#maskSupport').textContent = supportsMaskComposite
+      ? '当前浏览器支持遮罩合成。不同浏览器的旧版 WebKit 关键字可能不同，本示例已同时设置标准与前缀属性。'
+      : '当前浏览器不支持遮罩合成，基础遮罩仍可能显示，但 subtract / intersect / exclude 的结果会退化为并集。';
+
+    const shadowBlur = document.querySelector('#shadowBlur');
+    const shadowOffset = document.querySelector('#shadowOffset');
+    function updateShadows() {
+      const x = shadowOffset.value;
+      const y = Math.round(Number(shadowOffset.value) * 1.28);
+      const shadow = `${x}px ${y}px ${shadowBlur.value}px rgb(36 54 24 / .32)`;
+      document.querySelectorAll('.leaf-shape').forEach(shape => shape.style.setProperty('--compare-shadow', shadow));
+      document.querySelector('#shadowBlurValue').textContent = `${shadowBlur.value} px`;
+      document.querySelector('#shadowOffsetValue').textContent = `${x} / ${y} px`;
+      document.querySelector('#dropCode').textContent = `.leaf {\n  filter: drop-shadow(${shadow});\n}`;
+    }
+    [shadowBlur, shadowOffset].forEach(input => input.addEventListener('input', updateShadows));
+    updateShadows();
+  </script>
+</body>
+</html>

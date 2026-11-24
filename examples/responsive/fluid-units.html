@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>流式单位：从 rem 到容器查询单位</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #263021;
+      --muted: #66705d;
+      --green: #3f6b2a;
+      --green-soft: #e3ecd9;
+      --lime: #b9d68c;
+      --line: #d6d2c5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    main { width: min(72rem, 100%); margin-inline: auto; }
+    h1, h2, h3, p { margin-block-start: 0; }
+    h1 { max-width: 18ch; margin-bottom: .7rem; font-size: clamp(2rem, 6vw, 3.7rem); line-height: 1.06; letter-spacing: -.045em; }
+    h2 { margin-bottom: .45rem; font-size: 1.2rem; }
+    p { color: var(--muted); }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; overflow-wrap: anywhere; }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back { display: inline-flex; gap: .45rem; margin-bottom: 1.4rem; font-weight: 800; text-decoration: none; }
+    .back::before { content: "←"; }
+    a:focus-visible, input:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .eyebrow { margin-bottom: .5rem; color: var(--green); font-size: .8rem; font-weight: 900; letter-spacing: .14em; }
+    .lead { max-width: 66ch; margin-bottom: 2rem; font-size: 1.05rem; }
+    .panel {
+      margin-bottom: 1.2rem;
+      padding: clamp(1.1rem, 3vw, 1.6rem);
+      border: 1px solid var(--line);
+      border-radius: 1.2rem;
+      background: var(--surface);
+    }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .panel-head p { max-width: 62ch; margin-bottom: 1.2rem; }
+    .tag { flex: none; padding: .25rem .6rem; border-radius: 999px; color: var(--green); background: var(--green-soft); font-size: .76rem; font-weight: 800; }
+    .tag.fallback { color: #765b17; background: #f2e6bd; }
+    .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1rem; margin: 1rem 0; }
+    label { font-weight: 700; }
+    input[type="range"] { width: min(18rem, 100%); accent-color: var(--green); cursor: pointer; }
+    output { min-width: 5rem; color: var(--green); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .unit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .sample { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: .9rem; background: var(--paper); }
+    .sample h3 { margin-bottom: .45rem; font-size: 1rem; }
+    .sample p { margin-bottom: .8rem; font-size: .9rem; }
+    .type-sample {
+      min-height: 6.5rem;
+      padding: 1rem;
+      border-left: .35rem solid var(--green);
+      background: var(--green-soft);
+      overflow-wrap: anywhere;
+    }
+    .rem-sample { font-size: 1.5rem; line-height: 1.25; }
+    .em-context { font-size: 20px; line-height: 1.2; }
+    .em-sample { font-size: 1.5em; line-height: 1.2; }
+
+    .viewport-track { display: grid; min-height: 12rem; place-items: center; margin-top: 1rem; border: 1px dashed var(--green); border-radius: 1rem; background: var(--paper); }
+    .viewport-box {
+      display: grid;
+      place-items: center;
+      width: 50vw;
+      height: 20vh;
+      min-height: 5rem;
+      max-height: 10rem;
+      border-radius: 1rem;
+      color: #fff;
+      background: repeating-linear-gradient(135deg, var(--green), var(--green) 12px, #4f7b38 12px, #4f7b38 24px);
+      font-weight: 800;
+      text-align: center;
+    }
+    .math-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .math-sample { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: .9rem; }
+    .math-sample p { min-height: 3rem; margin-bottom: .8rem; font-size: .9rem; }
+    .bar-track { width: 100%; min-height: 3rem; border-radius: .65rem; background: var(--paper); }
+    .bar { display: grid; height: 3rem; place-items: center; border-radius: .65rem; color: #fff; background: var(--green); font-size: .82rem; font-weight: 800; white-space: nowrap; }
+    .bar.clamp { width: clamp(11rem, 60vw, 30rem); max-width: 100%; }
+    .bar.min { width: min(100%, 22rem); }
+    .bar.max { width: max(9rem, 55%); }
+    .bar.calc { width: calc(100% - 3rem); }
+
+    .container-toolbar { display: grid; gap: .5rem; margin-block: 1rem; }
+    .container-stage {
+      width: 78%;
+      max-width: 44rem;
+      min-width: 12rem;
+      margin-inline: auto;
+      padding: 1rem;
+      border: 2px dashed var(--green);
+      border-radius: 1rem;
+      container-type: inline-size;
+      background: var(--paper);
+      transition: width 160ms ease;
+    }
+    .container-inner {
+      display: grid;
+      gap: .8rem;
+      min-height: 7rem;
+      align-content: center;
+      padding: 1rem;
+      border-radius: .8rem;
+      color: #fff;
+      background: var(--green);
+    }
+    .cqw-bar { width: 50%; height: 2.4rem; border-radius: 999px; background: var(--lime); }
+    .cqi-type { font-size: 1.25rem; line-height: 1.2; }
+    .container-readout { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; margin-top: .8rem; font-size: .88rem; color: var(--muted); }
+    .container-readout strong { color: var(--green); font-variant-numeric: tabular-nums; }
+    @supports (width: 1cqi) and (font-size: 1cqi) {
+      .cqw-bar { width: 50cqw; }
+      .cqi-type { font-size: clamp(.95rem, 6cqi, 2rem); }
+    }
+    @supports not (width: 1cqi) {
+      .cqw-bar { width: 50%; }
+      .cqi-type { font-size: clamp(.95rem, 3vw, 1.8rem); }
+      .container-stage { border-style: solid; }
+    }
+    .formula-note { margin-top: 1rem; padding: .9rem 1rem; border-left: .35rem solid var(--green); background: var(--green-soft); color: var(--ink); font-size: .9rem; }
+    .formula-note p { margin: 0; color: inherit; }
+
+    @media (max-width: 46rem) {
+      .unit-grid, .math-grid { grid-template-columns: 1fr; }
+      .panel-head { display: block; }
+      .tag { display: inline-block; margin-bottom: .8rem; }
+      .viewport-box { width: 74vw; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .container-stage { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="../index.html">返回示例索引</a>
+    <header>
+      <p class="eyebrow">Responsive CSS / 02</p>
+      <h1>让尺寸流动，而不是堆断点</h1>
+      <p class="lead">字号、间距和组件宽度可以在上下限之间连续变化。拖动滑块、缩放浏览器，观察不同单位如何建立响应式节奏。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="relative-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="relative-title">rem 与 em：相关，但参照物不同</h2>
+          <p><code>rem</code> 始终参照根元素字号；<code>em</code> 参照当前元素继承来的字号，因此会层层累积。</p>
+        </div>
+        <span class="tag">相对字号</span>
+      </div>
+      <div class="control-row">
+        <label for="rootSize">根字号</label>
+        <input id="rootSize" type="range" min="14" max="22" step="1" value="16" />
+        <output id="rootOutput" for="rootSize">16 px</output>
+        <label for="emSize">em 父级字号</label>
+        <input id="emSize" type="range" min="14" max="32" step="1" value="20" />
+        <output id="emOutput" for="emSize">20 px</output>
+      </div>
+      <div class="unit-grid">
+        <article class="sample">
+          <h3><code>1.5rem</code></h3>
+          <p>跟随根字号，适合全站统一的标题与控件。</p>
+          <div class="type-sample rem-sample" id="remSample">流式文字 · rem</div>
+          <p style="margin:.7rem 0 0">计算值：<strong id="remValue">24 px</strong></p>
+        </article>
+        <article class="sample">
+          <h3><code>1.5em</code></h3>
+          <p>跟随父级，适合组件内部按比例缩放。</p>
+          <div class="type-sample em-context" id="emContext">父级 20px
+            <div class="em-sample" id="emSample">子级 1.5em</div>
+          </div>
+          <p style="margin:.7rem 0 0">计算值：<strong id="emValue">30 px</strong></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="viewport-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="viewport-title">vw 与 vh：跟随视口</h2>
+          <p><code>50vw</code> 是视口宽度的一半，<code>20vh</code> 是视口高度的五分之一。它们适合全屏背景、海报等强视口相关场景。</p>
+        </div>
+        <span class="tag">视口单位</span>
+      </div>
+      <div class="viewport-track">
+        <div class="viewport-box" id="viewportBox">50vw × 20vh</div>
+      </div>
+      <div class="container-readout">
+        <span>当前尺寸：<strong id="viewportValue">—</strong></span>
+        <span>视口：<strong id="viewportSize">—</strong></span>
+        <span>最小 / 最大高度限制：5rem / 10rem</span>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="math-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="math-title">clamp、min、max、calc：表达约束</h2>
+          <p>不必为每个断点写声明，让浏览器从公式中选出合适尺寸；<code>calc()</code> 负责混合单位与减法。</p>
+        </div>
+        <span class="tag">数学函数</span>
+      </div>
+      <div class="math-grid">
+        <article class="math-sample">
+          <h3><code>clamp(11rem, 60vw, 30rem)</code></h3>
+          <p>首选值受最小值和最大值约束，适合流式标题宽度。</p>
+          <div class="bar-track"><div class="bar clamp">clamp</div></div>
+        </article>
+        <article class="math-sample">
+          <h3><code>min(100%, 22rem)</code></h3>
+          <p>取更小值，既不超过父容器，也有舒适阅读上限。</p>
+          <div class="bar-track"><div class="bar min">min</div></div>
+        </article>
+        <article class="math-sample">
+          <h3><code>max(9rem, 55%)</code></h3>
+          <p>取更大值，保证组件不会缩得过小。</p>
+          <div class="bar-track"><div class="bar max">max</div></div>
+        </article>
+        <article class="math-sample">
+          <h3><code>calc(100% - 3rem)</code></h3>
+          <p>用父级宽度减去固定间距，常见于两侧留白布局。</p>
+          <div class="bar-track"><div class="bar calc">calc</div></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="container-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="container-title">cqi 与 cqw：让组件响应自己的容器</h2>
+          <p><code>1cqi</code> 是查询容器行内尺寸的 1%；水平书写下 <code>cqi</code> 与 <code>cqw</code> 数值相同。拖动宽度，组件不依赖屏幕断点。</p>
+        </div>
+        <span class="tag" id="containerSupport">检测中</span>
+      </div>
+      <div class="container-toolbar">
+        <label for="containerWidth">容器宽度</label>
+        <input id="containerWidth" type="range" min="30" max="100" step="1" value="78" />
+      </div>
+      <div class="container-stage" id="containerStage">
+        <div class="container-inner">
+          <div class="cqi-type" id="cqiType">字号使用 clamp(.95rem, 6cqi, 2rem)</div>
+          <div class="cqw-bar" id="cqwBar" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="container-readout">
+        <span>容器行内尺寸：<strong id="containerValue">—</strong></span>
+        <span>色条 50cqw：<strong id="cqwValue">—</strong></span>
+        <span>文字计算字号：<strong id="cqiValue">—</strong></span>
+      </div>
+      <div class="formula-note">
+        <p><strong>回退策略：</strong>先提供 <code>50%</code> 与 <code>clamp(.95rem, 3vw, 1.8rem)</code>，再在 <code>@supports (width: 1cqi)</code> 中启用容器单位；不支持时组件仍然完整可用。</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+    const rootSize = $("#rootSize");
+    const emSize = $("#emSize");
+    const containerWidth = $("#containerWidth");
+
+    function updateTypography() {
+      const root = Number(rootSize.value);
+      const parent = Number(emSize.value);
+      document.documentElement.style.fontSize = `${root}px`;
+      $("#rootOutput").textContent = `${root} px`;
+      $("#emOutput").textContent = `${parent} px`;
+      $("#emContext").style.fontSize = `${parent}px`;
+      $("#remValue").textContent = `${getComputedStyle($("#remSample")).fontSize}`;
+      $("#emValue").textContent = `${getComputedStyle($("#emSample")).fontSize}`;
+    }
+
+    function updateViewport() {
+      const box = $("#viewportBox").getBoundingClientRect();
+      $("#viewportValue").textContent = `${Math.round(box.width)} × ${Math.round(box.height)} px`;
+      $("#viewportSize").textContent = `${window.innerWidth} × ${window.innerHeight} px`;
+    }
+
+    function updateContainer() {
+      const stage = $("#containerStage");
+      stage.style.width = `${containerWidth.value}%`;
+      const bar = $("#cqwBar").getBoundingClientRect();
+      const stageWidth = stage.getBoundingClientRect().width;
+      $("#containerValue").textContent = `${Math.round(stageWidth)} px`;
+      $("#cqwValue").textContent = `${Math.round(bar.width)} px`;
+      $("#cqiValue").textContent = getComputedStyle($("#cqiType")).fontSize;
+      $("#containerSupport").textContent = CSS.supports("width: 1cqi") ? "支持容器单位" : "使用回退样式";
+      $("#containerSupport").classList.toggle("fallback", !CSS.supports("width: 1cqi"));
+    }
+
+    rootSize.addEventListener("input", updateTypography);
+    emSize.addEventListener("input", updateTypography);
+    containerWidth.addEventListener("input", updateContainer);
+    window.addEventListener("resize", () => {
+      updateViewport();
+      updateContainer();
+    });
+
+    updateTypography();
+    updateViewport();
+    updateContainer();
+  </script>
+</body>
+</html>

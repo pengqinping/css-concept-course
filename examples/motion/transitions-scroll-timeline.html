@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>过渡、关键帧与滚动时间线</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #263021;
+      --muted: #66705d;
+      --green: #3f6b2a;
+      --green-soft: #e3ecd9;
+      --lime: #b9d68c;
+      --line: #d6d2c5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    main { width: min(72rem, 100%); margin-inline: auto; }
+    h1, h2, h3, p { margin-block-start: 0; }
+    h1 { max-width: 18ch; margin-bottom: .7rem; font-size: clamp(2rem, 6vw, 3.7rem); line-height: 1.06; letter-spacing: -.045em; }
+    h2 { margin-bottom: .45rem; font-size: 1.2rem; }
+    h3 { margin-bottom: .35rem; font-size: 1rem; }
+    p { color: var(--muted); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    code { font-size: .9em; overflow-wrap: anywhere; }
+    pre { margin: 1rem 0 0; padding: 1rem; border-radius: .8rem; color: #edf3e6; background: var(--ink); font-size: .82rem; line-height: 1.6; overflow-x: auto; }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back { display: inline-flex; gap: .45rem; margin-bottom: 1.4rem; font-weight: 800; text-decoration: none; }
+    .back::before { content: "←"; }
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .eyebrow { margin-bottom: .5rem; color: var(--green); font-size: .8rem; font-weight: 900; letter-spacing: .14em; }
+    .lead { max-width: 68ch; margin-bottom: 1.8rem; font-size: 1.05rem; }
+    .panel { margin-bottom: 1.2rem; padding: clamp(1.1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: 1.2rem; background: var(--surface); }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .panel-head p { max-width: 66ch; margin-bottom: 1rem; }
+    .tag { flex: none; padding: .25rem .65rem; border-radius: 999px; color: var(--green); background: var(--green-soft); font-size: .76rem; font-weight: 800; }
+    .tag.fallback { color: #765b17; background: #f2e6bd; }
+    .button-row { display: flex; flex-wrap: wrap; gap: .6rem; margin-block: 1rem; }
+    button {
+      min-height: 2.75rem;
+      padding: .55rem .9rem;
+      border: 1px solid var(--green);
+      border-radius: .65rem;
+      color: var(--green);
+      background: var(--surface);
+      font: inherit;
+      font-size: .88rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    button:hover { background: var(--green-soft); }
+    button.primary { color: #fff; background: var(--green); }
+    button.primary:hover { background: #31541f; }
+
+    .timing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+    .timing-card {
+      --travel: clamp(5.5rem, 14vw, 9rem);
+      min-width: 0;
+      padding: .8rem;
+      border: 1px solid var(--line);
+      border-radius: .9rem;
+      color: var(--ink);
+      background: var(--paper);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .timing-card[aria-pressed="true"] { border-color: var(--green); background: var(--green-soft); }
+    .timing-card strong { display: block; }
+    .timing-card small { display: block; min-height: 2.6rem; margin-block: .25rem .7rem; color: var(--muted); font-size: .75rem; line-height: 1.4; }
+    .timing-stage { position: relative; height: 3.2rem; border-radius: .6rem; background: #e9e5d9; overflow: hidden; }
+    .runner {
+      position: absolute;
+      inset: .45rem auto .45rem .45rem;
+      display: grid;
+      width: 2.3rem;
+      place-items: center;
+      border-radius: .45rem;
+      color: #fff;
+      background: var(--green);
+      font-size: .68rem;
+      font-weight: 900;
+      transform: translateX(0);
+      transition-property: transform;
+      transition-duration: 900ms;
+    }
+    .timing-card.linear .runner { transition-timing-function: linear; }
+    .timing-card.ease .runner { transition-timing-function: ease; }
+    .timing-card.custom .runner { transition-timing-function: cubic-bezier(.68, -.55, .27, 1.55); }
+    .timing-card.steps .runner { transition-timing-function: steps(5, end); }
+    .timing-card[aria-pressed="true"] .runner { transform: translateX(var(--travel)); }
+    .timing-state { display: block; margin-top: .55rem; color: var(--green); font-size: .75rem; font-weight: 800; }
+
+    .keyframe-grid { display: grid; gap: .8rem; }
+    .keyframe-lane { padding: .9rem; border: 1px solid var(--line); border-radius: .9rem; background: var(--paper); }
+    .keyframe-lane p { margin-bottom: .6rem; font-size: .85rem; }
+    .keyframe-track { position: relative; height: 4.2rem; border-radius: .7rem; background: #e9e5d9; overflow: hidden; }
+    .keyframe-dot {
+      position: absolute;
+      top: .65rem;
+      left: .65rem;
+      display: grid;
+      width: 2.9rem;
+      height: 2.9rem;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--green);
+      font-size: .7rem;
+      font-weight: 900;
+      transform: translateX(0) scale(1);
+      animation: keyframe-travel 2.4s ease-in-out infinite alternate;
+    }
+    .keyframe-lane.composite .keyframe-dot { animation: keyframe-travel 2.4s ease-in-out infinite alternate, keyframe-breathe 900ms ease-in-out infinite alternate; animation-composition: add; }
+    .paused .keyframe-dot { animation-play-state: paused; }
+    @keyframes keyframe-travel { to { transform: translateX(min(22rem, 55vw)); } }
+    @keyframes keyframe-breathe { from { transform: scale(.72); opacity: .58; } to { transform: scale(1.3); opacity: 1; } }
+    @supports not (animation-composition: add) {
+      .keyframe-lane.composite .keyframe-dot { animation-name: keyframe-travel; }
+    }
+
+    .timeline-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .timeline-demo { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--paper); }
+    .timeline-demo h3 { display: flex; align-items: center; justify-content: space-between; gap: .7rem; }
+    .timeline-demo h3 .tag { font-size: .68rem; }
+    .timeline-demo p { min-height: 3.2rem; font-size: .85rem; }
+    .view-window, .scroll-scroller {
+      position: relative;
+      height: 20rem;
+      border: 1px solid var(--line);
+      border-radius: .8rem;
+      background: #e9e5d9;
+      overflow: auto;
+      scrollbar-color: var(--green) transparent;
+      scrollbar-width: thin;
+    }
+    .view-space { display: grid; height: 36rem; place-items: center; padding: 1rem; }
+    .view-card { width: min(15rem, 82%); min-height: 10rem; padding: 1rem; border-radius: .9rem; color: #fff; background: var(--green); }
+    .view-card strong { display: block; margin-bottom: .3rem; }
+    .view-card p { min-height: 0; margin: 0; color: rgb(255 255 255 / 82%); font-size: .8rem; }
+    .view-fill, .scroll-fill { height: .65rem; border-radius: 999px; background: var(--lime); transform: scaleX(1); transform-origin: left center; }
+    .view-fill { margin-top: 1rem; }
+    @supports (animation-timeline: view()) and (animation-range: entry 0%) {
+      .view-fill { animation: timeline-grow linear both; animation-timeline: view(block); animation-range: entry 0% exit 100%; }
+    }
+    .scroll-sticky { position: sticky; z-index: 2; top: 0; padding: .55rem; background: #e9e5d9; }
+    .scroll-fill { transform: scaleX(0); }
+    @supports (animation-timeline: scroll()) and (animation-range: 0% 100%) {
+      .scroll-fill { animation: timeline-grow linear both; animation-timeline: scroll(nearest block); }
+    }
+    @keyframes timeline-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .scroll-content { min-height: 34rem; padding: 1rem; color: var(--muted); font-size: .86rem; }
+    .scroll-content p { padding: .8rem; border-bottom: 1px dashed var(--line); }
+    .timeline-note { margin-top: .8rem; font-size: .78rem; color: var(--muted); }
+
+    dialog {
+      width: min(28rem, calc(100% - 2rem));
+      padding: clamp(1.2rem, 4vw, 1.7rem);
+      border: 1px solid var(--line);
+      border-radius: 1.1rem;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 24px 70px rgb(38 48 33 / 25%);
+    }
+    dialog::backdrop { background: rgb(38 48 33 / 45%); }
+    @supports (transition-behavior: allow-discrete) {
+      dialog {
+        opacity: 0;
+        transform: translateY(1rem) scale(.97);
+        transition: opacity 280ms ease, transform 280ms cubic-bezier(.2, .8, .2, 1), display 280ms allow-discrete, overlay 280ms allow-discrete;
+      }
+      dialog[open] { opacity: 1; transform: translateY(0) scale(1); }
+      dialog::backdrop { opacity: 1; transition: opacity 280ms ease, display 280ms allow-discrete, overlay 280ms allow-discrete; }
+      @starting-style {
+        dialog[open] { opacity: 0; transform: translateY(1rem) scale(.97); }
+        dialog[open]::backdrop { opacity: 0; }
+      }
+    }
+    @supports not (transition-behavior: allow-discrete) {
+      dialog, dialog::backdrop { transition: none; }
+    }
+    .no-starting-style dialog, .no-starting-style dialog::backdrop { transition: none; }
+    dialog h2 { margin-bottom: .5rem; }
+    dialog p { margin-bottom: 1rem; }
+    .support-line { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
+    .support-line p { margin: 0; font-size: .86rem; }
+
+    @media (max-width: 54rem) {
+      .timing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .timeline-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 32rem) {
+      .panel-head { display: block; }
+      .panel-head .tag { display: inline-block; margin-bottom: .7rem; }
+      .timing-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+      .runner, .keyframe-dot, .view-fill, .scroll-fill, dialog, dialog::backdrop { transition: none !important; animation: none !important; }
+      .view-fill, .scroll-fill { transform: scaleX(1); }
+      .keyframe-dot { transform: translateX(0) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="../index.html">返回示例索引</a>
+    <header>
+      <p class="eyebrow">Motion CSS / 02</p>
+      <h1>时间，也是一种设计材料</h1>
+      <p class="lead">同一个位移，缓动函数会改变节奏；滚动时间线让进度直接来自页面位置。所有演示均可用键盘操作，并在“减少动态效果”下自动降级。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="timing-title">
+      <h2 id="timing-title">transition timing：比较四种节奏</h2>
+      <p>点击卡片让圆点移动，再次点击返回。位移距离和持续时间完全相同，只有 <code>transition-timing-function</code> 不同。</p>
+      <div class="timing-grid" style="margin-top:1rem">
+        <button class="timing-card linear" type="button" aria-pressed="false">
+          <strong>linear</strong><small>匀速前进，机械但可预测。</small>
+          <span class="timing-stage"><span class="runner">→</span></span>
+          <span class="timing-state">点击出发</span>
+        </button>
+        <button class="timing-card ease" type="button" aria-pressed="false">
+          <strong>ease</strong><small>默认曲线，慢起、加速、再减速。</small>
+          <span class="timing-stage"><span class="runner">→</span></span>
+          <span class="timing-state">点击出发</span>
+        </button>
+        <button class="timing-card custom" type="button" aria-pressed="false">
+          <strong>cubic-bezier</strong><small>带回弹的富曲线，强调落点。</small>
+          <span class="timing-stage"><span class="runner">→</span></span>
+          <span class="timing-state">点击出发</span>
+        </button>
+        <button class="timing-card steps" type="button" aria-pressed="false">
+          <strong>steps(5, end)</strong><small>分五步跳变，产生节拍感。</small>
+          <span class="timing-stage"><span class="runner">→</span></span>
+          <span class="timing-state">点击出发</span>
+        </button>
+      </div>
+      <div class="button-row"><button id="resetTiming" type="button">全部复位</button></div>
+      <pre><code>.runner {
+  transition: transform 900ms cubic-bezier(.2, .8, .2, 1);
+}
+.card[aria-pressed="true"] .runner {
+  transform: translateX(9rem);
+}</code></pre>
+    </section>
+
+    <section class="panel" id="keyframePanel" aria-labelledby="keyframe-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="keyframe-title">@keyframes 与 animation-composition</h2>
+          <p>上行只运行位移关键帧；下行同时运行位移与呼吸关键帧，并通过 <code>composition: add</code> 叠加 transform 矩阵。</p>
+        </div>
+        <span class="tag" id="compositionSupport">检测中</span>
+      </div>
+      <div class="keyframe-grid" style="margin-top:1rem">
+        <div class="keyframe-lane">
+          <p><strong>replace（默认）：</strong>后一个动画覆盖同属性。这里只演示基础位移。</p>
+          <div class="keyframe-track"><div class="keyframe-dot">位移</div></div>
+        </div>
+        <div class="keyframe-lane composite">
+          <p><strong>add：</strong>把缩放叠加到位移上，圆点在移动中呼吸；不支持时回退为单纯位移。</p>
+          <div class="keyframe-track"><div class="keyframe-dot">叠加</div></div>
+        </div>
+      </div>
+      <div class="button-row"><button id="pauseKeyframes" type="button" aria-pressed="false">暂停循环动画</button></div>
+      <pre><code>@keyframes travel { to { transform: translateX(12rem); } }
+@keyframes breathe { to { transform: scale(1.3); } }
+
+.composite-dot {
+  animation: travel 2.4s ease-in-out infinite alternate,
+             breathe 900ms ease-in-out infinite alternate;
+  animation-composition: add;
+}</code></pre>
+    </section>
+
+    <section class="panel" aria-labelledby="timeline-title">
+      <h2 id="timeline-title">view() 与 scroll() 滚动时间线</h2>
+      <p>两个容器都可以用鼠标滚轮或键盘滚动。支持时，进度条由滚动位置直接驱动，不需要监听 scroll 事件。</p>
+      <div class="timeline-grid" style="margin-top:1rem">
+        <article class="timeline-demo">
+          <h3><code>view(block)</code><span class="tag" id="viewSupport">检测中</span></h3>
+          <p>元素进入、穿过、离开视口时推进动画；适合卡片揭示和阅读进度。</p>
+          <div class="view-window" tabindex="0" aria-label="可滚动区域，演示 view 时间线">
+            <div class="view-space">
+              <div class="view-card">
+                <strong>View timeline</strong>
+                <p>滚动观察色条随卡片进入与离开而变化。</p>
+                <div class="view-fill" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-note">不支持时显示静态完整色条，不遮挡内容。</div>
+        </article>
+        <article class="timeline-demo">
+          <h3><code>scroll(nearest block)</code><span class="tag" id="scrollSupport">检测中</span></h3>
+          <p>以最近滚动容器为时间来源；适合阅读进度、章节指示与长页面导航。</p>
+          <div class="scroll-scroller" tabindex="0" aria-label="可滚动区域，演示 scroll 时间线">
+            <div class="scroll-sticky"><div class="scroll-fill" aria-hidden="true"></div></div>
+            <div class="scroll-content">
+              <p>向下滚动：顶部色条会从 0% 增长到 100%。</p>
+              <p>时间线由浏览器在合成阶段驱动，通常比 JavaScript 逐帧更新更平滑。</p>
+              <p>进度只是视觉反馈；真正的阅读位置仍由正常文档流决定。</p>
+              <p>继续滚动，观察进度到达终点。</p>
+              <p>键盘用户可以先聚焦容器，再使用方向键或 Page Down。</p>
+            </div>
+          </div>
+          <div class="timeline-note">回退状态为静态色条；不支持时功能不依赖动画。</div>
+        </article>
+      </div>
+      <pre><code>@supports (animation-timeline: view()) {
+  .view-fill {
+    animation: timeline-grow linear both;
+    animation-timeline: view(block);
+    animation-range: entry 0% exit 100%;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .scroll-fill {
+    animation: timeline-grow linear both;
+    animation-timeline: scroll(nearest block);
+  }
+}</code></pre>
+    </section>
+
+    <section class="panel" aria-labelledby="starting-title">
+      <h2 id="starting-title">@starting-style：元素“出现之前”的样式</h2>
+      <p>原生 <code>dialog</code> 自带焦点管理、Esc 关闭与模态语义。支持时，打开与关闭都有入场 / 退场过渡。</p>
+      <div class="support-line" style="margin-top:1rem">
+        <button class="primary" id="entryOpen" type="button">打开动画对话框</button>
+        <span class="tag" id="startingSupport">检测中</span>
+        <p id="startingNote">正在检测起始样式支持…</p>
+      </div>
+      <pre><code>@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(1rem) scale(.97);
+  }
+}
+dialog {
+  transition: opacity 280ms ease,
+              transform 280ms ease,
+              display 280ms allow-discrete,
+              overlay 280ms allow-discrete;
+}</code></pre>
+    </section>
+
+    <aside class="panel" style="border-left:.35rem solid var(--green)">
+      <strong>可访问性检查：</strong>开启系统“减少动态效果”后，循环动画停止、滚动时间线变为静态进度、过渡即时完成。焦点样式不会被移除，信息也不依赖动画才能理解。
+    </aside>
+  </main>
+
+  <dialog id="entryDialog" aria-labelledby="dialogTitle">
+    <h2 id="dialogTitle">从起始样式进入</h2>
+    <p>对话框打开前先应用 <code>@starting-style</code> 中的透明、下移状态，再过渡到最终位置。按 Esc 或下方按钮关闭。</p>
+    <form method="dialog"><button class="primary" type="submit" value="close">关闭对话框</button></form>
+  </dialog>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+
+    document.querySelectorAll(".timing-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const active = card.getAttribute("aria-pressed") !== "true";
+        card.setAttribute("aria-pressed", String(active));
+        card.querySelector(".timing-state").textContent = active ? "再次点击返回" : "点击出发";
+      });
+    });
+    $("#resetTiming").addEventListener("click", () => {
+      document.querySelectorAll(".timing-card").forEach((card) => {
+        card.setAttribute("aria-pressed", "false");
+        card.querySelector(".timing-state").textContent = "点击出发";
+      });
+    });
+
+    const pauseKeyframes = $("#pauseKeyframes");
+    pauseKeyframes.addEventListener("click", () => {
+      const paused = pauseKeyframes.getAttribute("aria-pressed") !== "true";
+      pauseKeyframes.setAttribute("aria-pressed", String(paused));
+      pauseKeyframes.textContent = paused ? "继续循环动画" : "暂停循环动画";
+      $("#keyframePanel").classList.toggle("paused", paused);
+    });
+
+    const compositionSupported = CSS.supports("animation-composition: add");
+    $("#compositionSupport").textContent = compositionSupported ? "支持叠加" : "使用回退";
+    $("#compositionSupport").classList.toggle("fallback", !compositionSupported);
+
+    const viewSupported = CSS.supports("animation-timeline: view()") && CSS.supports("animation-range: entry 0%");
+    const scrollSupported = CSS.supports("animation-timeline: scroll()") && CSS.supports("animation-range: 0% 100%");
+    $("#viewSupport").textContent = viewSupported ? "支持" : "静态回退";
+    $("#scrollSupport").textContent = scrollSupported ? "支持" : "静态回退";
+    $("#viewSupport").classList.toggle("fallback", !viewSupported);
+    $("#scrollSupport").classList.toggle("fallback", !scrollSupported);
+
+    function detectStartingStyle() {
+      try {
+        const sheet = new CSSStyleSheet();
+        sheet.insertRule("@starting-style {}", 0);
+        return sheet.cssRules.length === 1 && sheet.cssRules[0].cssRules != null;
+      } catch {
+        return false;
+      }
+    }
+    const startingSupported = detectStartingStyle() && CSS.supports("transition-behavior: allow-discrete");
+    $("#startingSupport").textContent = startingSupported ? "支持起始样式" : "静态回退";
+    $("#startingSupport").classList.toggle("fallback", !startingSupported);
+    $("#startingNote").textContent = startingSupported
+      ? "打开对话框观察淡入与位移动画。"
+      : "当前浏览器仍可打开对话框，但不播放入场动画。";
+    if (!startingSupported) document.documentElement.classList.add("no-starting-style");
+
+    const entryDialog = $("#entryDialog");
+    $("#entryOpen").addEventListener("click", () => {
+      if (typeof entryDialog.showModal === "function") {
+        entryDialog.showModal();
+      } else {
+        entryDialog.setAttribute("open", "");
+      }
+    });
+  </script>
+</body>
+</html>

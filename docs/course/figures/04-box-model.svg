@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580" width="800" height="580">
+  <rect x="0" y="0" width="800" height="580" fill="#FFFDF7"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#1F2A1B">四层盒剖面与两种 box-sizing 对照</text>
+  <text x="400" y="66" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#4A5544">box-sizing 换的不是盒子，是尺子的起点</text>
+
+  <text x="190" y="92" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#4A5544">四层盒剖面（从内到外）</text>
+
+  <rect x="40" y="105" width="300" height="220" fill="none" stroke="#B8860B" stroke-width="1.5" stroke-dasharray="7,5"/>
+  <rect x="55" y="120" width="270" height="190" fill="#E9E2D2" stroke="#8A7A55" stroke-width="1"/>
+  <rect x="71" y="136" width="238" height="158" fill="#E4EBDD" stroke="#9CAD8C" stroke-width="1"/>
+  <rect x="91" y="156" width="198" height="118" fill="#FFFDF7" stroke="#6B7F5B" stroke-width="1.5"/>
+
+  <text x="190" y="133" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#6B6352">border</text>
+  <text x="190" y="153" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#556148">padding</text>
+  <text x="190" y="212" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#1F2A1B">content</text>
+  <text x="190" y="234" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">放文字与子元素</text>
+  <text x="190" y="346" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8A6A1F">margin：虚线 · 盒外 · 不填背景，只推开别人</text>
+
+  <text x="570" y="92" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#4A5544">同一组数字，两种 box-sizing</text>
+  <text x="570" y="112" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">width:300px  padding:20px  border:5px  margin:20px（左右各一份）</text>
+
+  <text x="522" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1F2A1B">content-box（默认）</text>
+  <rect x="400" y="132" width="246" height="52" fill="none" stroke="#B8860B" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <rect x="412.4" y="138" width="220.8" height="40" fill="none" stroke="#6B7F5B" stroke-width="1.2"/>
+  <rect x="412.4" y="138" width="5" height="40" fill="#E9E2D2" stroke="#8A7A55" stroke-width="0.5"/>
+  <rect x="628.2" y="138" width="5" height="40" fill="#E9E2D2" stroke="#8A7A55" stroke-width="0.5"/>
+  <rect x="417.4" y="138" width="12.4" height="40" fill="#E4EBDD" stroke="#9CAD8C" stroke-width="0.5"/>
+  <rect x="615.8" y="138" width="12.4" height="40" fill="#E4EBDD" stroke="#9CAD8C" stroke-width="0.5"/>
+  <rect x="429.8" y="138" width="186" height="40" fill="#DCEBD4" stroke="#3F7A3F" stroke-width="1"/>
+  <text x="522" y="163" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1F2A1B">content 300px</text>
+  <text x="522" y="202" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">内容 300px · 占位 350px · 含 margin 390px</text>
+
+  <text x="507" y="228" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1F2A1B">border-box</text>
+  <rect x="400" y="232" width="215" height="52" fill="none" stroke="#B8860B" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <rect x="412.4" y="238" width="189.8" height="40" fill="none" stroke="#6B7F5B" stroke-width="1.2"/>
+  <rect x="412.4" y="238" width="5" height="40" fill="#E9E2D2" stroke="#8A7A55" stroke-width="0.5"/>
+  <rect x="597.2" y="238" width="5" height="40" fill="#E9E2D2" stroke="#8A7A55" stroke-width="0.5"/>
+  <rect x="417.4" y="238" width="12.4" height="40" fill="#E4EBDD" stroke="#9CAD8C" stroke-width="0.5"/>
+  <rect x="584.8" y="238" width="12.4" height="40" fill="#E4EBDD" stroke="#9CAD8C" stroke-width="0.5"/>
+  <rect x="429.8" y="238" width="155" height="40" fill="#DCEBD4" stroke="#3F7A3F" stroke-width="1"/>
+  <text x="507" y="263" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1F2A1B">content 250px</text>
+  <text x="507" y="302" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">内容 250px · 占位 300px · 含 margin 340px</text>
+
+  <rect x="400" y="335" width="16" height="12" fill="#DCEBD4" stroke="#3F7A3F" stroke-width="0.8"/>
+  <text x="422" y="346" font-family="sans-serif" font-size="12" fill="#4A5544">content</text>
+  <rect x="490" y="335" width="16" height="12" fill="#E4EBDD" stroke="#9CAD8C" stroke-width="0.8"/>
+  <text x="512" y="346" font-family="sans-serif" font-size="12" fill="#4A5544">padding</text>
+  <rect x="570" y="335" width="16" height="12" fill="#E9E2D2" stroke="#8A7A55" stroke-width="0.8"/>
+  <text x="592" y="346" font-family="sans-serif" font-size="12" fill="#4A5544">border</text>
+  <rect x="650" y="335" width="16" height="12" fill="none" stroke="#B8860B" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="672" y="346" font-family="sans-serif" font-size="12" fill="#4A5544">margin</text>
+
+  <text x="400" y="392" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#4A5544">垂直 margin 折叠：相邻兄弟取较大值</text>
+  <rect x="280" y="420" width="220" height="44" rx="4" fill="#EAF0E4" stroke="#6B7F5B" stroke-width="1.2"/>
+  <text x="390" y="448" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1F2A1B">A  margin-bottom: 30px</text>
+  <rect x="280" y="464" width="220" height="30" fill="none" stroke="#B8860B" stroke-width="1.2" stroke-dasharray="6,4"/>
+  <rect x="280" y="494" width="220" height="44" rx="4" fill="#EAF0E4" stroke="#6B7F5B" stroke-width="1.2"/>
+  <text x="390" y="522" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1F2A1B">B  margin-top: 20px</text>
+  <text x="540" y="478" font-family="sans-serif" font-size="12" font-weight="700" fill="#8A6A1F">折叠后 30px</text>
+  <text x="540" y="496" font-family="sans-serif" font-size="12" fill="#4A5544">max(30, 20) = 30，不是 50</text>
+</svg>

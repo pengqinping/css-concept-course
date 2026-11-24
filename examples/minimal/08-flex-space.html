@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>08 · 一维空间怎么分</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    label { display: block; font-size: 14px; color: var(--muted); margin-bottom: .35rem; }
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .scroll { overflow-x: auto; padding: .4rem 0; }
+    .flexbox { display: flex; gap: 16px; height: 84px; }
+    .item { flex: none; display: grid; place-items: center; color: #fff; font-family: var(--mono); font-size: 14px; font-weight: 700; border-radius: .45rem; white-space: nowrap; }
+    .i1 { flex: 2 1 100px; background: var(--green); }
+    .i2 { flex: 1 1 100px; background: var(--amber); }
+    .i3 { flex: 1 1 100px; background: #6b7280; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/08-flex.md">← 返回课程</a></p>
+  <h1>08 · 一维空间怎么分</h1>
+  <p class="lede">先定 basis，再扣 gap，再按系数分剩余空间。三个子项的 basis 都是 100px，grow 系数是 2:1:1。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>容器宽 600px、gap 固定 16px 时，第一项（flex: 2 1 100px）最终是多少像素？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>234px。算四步：两道 gap 共 32px；三个 basis 共 300px；剩余 = 600 - 32 - 300 = 268px；按 2:1:1 分，第一项拿 268 × 2/4 = 134px，再加 basis 100px 得 234px。另外两项各 100 + 67 = 167px。把滑块拖到 600 核对实测值。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label for="cw">容器宽度（改变可分配的剩余空间；gap 恒为 16px）：<span id="cwOut">600</span>px</label>
+    <input id="cw" type="range" min="400" max="800" step="10" value="600" />
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="scroll">
+      <div class="flexbox" id="flexbox">
+        <div class="item i1" id="item1">第一项</div>
+        <div class="item i2" id="item2">第二项</div>
+        <div class="item i3" id="item3">第三项</div>
+      </div>
+    </div>
+    <p class="hint">窄屏上容器可横向滚动，宽度仍按滑块精确设置，实测值不受影响。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/08-flex.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var slider = document.getElementById('cw');
+    var box = document.getElementById('flexbox');
+    var items = [document.getElementById('item1'), document.getElementById('item2'), document.getElementById('item3')];
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function render() {
+      var w = Number(slider.value);
+      box.style.width = w + 'px';
+      document.getElementById('cwOut').textContent = String(w);
+
+      var gap = parseFloat(getComputedStyle(box).columnGap);
+      var widths = items.map(function (el) { return Math.round(el.getBoundingClientRect().width * 100) / 100; });
+      var basisSum = items.reduce(function (sum, el) { return sum + parseFloat(getComputedStyle(el).flexBasis); }, 0);
+      var free = w - gap * 2 - basisSum;
+
+      readout.innerHTML =
+        '<div><span>容器宽度（实测）</span><b>' + Math.round(box.getBoundingClientRect().width) + 'px</b></div>' +
+        '<div><span>gap × 2</span><b>' + gap + ' × 2 = ' + gap * 2 + 'px</b></div>' +
+        '<div><span>basis 合计</span><b>' + basisSum + 'px</b></div>' +
+        '<div><span>剩余空间</span><b>' + w + ' - ' + gap * 2 + ' - ' + basisSum + ' = ' + Math.round(free * 100) / 100 + 'px</b></div>' +
+        '<div><span>分配系数</span><b>2 : 1 : 1（合计 4）</b></div>' +
+        '<div><span>第一项 = 100 + ' + Math.round(free * 100) / 100 + ' × 2/4</span><b>' + widths[0] + 'px</b></div>' +
+        '<div><span>第二项（实测）</span><b>' + widths[1] + 'px</b></div>' +
+        '<div><span>第三项（实测）</span><b>' + widths[2] + 'px</b></div>' +
+        '<div><span>三项 + 两道 gap 合计</span><b>' + (widths[0] + widths[1] + widths[2] + gap * 2) + 'px</b></div>';
+
+      css.textContent =
+        '.flexbox { display: flex; gap: 16px; width: ' + w + 'px; }\n' +
+        '.item-1  { flex: 2 1 100px; }  /* 实测 ' + widths[0] + 'px */\n' +
+        '.item-2  { flex: 1 1 100px; }  /* 实测 ' + widths[1] + 'px */\n' +
+        '.item-3  { flex: 1 1 100px; }  /* 实测 ' + widths[2] + 'px */';
+    }
+
+    slider.addEventListener('input', render);
+    render();
+  })();
+</script>
+</body>
+</html>

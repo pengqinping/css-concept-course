@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>定位与层叠：CSS 布局示例</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #67705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .65rem; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.15; letter-spacing: -.035em; }
+    h2 { margin: 0 0 .35rem; font-size: 1.35rem; line-height: 1.3; }
+    h3 { margin: 0 0 .4rem; font-size: 1rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 48rem; color: var(--muted); font-size: 1.05rem; }
+    .panel {
+      margin-top: 1.25rem;
+      padding: clamp(1rem, 3vw, 1.6rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%);
+    }
+    .panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 1.5rem; align-items: start; }
+    .section-no { display: inline-grid; place-items: center; flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 50%; background: var(--green); color: #fff; font-weight: 800; }
+    .heading-wrap { display: flex; gap: .75rem; align-items: start; }
+    .description { max-width: 46rem; color: var(--muted); }
+    code { padding: .08em .32em; border-radius: .3rem; background: var(--green-soft); color: var(--green-dark); font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1.1rem 0; }
+    .button-group { display: flex; flex-wrap: wrap; gap: .4rem; }
+    button, select {
+      min-height: 2.65rem;
+      padding: .5rem .85rem;
+      border: 1px solid #aeb7a4;
+      border-radius: .65rem;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: .92rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    button:hover, select:hover { border-color: var(--green); background: #f7faef; }
+    button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
+    .demo-stage { position: relative; min-height: 15rem; padding: 1rem; overflow: hidden; border: 2px solid #aeb7a4; border-radius: .9rem; background-color: #f8f6ef; background-image: linear-gradient(#e7e2d5 1px, transparent 1px), linear-gradient(90deg, #e7e2d5 1px, transparent 1px); background-size: 1.5rem 1.5rem; }
+    .stage-label { position: absolute; top: .45rem; right: .65rem; color: var(--muted); font: .75rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .containing-block { min-height: 12rem; padding: .8rem; border: 2px dashed var(--green); border-radius: .65rem; background: rgb(228 236 217 / 60%); }
+    .containing-block.is-static { border-color: #9d9483; background: rgb(235 231 220 / 70%); }
+    .block-label { color: var(--green-dark); font-size: .8rem; font-weight: 800; }
+    .slot { display: grid; place-items: center; width: 10rem; height: 5rem; margin-top: .5rem; border: 2px dashed #a69f90; border-radius: .5rem; color: var(--muted); font-size: .82rem; text-align: center; }
+    .position-piece {
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      width: 10rem;
+      min-height: 5rem;
+      padding: .75rem;
+      border: 2px solid var(--green-dark);
+      border-radius: .65rem;
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 .5rem 1.2rem rgb(41 72 28 / 22%);
+      text-align: center;
+      font-weight: 800;
+    }
+    .position-piece.is-relative { position: relative; inset: auto; margin: 1rem; }
+    .position-piece.is-absolute, .position-piece.is-fixed { position: absolute; margin: 0; }
+    .position-piece.is-fixed { position: fixed; z-index: 30; }
+    .position-piece.at-start { inset: 1rem auto auto 1rem; }
+    .position-piece.at-end { inset: auto 1rem 1rem auto; }
+    .position-piece.at-center { inset: 50% auto auto 50%; transform: translate(-50%, -50%); }
+    .position-piece small { display: block; margin-top: .15rem; font: .73rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 500; }
+    .status-line { min-height: 1.7em; margin: .8rem 0 0; color: var(--green-dark); font-weight: 650; }
+    .tip { padding: .75rem .9rem; border-left: 4px solid var(--green); border-radius: 0 .55rem .55rem 0; background: var(--green-soft); color: var(--green-dark); font-size: .9rem; }
+    .stack-scene { position: relative; min-height: 16rem; overflow: hidden; border: 2px solid #aeb7a4; border-radius: .9rem; background: #f8f6ef; }
+    .stack-context { position: absolute; inset: 1rem 45% 1rem 1rem; z-index: 1; isolation: isolate; border: 2px solid var(--green); border-radius: .75rem; background: var(--green-soft); }
+    .stack-context.released { z-index: auto; isolation: auto; border-style: dashed; background: #f1ecdd; }
+    .context-title { padding: .65rem .8rem; color: var(--green-dark); font-size: .85rem; font-weight: 800; }
+    .escape-child { position: absolute; top: 3.2rem; right: -5rem; z-index: 9999; display: grid; place-items: center; width: 10rem; min-height: 7rem; padding: .65rem; border: 2px solid #7a4716; border-radius: .7rem; background: var(--amber-soft); color: #70400f; box-shadow: 0 .5rem 1rem rgb(112 64 15 / 18%); text-align: center; font-weight: 800; }
+    .upper-sibling { position: absolute; top: 4.2rem; right: 1rem; z-index: 2; display: grid; place-items: center; width: 43%; min-height: 7rem; padding: .65rem; border: 2px solid #243a20; border-radius: .7rem; background: var(--green-dark); color: #fff; text-align: center; font-weight: 800; }
+    .stack-scene::after { content: "重叠区域：谁在上面？"; position: absolute; right: 1rem; bottom: .45rem; color: var(--muted); font-size: .78rem; }
+    .sticky-scroll { position: relative; height: 18rem; overflow-y: auto; overscroll-behavior-y: contain; border: 2px solid #aeb7a4; border-radius: .9rem; background: #f8f6ef; scrollbar-color: var(--green) #e1ddcf; scrollbar-width: thin; }
+    .sticky-spacer { display: grid; place-items: end start; min-height: 8rem; padding: 1rem; color: var(--muted); background: #ece8dc; }
+    .sticky-header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .25rem 1rem; padding: .8rem 1rem; border-block: 2px solid var(--green-dark); background: var(--green); color: #fff; }
+    .sticky-header strong { font-size: 1rem; }
+    .sticky-header span { font: .78rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .sticky-content { padding: 1rem; }
+    .sticky-content section { min-height: 6.5rem; margin-bottom: .7rem; padding: .9rem; border: 1px solid var(--line); border-radius: .65rem; background: #fffdf7; }
+    .sticky-content section:last-child { margin-bottom: 0; }
+    .property-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; margin-top: 1.1rem; }
+    .property-card { padding: .9rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .property-card p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 42rem) {
+      .page { width: min(100% - 1rem, 74rem); padding-top: 1rem; }
+      .topbar { align-items: start; margin-bottom: 1.2rem; }
+      .demo-stage { padding: .6rem; }
+      .containing-block { min-height: 14rem; }
+      .escape-child { right: -3.5rem; width: 9rem; }
+      .upper-sibling { width: 48%; }
+    }
+    @media (max-width: 28rem) {
+      .position-piece { width: 8.5rem; }
+      .upper-sibling { top: 6.5rem; }
+      .escape-child { top: 5rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <p class="eyebrow">Layout / 01</p>
+    </div>
+    <header>
+      <p class="eyebrow">Position &amp; Stacking</p>
+      <h1>定位与层叠上下文</h1>
+      <p class="lead">用同一组按钮观察定位参照物与 <code>inset</code>，再滚动粘性区域、切换隔离，亲眼确认子元素的 <code>z-index</code> 能去哪里、不能去哪里。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="position-title">
+      <div class="panel-head">
+        <div class="heading-wrap">
+          <span class="section-no" aria-hidden="true">1</span>
+          <div>
+            <h2 id="position-title">定位方式与包含块</h2>
+            <p class="description"><code>relative</code> 保留原位置；<code>absolute</code> 相对最近的定位祖先；<code>fixed</code> 相对视口（除非祖先建立固定定位包含块）。</p>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="button-group" role="group" aria-label="选择定位方式">
+          <button type="button" data-position="relative" aria-pressed="true">relative</button>
+          <button type="button" data-position="absolute" aria-pressed="false">absolute</button>
+          <button type="button" data-position="fixed" aria-pressed="false">fixed</button>
+        </div>
+        <button type="button" id="containingToggle" aria-pressed="true">包含块：relative</button>
+        <button type="button" id="insetButton">切换 inset：起点</button>
+      </div>
+      <div class="demo-stage" id="positionStage">
+        <span class="stage-label">舞台：position: relative</span>
+        <div class="containing-block is-relative" id="containingBlock">
+          <span class="block-label" id="blockLabel">绿色虚线框：position: relative</span>
+          <div class="slot">正常流中的原始位置</div>
+          <div class="position-piece is-relative at-start" id="positionPiece">
+            <span>定位方块<small id="pieceMode">position: relative</small></span>
+          </div>
+        </div>
+      </div>
+      <p class="status-line" id="positionStatus" role="status" aria-live="polite"></p>
+      <p class="tip">试试：切到 absolute 后移除内层的 relative。方块会改为参照外层舞台。切到 fixed 后滚动页面，它仍贴着视口；用起点 / 终点 / 居中按钮改变 <code>inset</code>。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="stack-title">
+      <div class="panel-head">
+        <div class="heading-wrap">
+          <span class="section-no" aria-hidden="true">2</span>
+          <div>
+            <h2 id="stack-title">9999 也逃不出父级</h2>
+            <p class="description">父元素通过 <code>isolation: isolate</code> 建立独立层叠上下文。子元素的 <code>z-index: 9999</code> 只在这个上下文内部比较，无法越过外层 <code>z-index: 2</code> 的兄弟。</p>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="isolationToggle" aria-pressed="true">isolation: isolate</button>
+      </div>
+      <div class="stack-scene">
+        <div class="stack-context" id="stackContext">
+          <div class="context-title" id="contextTitle">父上下文 · z-index: 1</div>
+          <div class="escape-child">子元素<br>z-index: 9999</div>
+        </div>
+        <div class="upper-sibling">兄弟元素<br>z-index: 2</div>
+      </div>
+      <p class="status-line" id="stackStatus" role="status" aria-live="polite"></p>
+      <p class="tip">点击按钮会同时移除父级的 <code>isolation</code> 和定位元素的 <code>z-index</code>（两者都会创建层叠上下文）。此时子元素回到舞台上下文，9999 才能盖住兄弟。其他上下文触发因素还有 <code>opacity &lt; 1</code>、<code>transform</code>、<code>filter</code>、<code>contain: paint</code> 等。</p>
+    </section>
+
+    <section class="panel" aria-labelledby="sticky-title">
+      <div class="panel-head">
+        <div class="heading-wrap">
+          <span class="section-no" aria-hidden="true">3</span>
+          <div>
+            <h2 id="sticky-title">sticky 的阈值在滚动容器里</h2>
+            <p class="description">绿色标题初始位于正常流中；容器滚动到它的起始位置后，<code>top: 0</code> 才让它吸附。它不会滚出父容器的边界。</p>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="scrollToSticky">滚动到吸附阈值</button>
+        <button type="button" id="resetSticky">回到顶部</button>
+      </div>
+      <div class="sticky-scroll" id="stickyScroll" tabindex="0" role="region" aria-label="可滚动的粘性定位演示，可用方向键或 Page Down 滚动">
+        <div class="sticky-spacer">向下滚动，先让标题到达容器顶部 ↓</div>
+        <div class="sticky-header" id="stickyHeader">
+          <strong>position: sticky · top: 0</strong>
+          <span id="stickyBadge">尚未到达阈值</span>
+        </div>
+        <div class="sticky-content">
+          <section><h3>正常流阶段</h3><p>标题仍占据文档流位置，下面的内容把它向下推。</p></section>
+          <section><h3>到达阈值</h3><p>滚动位置达到标题初始偏移量时，粘性约束开始生效。</p></section>
+          <section><h3>持续吸附</h3><p>继续滚动，标题停留在容器顶部；这是相对滚动祖先的固定，不是 <code>fixed</code>。</p></section>
+          <section><h3>边界约束</h3><p>滚动到底部时，标题会被父容器底边限制，最终随内容离开。</p></section>
+        </div>
+      </div>
+      <p class="status-line" id="stickyStatus" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="reference-title">
+      <h2 id="reference-title">属性速查</h2>
+      <div class="property-grid">
+        <article class="property-card"><h3>position</h3><p><code>static</code> 忽略偏移；<code>relative</code> 视觉偏移且保留原位；<code>absolute</code> 脱离文档流；<code>fixed</code> 参照视口；<code>sticky</code> 跨越正常流与吸附状态。</p></article>
+        <article class="property-card"><h3>inset / top 等</h3><p><code>inset</code> 是上、右、下、左的简写。三值写法可省略一侧为 <code>auto</code>；百分比相对包含块对应尺寸。</p></article>
+        <article class="property-card"><h3>z-index</h3><p>只对定位元素或 Grid / Flex 项目生效；数值只在同一层叠上下文内有可比性，不是“全局高度”。</p></article>
+        <article class="property-card"><h3>isolation: isolate</h3><p>强制建立新的层叠上下文，适合把组件内部的混合模式、阴影与高 <code>z-index</code> 限制在组件内。</p></article>
+        <article class="property-card"><h3>sticky 条件</h3><p>需要可滚动祖先、明确阈值（如 <code>top</code>）和足够空间；父元素 <code>overflow: hidden</code> 可能改变实际滚动容器。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const positionPiece = document.querySelector('#positionPiece');
+      const positionStatus = document.querySelector('#positionStatus');
+      const containingBlock = document.querySelector('#containingBlock');
+      const containingToggle = document.querySelector('#containingToggle');
+      const insetButton = document.querySelector('#insetButton');
+      const positionButtons = [...document.querySelectorAll('[data-position]')];
+      const insetNames = ['起点', '终点', '居中'];
+      const insetClasses = ['at-start', 'at-end', 'at-center'];
+      let mode = 'relative';
+      let insetIndex = 0;
+
+      function scrollBehavior() {
+        return reduceMotion.matches ? 'auto' : 'smooth';
+      }
+
+      function renderPosition() {
+        positionPiece.className = `position-piece is-${mode} ${insetClasses[insetIndex]}`;
+        positionButtons.forEach(button => {
+          button.setAttribute('aria-pressed', String(button.dataset.position === mode));
+        });
+        document.querySelector('#pieceMode').textContent = `position: ${mode}`;
+        insetButton.textContent = `切换 inset：${insetNames[insetIndex]}`;
+        let reference = '正常流';
+        if (mode === 'absolute') reference = containingBlock.classList.contains('is-relative') ? '最近的定位祖先：绿色虚线框' : '绿色虚线框变为 static，改参照外层舞台';
+        if (mode === 'fixed') reference = '视口；包含块按钮不会改变它';
+        positionStatus.textContent = `当前：${mode}；${reference}；inset 位置为${insetNames[insetIndex]}${mode === 'relative' ? '（relative 下仍由正常流位置决定视觉起点）' : ''}。`;
+      }
+
+      positionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          mode = button.dataset.position;
+          renderPosition();
+        });
+      });
+
+      containingToggle.addEventListener('click', () => {
+        const isRelative = containingToggle.getAttribute('aria-pressed') !== 'true';
+        containingToggle.setAttribute('aria-pressed', String(isRelative));
+        containingToggle.textContent = `包含块：${isRelative ? 'relative' : 'static'}`;
+        containingBlock.classList.toggle('is-relative', isRelative);
+        containingBlock.classList.toggle('is-static', !isRelative);
+        document.querySelector('#blockLabel').textContent = isRelative ? '绿色虚线框：position: relative' : '灰色虚线框：position: static（不再是包含块）';
+        renderPosition();
+      });
+
+      insetButton.addEventListener('click', () => {
+        insetIndex = (insetIndex + 1) % insetClasses.length;
+        renderPosition();
+      });
+
+      const stackContext = document.querySelector('#stackContext');
+      const isolationToggle = document.querySelector('#isolationToggle');
+      const stackStatus = document.querySelector('#stackStatus');
+      function renderStack() {
+        const isolated = isolationToggle.getAttribute('aria-pressed') === 'true';
+        stackContext.classList.toggle('released', !isolated);
+        isolationToggle.textContent = isolated ? 'isolation: isolate' : 'isolation: auto（已释放）';
+        document.querySelector('#contextTitle').textContent = isolated ? '父上下文 · z-index: 1' : '父级不再建立层叠上下文';
+        const parentStyle = getComputedStyle(stackContext);
+        stackStatus.textContent = isolated
+          ? `子元素被限制在父上下文中：父 isolation=${parentStyle.isolation}、z-index=${parentStyle.zIndex}，所以绿色的兄弟仍盖住重叠部分。`
+          : '父级 isolation=auto 且 z-index=auto：子元素 9999 进入舞台上下文，现在盖住绿色的兄弟。';
+      }
+      isolationToggle.addEventListener('click', () => {
+        isolationToggle.setAttribute('aria-pressed', String(isolationToggle.getAttribute('aria-pressed') !== 'true'));
+        renderStack();
+      });
+
+      const stickyScroll = document.querySelector('#stickyScroll');
+      const stickyHeader = document.querySelector('#stickyHeader');
+      const stickyBadge = document.querySelector('#stickyBadge');
+      const stickyStatus = document.querySelector('#stickyStatus');
+      function stickyThreshold() {
+        return document.querySelector('.sticky-spacer').offsetHeight;
+      }
+      function renderSticky() {
+        const threshold = stickyThreshold();
+        const stuck = stickyScroll.scrollTop >= threshold - 1;
+        stickyBadge.textContent = stuck ? '已吸附到 top: 0' : '尚未到达阈值';
+        stickyStatus.textContent = `容器 scrollTop=${Math.round(stickyScroll.scrollTop)}px，标题阈值≈${Math.round(threshold)}px：${stuck ? '粘性约束已生效' : '仍在正常流中'}。`;
+      }
+      stickyScroll.addEventListener('scroll', renderSticky, { passive: true });
+      window.addEventListener('resize', renderSticky);
+      document.querySelector('#scrollToSticky').addEventListener('click', () => {
+        stickyScroll.scrollTo({ top: stickyThreshold(), behavior: scrollBehavior() });
+      });
+      document.querySelector('#resetSticky').addEventListener('click', () => {
+        stickyScroll.scrollTo({ top: 0, behavior: scrollBehavior() });
+      });
+
+      renderPosition();
+      renderStack();
+      renderSticky();
+      window.addEventListener('load', renderSticky);
+    })();
+  </script>
+</body>
+</html>

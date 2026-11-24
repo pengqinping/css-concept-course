@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>05 · 百分比是谁的百分比 | CSS 概念课</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 48rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--green); }
+    .control label { cursor: pointer; }
+    .stage { padding: 1.5rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; overflow-x: auto; }
+    .cb-parent { box-sizing: content-box; width: 400px; padding: 20px; border: 2px solid var(--amber); position: relative; background: var(--green-soft); }
+    .cb-child { width: 50%; height: 40px; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font: .85rem var(--mono); }
+    body.cb-abs .cb-child { position: absolute; top: 0; left: 0; }
+    .ref-guide { position: absolute; pointer-events: none; border: 2px dashed var(--amber); box-sizing: border-box; }
+    body:not(.cb-abs) .ref-guide { inset: 20px; }
+    body.cb-abs .ref-guide { inset: 0; }
+    .hint { color: var(--muted); font-size: .9rem; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 14rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } .readout .key { min-width: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/05-containing-block.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 05 包含块</p>
+  </header>
+
+  <h1>50% 的尺子搭在哪</h1>
+  <p class="lead">width: 50% 里的 50% 是一个待解析的比例。定位方式一变，参照盒就换：普通流参照 content box，绝对定位参照 padding box。</p>
+
+  <section class="panel">
+    <h2>调一调</h2>
+    <div class="controls">
+      <span class="control">
+        <input type="checkbox" id="abs" />
+        <label for="abs">子元素 position: absolute（关 = static）</label>
+      </span>
+    </div>
+    <div class="stage">
+      <div class="cb-parent" id="parentBox">
+        <div class="ref-guide" aria-hidden="true"></div>
+        <div class="cb-child" id="childBox">width: 50%</div>
+      </div>
+    </div>
+    <p class="hint">父元素：content 宽 400px、padding 20px、border 2px。虚线框标出本次用来解析百分比的参照盒；窄屏可横向滚动。</p>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>把子元素从 static 切到 absolute 后，width: 50% 的实际像素增加多少？先写下数字再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p><strong>增加 20px：200px 变 220px。</strong>static 参照父元素 content box：400 × 50% = 200px；absolute 参照 padding box：(400 + 20×2) × 50% = 440 × 50% = 220px。父元素的 border 2px 始终在参照盒之外，不参与计算。换 position 同时换掉了两件事：量百分比的尺子，和摆放子元素的原点。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">参照盒</span><span class="val" id="rRef"></span></div>
+      <div class="readout"><span class="key">computed width</span><span class="val" id="rComputed"></span></div>
+      <div class="readout"><span class="key">getBoundingClientRect().width</span><span class="val" id="rRect"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/05-containing-block.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  const absToggle = document.getElementById("abs");
+  const childBox = document.getElementById("childBox");
+  const cssOut = document.getElementById("cssOut");
+
+  function render() {
+    const isAbs = absToggle.checked;
+    document.body.classList.toggle("cb-abs", isAbs);
+
+    const computed = getComputedStyle(childBox).width;
+    const rect = childBox.getBoundingClientRect().width;
+
+    cssOut.textContent =
+      ".parent { width: 400px; padding: 20px; border: 2px solid;\n" +
+      "          position: relative; }\n" +
+      ".child  { position: " + (isAbs ? "absolute; top: 0; left: 0;" : "static;") + "\n" +
+      "          width: 50%; height: 40px; }";
+
+    document.getElementById("rRef").textContent = isAbs
+      ? "padding box 440px (400 + 20×2)"
+      : "content box 400px";
+    document.getElementById("rComputed").textContent = computed;
+    document.getElementById("rRect").textContent = rect + "px";
+    document.getElementById("status").textContent = isAbs
+      ? "虚线框落在 padding box：440 × 50% = 220px。百分比没变，变的是尺子的起点和终点；border 2px 不参与。"
+      : "虚线框落在 content box：400 × 50% = 200px。padding 是父元素自己的留白，不是子元素可占用的地盘。";
+  }
+
+  absToggle.addEventListener("change", render);
+  render();
+</script>
+</body>
+</html>

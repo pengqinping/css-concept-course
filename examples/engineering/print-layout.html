@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>打印工程：A4 分页与重复表头</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #24301f;
+      --muted: #68715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1e;
+      --green-soft: #e4ecd9;
+      --line: #d9d6ca;
+      --clay: #b9633f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      color: var(--ink);
+      background: #e9e5da;
+      font: 16px/1.75 system-ui, -apple-system, "Segoe UI", "Noto Sans CJK SC", sans-serif;
+    }
+    main { max-width: 62rem; margin: 0 auto; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: .7rem; font-size: clamp(2rem, 6vw, 3.8rem); line-height: 1.08; letter-spacing: -.045em; }
+    h2 { margin: 2.2rem 0 .85rem; font-size: 1.55rem; line-height: 1.3; }
+    h3 { margin-bottom: .45rem; font-size: 1rem; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; margin-bottom: 1.5rem; font-weight: 800; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin-bottom: .75rem; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .lede { max-width: 46rem; margin-bottom: 1.4rem; color: var(--muted); font-size: clamp(1rem, 2vw, 1.13rem); }
+    code, pre, output { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .12em .35em; border-radius: .3rem; color: var(--green-dark); background: var(--green-soft); font-size: .88em; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; margin-bottom: 1rem; }
+    button { min-height: 2.75rem; padding: .6rem .9rem; border: 1px solid #b9c1ad; border-radius: .7rem; color: var(--ink); background: var(--surface); font: inherit; font-size: .9rem; font-weight: 800; cursor: pointer; }
+    button:hover { border-color: var(--green); }
+    button[aria-pressed="true"] { border-color: var(--green); color: #fff; background: var(--green); }
+    button.primary { border-color: var(--green); color: #fff; background: var(--green); }
+    .print-status { flex: 1 1 15rem; margin: 0; color: var(--muted); font-size: .85rem; }
+    .preview-shell { padding: clamp(.35rem, 2vw, 1rem); border: 1px solid #cfcabd; border-radius: 1.1rem; background: #dcd8cc; }
+    .paper {
+      width: min(210mm, 100%);
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 20mm 18mm;
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 18px 50px rgb(39 48 31 / 14%);
+    }
+    .paper-topline { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 8rem; padding-bottom: .7rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+    .doc-kicker { margin-bottom: 1rem; color: var(--green); font-size: .75rem; font-weight: 850; letter-spacing: .18em; text-transform: uppercase; }
+    .cover { padding-bottom: 8mm; break-after: page; page-break-after: always; }
+    .cover h1 { max-width: 12em; margin-bottom: 1.2rem; font-size: clamp(2.6rem, 8vw, 5.2rem); }
+    .subtitle { max-width: 36rem; color: var(--muted); font-size: 1.12rem; }
+    .cover-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 4rem; }
+    .cover-grid div { padding-top: 1rem; border-top: 3px solid var(--green); }
+    .cover-grid strong { display: block; margin-bottom: .3rem; font-size: 1.35rem; }
+    .cover-grid span { color: var(--muted); font-size: .82rem; }
+    .chapter { break-before: page; page-break-before: always; }
+    .body-copy { orphans: 3; widows: 3; }
+    .body-copy + .body-copy { margin-top: 1em; }
+    .keep-card { margin: 1.5rem 0; padding: 1.2rem 1.35rem; border: 1px solid #b9c1ad; border-left: 5px solid var(--green); border-radius: .65rem; background: var(--green-soft); break-inside: avoid; page-break-inside: avoid; }
+    .keep-card p:last-child { margin-bottom: 0; }
+    .ink-block { margin: 1.6rem 0; padding: 1.4rem; border-radius: .7rem; color: var(--surface); background: var(--green); -webkit-print-color-adjust: exact; print-color-adjust: exact; break-inside: avoid; page-break-inside: avoid; }
+    .ink-block h3 { color: var(--surface); }
+    .ink-block p { margin-bottom: 0; color: #eef2e8; }
+    .page-rule { margin: 1.8rem 0; padding: .8rem 1rem; border: 1px dashed var(--clay); color: #7d351e; background: #fff0e8; font-size: .86rem; break-inside: avoid; page-break-inside: avoid; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: .7rem; }
+    table { width: 100%; min-width: 34rem; border-collapse: collapse; font-size: .88rem; }
+    caption { padding: .8rem; color: var(--muted); font-size: .8rem; text-align: left; }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    th, td { padding: .72rem .8rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    thead th { color: #fff; background: var(--green); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tbody tr:nth-child(even) { background: #f4f6ee; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    tfoot td { border-bottom: 0; color: var(--muted); background: #f4f1e9; font-size: .78rem; }
+    .table-chapter { break-before: page; page-break-before: always; }
+    .print-only { display: none; }
+    .rule-card { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; margin: 1.5rem 0; }
+    .rule-card div { padding: .9rem; border: 1px solid var(--line); border-radius: .65rem; }
+    .rule-card p { margin: .25rem 0 0; color: var(--muted); font-size: .8rem; }
+    .show-rules .keep-card, .show-rules .chapter, .show-rules .ink-block { outline: 3px solid rgb(185 99 63 / 45%); outline-offset: 5px; }
+    .show-rules .keep-card::before, .show-rules .chapter::before, .show-rules .ink-block::before { display: block; margin: -1.2rem -1.35rem .9rem; padding: .3rem .7rem; color: #fff; background: var(--clay); font-size: .68rem; font-weight: 800; letter-spacing: .06em; }
+    .show-rules .keep-card::before { content: "break-inside: avoid"; }
+    .show-rules .chapter::before { content: "break-before: page"; margin: -20mm -18mm 1.5rem; padding: .3rem 18mm; }
+    .show-rules .ink-block::before { content: "print-color-adjust: exact"; }
+    .tech-notes { margin-top: 2rem; padding: 1.2rem; border-radius: .9rem; color: #e8eddf; background: #24301f; }
+    .tech-notes h2 { margin-top: 0; color: #fff; }
+    .tech-notes p { margin-bottom: 0; color: #d3ddc9; }
+    .code-panel { margin-top: 1.5rem; }
+    pre { margin: 0; padding: 1.2rem; overflow-x: auto; border-radius: .9rem; color: #e8eddf; background: #24301f; font-size: .8rem; line-height: 1.65; }
+
+    @page {
+      size: A4 portrait;
+      margin: 20mm 18mm 22mm;
+      @top-left {
+        content: "CSS 打印样式手册";
+        color: #68715f;
+        font-size: 8pt;
+      }
+      @top-right {
+        content: "第 " counter(page) " 页 / 共 " counter(pages) " 页";
+        color: #68715f;
+        font-size: 8pt;
+      }
+      @bottom-left {
+        content: "工程示例 · 无外部资源";
+        color: #68715f;
+        font-size: 8pt;
+      }
+      @bottom-right {
+        content: counter(page);
+        color: #3f6b2a;
+        font-size: 9pt;
+        font-weight: 700;
+      }
+    }
+    @page :left {
+      @bottom-left { content: "左页 · 偶数页"; }
+    }
+    @page :right {
+      @bottom-left { content: "右页 · 奇数页"; }
+    }
+    @page :first {
+      margin-top: 28mm;
+      @top-left { content: none; }
+      @bottom-left { content: "第一页 · 封面"; }
+    }
+
+    @media (max-width: 48rem) {
+      body { padding: 1rem .75rem 2rem; }
+      .paper { min-height: 0; padding: 1.25rem; }
+      .paper-topline { margin-bottom: 4rem; }
+      .cover-grid, .rule-card { grid-template-columns: 1fr; }
+      .cover h1 { font-size: clamp(2.4rem, 13vw, 4rem); }
+      .toolbar > * { flex: 1 1 100%; }
+      .print-status { flex-basis: 100%; }
+      .show-rules .chapter::before { margin: -1.25rem -1.25rem 1rem; padding: .3rem 1.25rem; }
+      .show-rules .keep-card::before, .show-rules .ink-block::before { margin: -1.2rem -1.35rem .9rem; }
+    }
+
+    @media print {
+      html, body {
+        width: auto;
+        margin: 0;
+        padding: 0;
+        color: #111;
+        background: #fff;
+        font-size: 10.5pt;
+        line-height: 1.62;
+      }
+      main { max-width: none; margin: 0; }
+      .screen-only, .toolbar, .back-link, .page-header, .code-panel, .tech-notes { display: none !important; }
+      .preview-shell { padding: 0; border: 0; border-radius: 0; background: none; }
+      .paper { width: auto; min-height: 0; margin: 0; padding: 0; overflow: visible; background: #fff; box-shadow: none; }
+      .paper-topline { margin-bottom: 8mm; }
+      .cover { padding-bottom: 0; }
+      .cover h1 { font-size: 38pt; }
+      .cover-grid { margin-top: 12mm; }
+      h2 { margin-top: 1.5em; font-size: 17pt; }
+      h3 { font-size: 11pt; }
+      p { orphans: 3; widows: 3; }
+      .keep-card, .ink-block, tr { break-inside: avoid; page-break-inside: avoid; }
+      .chapter, .table-chapter { break-before: page; page-break-before: always; }
+      .table-wrap { overflow: visible; border-radius: 0; }
+      table { min-width: 0; font-size: 8.8pt; }
+      th, td { padding: 5pt 6pt; }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      .print-only { display: block; margin-top: 4mm; color: #555; font-size: 8pt; }
+      a { color: inherit; text-decoration: none; }
+      .show-rules .keep-card, .show-rules .chapter, .show-rules .ink-block,
+      .show-rules .keep-card::before, .show-rules .chapter::before, .show-rules .ink-block::before { outline: 0; }
+      .show-rules .keep-card::before, .show-rules .chapter::before, .show-rules .ink-block::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <a class="back-link screen-only" href="../index.html">返回示例索引</a>
+  <header class="page-header">
+    <p class="eyebrow">CSS 工程 · 03</p>
+    <h1>把网页变成可靠的纸面文档</h1>
+    <p class="lede">屏幕布局负责预览，打印规则负责分页。下面这份 A4 文档包含封面、强制分页、防拆卡片、长段落和跨页表格，可直接调用浏览器打印。</p>
+    <div class="toolbar" aria-label="打印演示工具">
+      <button type="button" id="printButton" class="primary">打印 / 保存为 PDF</button>
+      <button type="button" id="appendButton">追加 3 段正文</button>
+      <button type="button" id="ruleButton" aria-pressed="false">显示分页规则</button>
+      <button type="button" id="resetButton">恢复示例内容</button>
+      <p id="printStatus" class="print-status" role="status" aria-live="polite">建议在打印对话框中关闭浏览器页眉页脚，并启用“背景图形”。</p>
+    </div>
+  </header>
+
+  <div class="preview-shell screen-only" aria-hidden="true">A4 · 210 × 297 mm · 屏幕预览</div>
+  <article id="printDocument" class="paper" aria-label="打印文档预览">
+    <div class="paper-topline screen-only">
+      <span>Paged Media Study</span>
+      <span>屏幕预览</span>
+    </div>
+
+    <section class="cover" aria-labelledby="doc-title">
+      <p class="doc-kicker">CSS 工程手册 / 第 01 册</p>
+      <h1 id="doc-title">打印，不只是隐藏按钮</h1>
+      <p class="subtitle">从页面尺寸、奇偶页到表格重复表头，建立可预测、可维护的打印层。</p>
+      <div class="cover-grid">
+        <div><strong>01</strong><span>定义纸张与页边距</span></div>
+        <div><strong>02</strong><span>控制段落分页</span></div>
+        <div><strong>03</strong><span>保留表格上下文</span></div>
+      </div>
+      <p class="print-only">本页由 <code>@page :first</code> 单独设置上边距，并覆盖默认页脚文字。</p>
+    </section>
+
+    <section class="chapter" aria-labelledby="chapter-one">
+      <p class="doc-kicker">第一章 · 分页基础</p>
+      <h2 id="chapter-one">先定义纸，再定义内容</h2>
+      <p class="body-copy">打印样式不是屏幕样式的缩小版。屏幕可以无限延伸，纸张却有固定尺寸；屏幕上的卡片阴影、圆角和悬浮层，到了纸上可能变成无意义的墨迹。设计打印层时，应先确认纸张大小、方向、安全边距以及正文行长，再决定哪些组件需要保留、折叠或完全隐藏。</p>
+      <p class="body-copy"><code>@page</code> 接受 <code>size</code> 与 <code>margin</code>。本示例使用 A4 纵向，左右各 18 mm、上下分别为 20 mm 与 22 mm。较新的浏览器还支持页边距盒，可在纸张边缘放置页码和文档标题；支持程度不一致时，应保留正文自身的信息层级作为降级。</p>
+
+      <div class="keep-card">
+        <h3>break-inside: avoid</h3>
+        <p>这张卡片作为一个不可拆分单元。当剩余空间不足时，浏览器会把它移到下一页。它适合提示框、图注、签名区和小型数据块，不适合强制保护超过一页的长内容。</p>
+      </div>
+
+      <h3>orphans 与 widows</h3>
+      <p class="body-copy"><code>orphans: 3</code> 要求段首至少保留三行，<code>widows: 3</code> 要求段尾至少保留三行，避免一页以孤立的一行开始或结束。它们只影响行级分页，不能保证整段不跨页；若整段必须完整，再使用 <code>break-inside: avoid</code>。</p>
+      <div id="appendTarget">
+        <p class="body-copy">分页规则需要真实的长内容来验证。短段落看起来完美，并不代表它在章节末尾、图片之后或表格之前仍然稳定。追加正文可以制造更多分页机会，再观察浏览器如何移动段落、卡片与表头。</p>
+        <p class="body-copy">不同的打印引擎对分页属性的支持并不完全相同。完成样式后，应至少在目标浏览器和“保存为 PDF”路径中各检查一次，重点寻找空白页、被截断的边框、重复表头缺失和背景色丢失。</p>
+        <p class="body-copy">最后，打印文档仍然需要语义。标题层级、表格表头、链接文字和阅读顺序不会因为进入打印样式而自动正确。把装饰性内容隐藏，把关键说明保留，是对纸张读者负责。</p>
+      </div>
+
+      <div class="ink-block">
+        <h3>print-color-adjust: exact</h3>
+        <p>深绿背景与暖白文字用于验证背景图形设置。浏览器若为了省墨而移除背景，正文仍应保持足够对比度，不能只依靠底色传达状态。</p>
+      </div>
+      <p class="print-only">奇偶页页脚由 <code>@page :left</code> 与 <code>@page :right</code> 分别设置。</p>
+    </section>
+
+    <section class="chapter table-chapter" aria-labelledby="chapter-two">
+      <p class="doc-kicker">第二章 · 跨页表格</p>
+      <h2 id="chapter-two">让表头在每一页重复</h2>
+      <p class="body-copy">表格跨页后，<code>thead { display: table-header-group; }</code> 会在后续页面重复表头；每一行使用 <code>break-inside: avoid</code>，避免单元格内容被切断。页码、单位与列含义应留在表头或表脚中，而不是只出现在第一页。</p>
+      <div class="table-wrap">
+        <table>
+          <caption>工程检查清单 · 52 行示例数据，用于验证跨页表头</caption>
+          <thead>
+            <tr><th scope="col">编号</th><th scope="col">检查项</th><th scope="col">建议</th><th scope="col">状态</th></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+          <tfoot>
+            <tr><td colspan="4">表脚在支持 table-footer-group 的打印引擎中于每页底部重复；不支持时仍正常参与文档流。</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="rule-card">
+        <div><h3>@page :first</h3><p>封面可使用不同上边距和页脚。</p></div>
+        <div><h3>@page :left / :right</h3><p>为奇偶页提供不同装订信息。</p></div>
+        <div><h3>break-before: page</h3><p>让新章从新页开始，而不是碰运气。</p></div>
+      </div>
+      <p class="body-copy">打印验收清单：先检查页数与空白页，再检查段落首尾行、表头重复、背景色和链接。最后用不同缩放比例导出 PDF，确认没有内容贴近裁切边缘。</p>
+    </section>
+  </article>
+
+  <section class="code-panel screen-only" aria-labelledby="code-title">
+    <h2 id="code-title">本页核心规则</h2>
+    <pre><code>@page {
+  size: A4 portrait;
+  margin: 20mm 18mm 22mm;
+  @bottom-right { content: counter(page); }
+}
+@page :first { margin-top: 28mm; }
+@page :left  { @bottom-left { content: "左页 · 偶数页"; } }
+@page :right { @bottom-left { content: "右页 · 奇数页"; } }
+
+.chapter { break-before: page; }
+.keep-card { break-inside: avoid; }
+.body-copy { orphans: 3; widows: 3; }
+thead { display: table-header-group; }
+.ink-block { print-color-adjust: exact; }
+
+@media print {
+  .toolbar, .back-link, .screen-only { display: none !important; }
+  .paper { width: auto; min-height: 0; padding: 0; box-shadow: none; }
+}</code></pre>
+  </section>
+
+  <aside class="tech-notes screen-only" aria-labelledby="compat-title">
+    <h2 id="compat-title">兼容性提醒</h2>
+    <p><code>@page</code> 的页边距盒、<code>:first</code>、<code>:left</code>、<code>:right</code> 和页码计数器主要由 Chromium 系打印引擎较好支持；Safari 与 Firefox 的支持范围可能不同。分页属性本身较普遍，但跨页表头、表脚与强制分页仍应以实际打印预览为准。</p>
+  </aside>
+</main>
+
+<script>
+  const printButton = document.querySelector('#printButton');
+  const appendButton = document.querySelector('#appendButton');
+  const ruleButton = document.querySelector('#ruleButton');
+  const resetButton = document.querySelector('#resetButton');
+  const printStatus = document.querySelector('#printStatus');
+  const printDocument = document.querySelector('#printDocument');
+  const appendTarget = document.querySelector('#appendTarget');
+  const tableBody = document.querySelector('#tableBody');
+  const initialAppendHTML = appendTarget.innerHTML;
+  let addedParagraphs = 0;
+
+  const checklist = [
+    ['A4 纵向', '核对纸张、方向和单位', '打印预览'],
+    ['安全边距', '正文不进入装订与裁切区', '已检查'],
+    ['封面', '使用 :first 调整首页', '已检查'],
+    ['奇偶页', '核对 :left 与 :right', '待浏览器验证'],
+    ['新章分页', '使用 break-before: page', '已检查'],
+    ['提示卡片', '使用 break-inside: avoid', '已检查'],
+    ['段落孤行', 'orphans / widows = 3', '已检查'],
+    ['表头重复', 'thead → table-header-group', '已检查'],
+    ['表格行', 'tr → break-inside: avoid', '已检查'],
+    ['背景颜色', '启用背景图形并检查对比度', '待打印验证'],
+    ['链接', '打印时移除下划线但保留文字', '已检查'],
+    ['空白页', '检查固定高度与强制分页', '待打印验证'],
+    ['缩放 100%', '避免浏览器额外缩小正文', '建议'],
+    ['PDF 导出', '检查字体嵌入与文字可选', '待验证'],
+    ['页数', '核对 counter(page) / counter(pages)', '待浏览器验证'],
+    ['移动端', '屏幕预览允许横向滚动表格', '已检查'],
+    ['降级方案', '不支持页边距盒时保留正文标题', '已准备'],
+    ['无障碍', '保持标题、表头和阅读顺序', '已检查'],
+    ['背景关闭', '深色文字仍有可读对比度', '已准备'],
+    ['最终签字', '确认版本号与打印日期', '待填写']
+  ];
+
+  function buildRows() {
+    const fragment = document.createDocumentFragment();
+    const totalRows = 52;
+    for (let index = 0; index < totalRows; index += 1) {
+      const [item, advice, state] = checklist[index % checklist.length];
+      const round = Math.floor(index / checklist.length);
+      const row = document.createElement('tr');
+      const number = document.createElement('td');
+      number.textContent = String(index + 1).padStart(2, '0');
+      const name = document.createElement('th');
+      name.scope = 'row';
+      name.textContent = round ? `${item} · 第 ${round + 1} 轮` : item;
+      const suggestion = document.createElement('td');
+      suggestion.textContent = advice;
+      const status = document.createElement('td');
+      status.textContent = state;
+      row.append(number, name, suggestion, status);
+      fragment.append(row);
+    }
+    tableBody.replaceChildren(fragment);
+  }
+
+  printButton.addEventListener('click', () => {
+    printStatus.textContent = '已调用 window.print()，请在系统对话框中确认纸张与背景图形。';
+    window.print();
+  });
+
+  appendButton.addEventListener('click', () => {
+    const fragment = document.createDocumentFragment();
+    const samples = [
+      '追加段落用于制造跨页边界。浏览器需要在这里平衡 orphans 与 widows，决定哪些行留在当前页，哪些行移到下一页。',
+      '如果前面的提示卡无法完整放入剩余空间，break-inside: avoid 会把它整体移动；这可能留下一些空白，但比切断卡片更易阅读。',
+      '表格出现后，新的分页压力会改变章节尾部。请同时检查表头是否重复，以及最后一行是否被孤立在单独的页面上。'
+    ];
+    samples.forEach(text => {
+      const paragraph = document.createElement('p');
+      paragraph.className = 'body-copy added-copy';
+      paragraph.textContent = text;
+      fragment.append(paragraph);
+    });
+    appendTarget.append(fragment);
+    addedParagraphs += samples.length;
+    appendButton.textContent = `再追加 3 段（已加 ${addedParagraphs} 段）`;
+    printStatus.textContent = `已追加 ${addedParagraphs} 段正文，可重新打印观察分页。`;
+  });
+
+  ruleButton.addEventListener('click', () => {
+    const active = ruleButton.getAttribute('aria-pressed') !== 'true';
+    ruleButton.setAttribute('aria-pressed', String(active));
+    ruleButton.textContent = active ? '隐藏分页规则' : '显示分页规则';
+    printDocument.classList.toggle('show-rules', active);
+    printStatus.textContent = active
+      ? '陶土色标记显示分页规则作用位置；这些标记不会出现在打印结果中。'
+      : '已隐藏屏幕分页标记。';
+  });
+
+  resetButton.addEventListener('click', () => {
+    appendTarget.innerHTML = initialAppendHTML;
+    addedParagraphs = 0;
+    appendButton.textContent = '追加 3 段正文';
+    printDocument.classList.remove('show-rules');
+    ruleButton.setAttribute('aria-pressed', 'false');
+    ruleButton.textContent = '显示分页规则';
+    printStatus.textContent = '示例内容已恢复。';
+  });
+
+  window.addEventListener('beforeprint', () => {
+    printStatus.textContent = '正在生成打印布局……';
+  });
+
+  window.addEventListener('afterprint', () => {
+    printStatus.textContent = `打印窗口已关闭；当前追加了 ${addedParagraphs} 段测试正文。`;
+  });
+
+  buildRows();
+</script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>性能工程：Containment 与长列表</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --surface: #fffdf7;
+      --ink: #24301f;
+      --muted: #68715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1e;
+      --green-soft: #e4ecd9;
+      --line: #d9d6ca;
+      --clay: #b9633f;
+      --gold: #efc66f;
+      --intrinsic-size: 132px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: clamp(1rem, 4vw, 3rem);
+      color: var(--ink);
+      background: radial-gradient(circle at 92% 4%, rgb(63 107 42 / 9%), transparent 26rem), var(--paper);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { max-width: 76rem; margin: 0 auto; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: .65rem; font-size: clamp(2rem, 6vw, 3.8rem); line-height: 1.08; letter-spacing: -.045em; }
+    h2 { margin-bottom: .85rem; font-size: clamp(1.25rem, 3vw, 1.7rem); }
+    h3 { margin-bottom: .45rem; font-size: 1rem; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
+    .back-link { display: inline-flex; gap: .4rem; align-items: center; margin-bottom: 2rem; font-weight: 800; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin-bottom: .8rem; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .lede { max-width: 52rem; color: var(--muted); font-size: clamp(1rem, 2vw, 1.15rem); }
+    code, pre, output { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .12em .35em; border-radius: .3rem; color: var(--green-dark); background: var(--green-soft); font-size: .88em; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(18rem, .6fr); gap: 1.5rem; align-items: start; margin-top: 2rem; }
+    .panel { min-width: 0; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: 1.25rem; background: rgb(255 253 247 / 90%); box-shadow: 0 18px 45px rgb(47 59 38 / 8%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .55rem; margin-bottom: 1rem; }
+    button, select { min-height: 2.75rem; padding: .58rem .85rem; border: 1px solid var(--line); border-radius: .7rem; color: var(--ink); background: var(--surface); font: inherit; font-size: .9rem; font-weight: 750; cursor: pointer; }
+    button:hover { border-color: var(--green); }
+    button[aria-pressed="true"] { border-color: var(--green); color: #fff; background: var(--green); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    button:disabled:hover { border-color: var(--line); }
+    button.primary { border-color: var(--green); color: #fff; background: var(--green); }
+    .range-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem 1rem; align-items: center; margin: 1rem 0; padding: .85rem; border: 1px dashed #b9c1ad; border-radius: .8rem; }
+    .range-row label { font-size: .9rem; font-weight: 750; }
+    .range-row input { grid-column: 1 / -1; width: 100%; accent-color: var(--green); }
+    .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; margin: 0; }
+    .metric { min-width: 0; padding: .8rem; border: 1px solid var(--line); border-radius: .8rem; background: #faf8f1; }
+    .metric dt { color: var(--muted); font-size: .76rem; font-weight: 700; }
+    .metric dd { margin: .25rem 0 0; font-size: 1.05rem; font-weight: 850; overflow-wrap: anywhere; }
+    .metric.wide { grid-column: 1 / -1; }
+    .metric code { font-size: .78rem; }
+    .note { margin: .8rem 0 0; color: var(--muted); font-size: .84rem; }
+    .status { min-height: 3.3rem; margin: .85rem 0 0; padding: .7rem .85rem; border-left: 4px solid var(--green); background: var(--green-soft); font-size: .85rem; }
+    .viewport-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin: 1rem 0 .55rem; color: var(--muted); font-size: .82rem; font-weight: 750; }
+    .list-viewport { height: min(29rem, 62vh); padding: .8rem; overflow: auto; overscroll-behavior: contain; border: 1px solid #b9c1ad; border-radius: 1rem; background: #e8e5db; scrollbar-color: var(--green) #d9d6ca; }
+    .list { display: grid; gap: .85rem; margin: 0; padding: 0; list-style: none; }
+    .row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 2.8rem minmax(0, 1fr) auto;
+      gap: .9rem;
+      align-items: start;
+      min-height: var(--intrinsic-size);
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: .85rem;
+      background: var(--surface);
+      box-shadow: 0 4px 12px rgb(45 60 35 / 4%);
+      contain-intrinsic-size: var(--intrinsic-size);
+      contain-intrinsic-size: auto var(--intrinsic-size);
+    }
+    .row-index { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: 50%; color: #fff; background: var(--green); font-size: .78rem; font-weight: 850; }
+    .row h3 { margin: 0 0 .25rem; font-size: .98rem; }
+    .row p { margin: 0; color: var(--muted); font-size: .86rem; }
+    .row-meta { padding-top: .15rem; color: var(--green); font-size: .72rem; font-weight: 800; white-space: nowrap; }
+    .row-badge { position: absolute; z-index: 2; top: -10px; right: -10px; padding: .2rem .45rem; border: 1px solid #8f4026; border-radius: .4rem; color: #fff; background: var(--clay); font-size: .65rem; font-weight: 800; }
+    .extra-copy { margin-top: .65rem !important; padding-top: .65rem; border-top: 1px dashed var(--line); color: #46523f !important; }
+
+    .mode-visibility .row { content-visibility: auto; }
+    .mode-paint .row { contain: layout paint; }
+    .mode-content .row { contain: content; }
+    .mode-strict .row { contain: size layout paint; contain-intrinsic-size: var(--intrinsic-size); }
+    .mode-visibility.no-intrinsic .row { contain-intrinsic-size: none; }
+
+    .isolation-stage { position: relative; min-height: 8.5rem; margin-top: .8rem; overflow: visible; border-radius: .9rem; color: #fff; background: var(--green); isolation: auto; }
+    .isolation-stage.isolated { isolation: isolate; }
+    .isolation-stage > .stage-copy { position: relative; z-index: 1; margin: 0; padding: 1rem; font-size: .85rem; }
+    .sinking { position: absolute; z-index: -1; inset: 3.4rem 1rem 1rem; display: grid; place-items: center; border-radius: .55rem; color: var(--ink); background: var(--gold); font-size: .8rem; font-weight: 850; }
+    .explain-list { display: grid; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+    .explain-list li { padding-bottom: .75rem; border-bottom: 1px solid var(--line); }
+    .explain-list li:last-child { padding-bottom: 0; border-bottom: 0; }
+    .explain-list p { margin: .2rem 0 0; color: var(--muted); font-size: .86rem; }
+    pre { margin: 1.5rem 0 0; padding: 1.15rem; overflow-x: auto; border-radius: 1rem; color: #e8eddf; background: #24301f; font-size: .82rem; line-height: 1.65; }
+    .unsupported { margin-top: 1rem; padding: 1rem; border: 1px solid var(--clay); border-radius: .8rem; color: #7d351e; background: #fff0e8; }
+
+    @media (max-width: 60rem) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 38rem) {
+      body { padding: 1rem .8rem 2rem; }
+      .controls > * { flex: 1 1 100%; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .metric.wide { grid-column: auto; }
+      .list-viewport { height: 25rem; padding: .55rem; }
+      .row { grid-template-columns: 2.4rem minmax(0, 1fr); gap: .65rem; padding: .8rem; }
+      .row-index { width: 2.15rem; height: 2.15rem; }
+      .row-meta { grid-column: 2; padding-top: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <a class="back-link" href="../index.html">返回示例索引</a>
+  <header>
+    <p class="eyebrow">CSS 工程 · 02</p>
+    <h1>让浏览器少做一点无关工作</h1>
+    <p class="lede">Containment 给布局、绘制与尺寸计算划定边界；<code>content-visibility</code> 则允许跳过屏幕外内容。性能收益与副作用需要一起测量。</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="lab-title">
+      <h2 id="lab-title">300 行长列表实验</h2>
+      <div class="controls" role="group" aria-label="渲染隔离模式">
+        <button type="button" data-mode="baseline" aria-pressed="true">基线</button>
+        <button type="button" data-mode="visibility" aria-pressed="false">可视性跳过</button>
+        <button type="button" data-mode="paint" aria-pressed="false">layout + paint</button>
+        <button type="button" data-mode="content" aria-pressed="false">content</button>
+        <button type="button" data-mode="strict" aria-pressed="false">size + paint</button>
+      </div>
+      <div class="controls" role="group" aria-label="列表操作">
+        <button type="button" id="measureButton" class="primary">立即测量</button>
+        <button type="button" id="expandButton" aria-pressed="false">加入长文本</button>
+        <button type="button" id="intrinsicButton" aria-pressed="true">占位尺寸：开</button>
+        <button type="button" id="jumpButton">跳到第 240 行</button>
+        <button type="button" id="topButton">回到顶部</button>
+      </div>
+      <div class="range-row">
+        <label for="intrinsicRange">contain-intrinsic-size 占位高度</label>
+        <output id="intrinsicValue" for="intrinsicRange">132px</output>
+        <input id="intrinsicRange" type="range" min="88" max="220" step="4" value="132">
+      </div>
+      <p class="note">提示：开启“占位尺寸”后切换“可视性跳过”，再关闭占位尺寸，观察滚动条和锚点变化。</p>
+
+      <div class="viewport-label">
+        <span>可滚动视口 · 共 <strong id="totalCount">300</strong> 项</span>
+        <span>橙红色角标用于观察 paint 裁剪</span>
+      </div>
+      <div id="listViewport" class="list-viewport" role="region" tabindex="0" aria-label="可滚动的长列表，使用方向键或 Page Down 浏览">
+        <ol id="longList" class="list mode-baseline"></ol>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite">基线模式：所有行正常参与布局与绘制。</p>
+      <p id="supportMessage" class="unsupported" hidden>当前浏览器不支持部分 containment 属性；仍可通过计算样式确认实际降级结果。</p>
+    </section>
+
+    <aside class="panel" aria-labelledby="metrics-title">
+      <h2 id="metrics-title">测量结果</h2>
+      <dl class="metric-grid">
+        <div class="metric"><dt>当前模式</dt><dd id="modeMetric">基线</dd></div>
+        <div class="metric"><dt>视口内项目</dt><dd id="visibleMetric">—</dd></div>
+        <div class="metric"><dt>列表滚动高度</dt><dd id="heightMetric">—</dd></div>
+        <div class="metric"><dt>采样耗时</dt><dd id="timeMetric">—</dd></div>
+        <div class="metric"><dt>样本 clientHeight</dt><dd id="clientMetric">—</dd></div>
+        <div class="metric"><dt>样本 scrollHeight</dt><dd id="scrollMetric">—</dd></div>
+        <div class="metric wide"><dt>实际计算样式</dt><dd id="computedMetric"><code>等待测量</code></dd></div>
+      </dl>
+      <p class="note">耗时只包含当前可见样本的几何读取与样式采样，不是完整渲染耗时；多次测量取观察值即可。</p>
+
+      <h2 style="margin-top:1.6rem">isolation 单独演示</h2>
+      <button type="button" id="isolationButton" aria-pressed="false">开启 isolation: isolate</button>
+      <div id="isolationStage" class="isolation-stage" aria-label="层叠上下文演示">
+        <p class="stage-copy">绿色是父级背景；黄色块的 <code>z-index: -1</code>。isolate 会创建新的层叠上下文。</p>
+        <div class="sinking">负层级子元素</div>
+      </div>
+      <p id="isolationStatus" class="note">未 isolate：负层级元素可能落到父级背景之后。</p>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:1.5rem" aria-labelledby="notes-title">
+    <h2 id="notes-title">属性作用与代价</h2>
+    <ul class="explain-list">
+      <li><h3><code>content-visibility: auto</code></h3><p>屏幕外内容可跳过渲染，但占位尺寸、滚动定位、查找与无障碍树更新都需要验证；不要用于需要保持状态的复杂组件。</p></li>
+      <li><h3><code>contain: layout paint</code></h3><p>建立独立布局与绘制边界，子元素溢出父级 padding box 的部分会被裁剪；绝对定位或阴影可能被截断。</p></li>
+      <li><h3><code>contain: size</code></h3><p>元素尺寸不再由内容推导。必须提供明确尺寸、最小高度或 <code>contain-intrinsic-size</code>，否则可能出现空白盒。</p></li>
+      <li><h3><code>contain: content</code></h3><p>等价于 <code>layout paint style</code>，不包含 size；适合希望保持内容高度、又隔离绘制的工作单元。</p></li>
+      <li><h3><code>isolation: isolate</code></h3><p>只创建层叠上下文，不裁剪、不改变尺寸，也不等于完整的 paint containment。</p></li>
+    </ul>
+  </section>
+
+  <pre aria-label="核心 CSS 代码"><code>.row {
+  min-height: 132px;
+  contain-intrinsic-size: auto 132px;
+}
+
+/* 屏幕外跳过；靠近视口时恢复真实尺寸 */
+.row.visibility { content-visibility: auto; }
+
+/* 隔离布局与绘制；溢出角标会被裁剪 */
+.row.paint { contain: layout paint; }
+
+/* 尺寸也隔离：高度由 CSS 决定，长文本不会撑高 */
+.row.strict { contain: size layout paint; }
+
+/* 只建立层叠上下文 */
+.stack-root { isolation: isolate; }</code></pre>
+</main>
+
+<script>
+  const list = document.querySelector('#longList');
+  const viewport = document.querySelector('#listViewport');
+  const status = document.querySelector('#status');
+  const modeButtons = [...document.querySelectorAll('[data-mode]')];
+  const measureButton = document.querySelector('#measureButton');
+  const expandButton = document.querySelector('#expandButton');
+  const intrinsicButton = document.querySelector('#intrinsicButton');
+  const jumpButton = document.querySelector('#jumpButton');
+  const topButton = document.querySelector('#topButton');
+  const intrinsicRange = document.querySelector('#intrinsicRange');
+  const intrinsicValue = document.querySelector('#intrinsicValue');
+  const isolationButton = document.querySelector('#isolationButton');
+  const isolationStage = document.querySelector('#isolationStage');
+  const supportMessage = document.querySelector('#supportMessage');
+
+  const modeNames = {
+    baseline: '基线',
+    visibility: 'content-visibility',
+    paint: 'layout + paint',
+    content: 'content',
+    strict: 'size + paint'
+  };
+  const modeMessages = {
+    baseline: '基线模式：所有行正常参与布局与绘制。',
+    visibility: '可视性跳过：屏幕外行使用占位尺寸；滚动时按需渲染。',
+    paint: 'layout + paint：绘制被隔离，向右上伸出的角标会被裁剪。',
+    content: 'content：布局与绘制隔离，但行高仍由长文本决定。',
+    strict: 'size + paint：内在尺寸由占位值决定；开启长文本后可对比 clientHeight 与 scrollHeight。'
+  };
+
+  const topics = ['布局边界', '绘制隔离', '尺寸包含', '滚动锚点', '可访问性', '长任务', '渲染预算'];
+  const descriptions = [
+    '这一行用于观察内容接近视口时，浏览器何时恢复真实布局。',
+    '短文本与长文本的切换能暴露 size containment 的尺寸副作用。',
+    '列表之外的事件不会让每一行都重新计算整个文档的布局。',
+    '占位尺寸越接近真实高度，快速滚动时的位置变化通常越小。',
+    '离屏内容的无障碍树可能延迟，关键导航不要只依赖屏幕外节点。',
+    '测量一次布局读取，避免在循环中交替写入样式造成布局抖动。',
+    ' containment 是边界提示，不是所有浏览器都采用完全相同的优化路径。'
+  ];
+
+  const fragment = document.createDocumentFragment();
+  for (let index = 1; index <= 300; index += 1) {
+    const item = document.createElement('li');
+    item.className = 'row';
+    item.dataset.index = String(index);
+    item.innerHTML = `
+      <span class="row-index" aria-hidden="true">${String(index).padStart(3, '0')}</span>
+      <div class="row-content">
+        <h3>${topics[index % topics.length]} · 样本 ${index}</h3>
+        <p>${descriptions[index % descriptions.length]}</p>
+        <p class="extra-copy" hidden>扩展文本用于增加真实内容高度。${'布局、绘制和尺寸需要一起观察，单一指标很容易误导。'.repeat(5)}</p>
+      </div>
+      <span class="row-meta">${(index * 37 % 100 + 10).toFixed(0)} ms</span>
+      ${index === 3 ? '<span class="row-badge">溢出 10px</span>' : ''}
+    `;
+    fragment.append(item);
+  }
+  list.append(fragment);
+  document.querySelector('#totalCount').textContent = String(list.children.length);
+
+  const visibleRows = new Set();
+  let currentMode = 'baseline';
+  let expanded = false;
+  let intrinsicEnabled = true;
+  let lastVisibleSample = null;
+
+  const observer = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        visibleRows.add(entry.target);
+        if (!lastVisibleSample || entry.boundingClientRect.top >= 0) lastVisibleSample = entry.target;
+      } else {
+        visibleRows.delete(entry.target);
+        if (lastVisibleSample === entry.target) lastVisibleSample = null;
+      }
+    }
+    if (!lastVisibleSample) lastVisibleSample = visibleRows.values().next().value || null;
+    document.querySelector('#visibleMetric').textContent = String(visibleRows.size);
+  }, { root: viewport, threshold: 0 });
+  [...list.children].forEach(row => observer.observe(row));
+
+  function rounded(value) {
+    return `${Math.round(value * 10) / 10}px`;
+  }
+
+  function measure() {
+    const started = performance.now();
+    let samples = [...visibleRows].slice(0, 16);
+    let measuredVisible = visibleRows.size;
+    if (!samples.length) {
+      const bounds = viewport.getBoundingClientRect();
+      const geometricRows = [...list.children].filter(row => {
+        const rect = row.getBoundingClientRect();
+        return rect.bottom > bounds.top && rect.top < bounds.bottom;
+      });
+      measuredVisible = geometricRows.length;
+      samples = geometricRows.slice(0, 16);
+      if (samples.length) lastVisibleSample = samples[0];
+    }
+    let overflowSample = null;
+    let maxOverflow = 0;
+    for (const row of samples) {
+      const overflow = row.scrollHeight - row.clientHeight;
+      if (overflow > maxOverflow) {
+        maxOverflow = overflow;
+        overflowSample = row;
+      }
+    }
+    const sample = overflowSample || (lastVisibleSample && visibleRows.has(lastVisibleSample) ? lastVisibleSample : samples[0]);
+    const sampleStyle = sample ? getComputedStyle(sample) : null;
+    const elapsed = performance.now() - started;
+
+    document.querySelector('#modeMetric').textContent = modeNames[currentMode];
+    document.querySelector('#visibleMetric').textContent = String(measuredVisible);
+    document.querySelector('#heightMetric').textContent = rounded(viewport.scrollHeight);
+    document.querySelector('#timeMetric').textContent = `${elapsed.toFixed(2)} ms`;
+    document.querySelector('#clientMetric').textContent = sample ? rounded(sample.clientHeight) : '—';
+    document.querySelector('#scrollMetric').textContent = sample ? rounded(sample.scrollHeight) : '—';
+    document.querySelector('#computedMetric').innerHTML = sampleStyle
+      ? `<code>content-visibility: ${sampleStyle.contentVisibility || 'visible'}<br>contain: ${sampleStyle.contain || 'none'}<br>contain-intrinsic-size: ${sampleStyle.containIntrinsicSize || 'none'}</code>`
+      : '<code>视口内暂无可采样行</code>';
+  }
+
+  function scheduleMeasure() {
+    requestAnimationFrame(() => requestAnimationFrame(measure));
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    list.classList.remove('mode-baseline', 'mode-visibility', 'mode-paint', 'mode-content', 'mode-strict');
+    list.classList.add(`mode-${mode}`);
+    list.classList.toggle('no-intrinsic', !intrinsicEnabled);
+    modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
+    status.textContent = modeMessages[mode];
+    const intrinsicAvailable = mode === 'visibility';
+    intrinsicButton.disabled = !intrinsicAvailable;
+    intrinsicRange.disabled = !intrinsicAvailable || !intrinsicEnabled;
+    scheduleMeasure();
+  }
+
+  modeButtons.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
+
+  measureButton.addEventListener('click', () => {
+    measure();
+    status.textContent = `已采样 ${Math.min(visibleRows.size, 16)} 个可见项目；结果见右侧测量面板。`;
+  });
+
+  expandButton.addEventListener('click', () => {
+    expanded = !expanded;
+    expandButton.setAttribute('aria-pressed', String(expanded));
+    expandButton.textContent = expanded ? '恢复短文本' : '加入长文本';
+    [...list.querySelectorAll('.extra-copy')].forEach(copy => { copy.hidden = !expanded; });
+    status.textContent = expanded
+      ? '已加入长文本：对比基线与 size + paint 模式的行高差异。'
+      : '已恢复短文本：各行回到接近最小高度的布局。';
+    scheduleMeasure();
+  });
+
+  intrinsicButton.addEventListener('click', () => {
+    intrinsicEnabled = !intrinsicEnabled;
+    intrinsicButton.setAttribute('aria-pressed', String(intrinsicEnabled));
+    intrinsicButton.textContent = `占位尺寸：${intrinsicEnabled ? '开' : '关'}`;
+    list.classList.toggle('no-intrinsic', !intrinsicEnabled);
+    intrinsicRange.disabled = !intrinsicEnabled || currentMode !== 'visibility';
+    status.textContent = intrinsicEnabled
+      ? '已恢复占位尺寸：离屏行在滚动条中保留估算高度。'
+      : '已关闭占位尺寸：仅对 content-visibility 生效；离屏行高度可能接近 0，滚动位置易跳动。';
+    scheduleMeasure();
+  });
+
+  intrinsicRange.addEventListener('input', () => {
+    const size = `${intrinsicRange.value}px`;
+    document.documentElement.style.setProperty('--intrinsic-size', size);
+    intrinsicValue.textContent = size;
+    scheduleMeasure();
+  });
+
+  jumpButton.addEventListener('click', () => {
+    const target = list.children[239];
+    target.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    status.textContent = '已跳转到第 240 行；content-visibility 会在目标接近视口时恢复渲染。';
+    setTimeout(measure, 450);
+  });
+
+  topButton.addEventListener('click', () => {
+    viewport.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    status.textContent = '已回到列表顶部。';
+    setTimeout(measure, 450);
+  });
+
+  viewport.addEventListener('scroll', () => {
+    document.querySelector('#visibleMetric').textContent = String(visibleRows.size);
+  }, { passive: true });
+
+  isolationButton.addEventListener('click', () => {
+    const isolated = isolationButton.getAttribute('aria-pressed') !== 'true';
+    isolationButton.setAttribute('aria-pressed', String(isolated));
+    isolationButton.textContent = isolated ? '关闭 isolation: isolate' : '开启 isolation: isolate';
+    isolationStage.classList.toggle('isolated', isolated);
+    document.querySelector('#isolationStatus').textContent = isolated
+      ? '已 isolate：黄色块位于父级背景之上，但父级仍不裁剪溢出。'
+      : '未 isolate：负层级元素可能落到父级背景之后。';
+  });
+
+  if (!CSS.supports('content-visibility', 'auto') || !CSS.supports('contain', 'layout paint')) {
+    supportMessage.hidden = false;
+  }
+
+  window.addEventListener('resize', scheduleMeasure, { passive: true });
+  setMode('baseline');
+</script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSS 多栏与文字环绕实验室</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #25301f;
+      --muted: #69715f;
+      --green: #3f6b2a;
+      --green-dark: #2d4d1d;
+      --green-soft: #e2ead7;
+      --line: #d8d3c5;
+      --amber: #d49a3a;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    button, select, input { font: inherit; }
+    button, select, input[type="range"], input[type="checkbox"] { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    ::selection { background: #cfdcba; color: var(--green-dark); }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { text-decoration-thickness: 2px; }
+    .skip-link { position: absolute; inset-block-start: -5rem; inset-inline-start: 1rem; z-index: 10; padding: .6rem 1rem; border-radius: 8px; background: var(--green-dark); color: white; }
+    .skip-link:focus { inset-block-start: 1rem; }
+    .page { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; padding-block: 1.5rem 4rem; }
+    .topbar { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; justify-content: space-between; }
+    .back-link { font-weight: 700; }
+    .top-note { color: var(--muted); font-size: .9rem; }
+
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); gap: 2rem; align-items: end; margin-block: 2.2rem 2rem; }
+    .eyebrow { margin: 0 0 .7rem; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 15ch; margin: 0; font-family: Georgia, "Songti SC", "STSong", serif; font-size: clamp(2.3rem, 7vw, 4.5rem); line-height: 1.06; letter-spacing: -.045em; text-wrap: balance; }
+    .intro { max-width: 62ch; margin: 1rem 0 0; color: var(--muted); font-size: 1.05rem; }
+    .hero-art { min-height: 180px; border: 1px solid var(--green); border-radius: var(--radius); background: linear-gradient(90deg, transparent 49.5%, rgb(63 107 42 / .35) 49.5% 50.5%, transparent 50.5%), linear-gradient(#e0e8d5 1px, transparent 1px), linear-gradient(#e0e8d5 1px, transparent 1px), #f5f2e7; background-size: 100% 100%, 18px 18px, 18px 18px, auto; background-position: 0 0, 0 0, 9px 9px, 0 0; }
+    .hero-art::after { content: "Aa Aa Aa\A Aa Aa Aa\A Aa Aa Aa"; white-space: pre; display: block; padding: 1.4rem; color: #6e7f60; font: 700 1.25rem/2.4 Georgia, serif; letter-spacing: .04em; }
+
+    .toolbar, .card-controls { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: end; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: rgb(255 253 247 / .75); }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-block-end: .55rem; font-size: .82rem; font-weight: 800; color: var(--green-dark); }
+    .control { display: grid; gap: .35rem; flex: 1 1 150px; min-width: 0; }
+    .control > span, .control > label { font-size: .8rem; font-weight: 700; color: var(--muted); }
+    .control output { font-variant-numeric: tabular-nums; color: var(--green-dark); }
+    select { width: 100%; min-height: 42px; padding: .5rem .7rem; border: 1px solid #bcb8aa; border-radius: 8px; background: var(--card); color: var(--ink); }
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+    input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--green); }
+    button { min-height: 42px; padding: .5rem .85rem; border: 1px solid #aab29e; border-radius: 999px; background: var(--card); color: var(--green-dark); font-weight: 700; }
+    button:hover { border-color: var(--green); background: #f4f7ef; }
+    button[aria-pressed="true"] { border-color: var(--green-dark); background: var(--green); color: white; }
+    .button-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .button-row button { flex: 1 1 auto; }
+    .check-control { display: flex; gap: .5rem; align-items: center; min-height: 42px; font-size: .88rem; font-weight: 700; color: var(--green-dark); }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block-start: 1rem; }
+    .card { min-width: 0; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 8px 24px rgb(50 60 40 / .045); }
+    .card.wide { grid-column: 1 / -1; }
+    .card h2 { margin: 0; font-size: 1.22rem; letter-spacing: -.02em; }
+    .card h3 { margin: 0 0 .5rem; font-size: .95rem; color: var(--green-dark); }
+    .card p { margin-block: .65rem 0; }
+    .desc { color: var(--muted); font-size: .92rem; }
+    code { padding: .1em .35em; border-radius: 5px; background: #eeeee5; color: #315322; font: .88em ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .property-note { margin-block-start: 1rem; padding: .75rem .9rem; border-inline-start: 4px solid var(--green); border-radius: 0 9px 9px 0; background: #f0f3e9; color: #4d5944; font-size: .86rem; }
+    pre { margin: .8rem 0 0; padding: .9rem; overflow-x: auto; border-radius: 10px; background: #25301f; color: #e8eddf; font: .78rem/1.65 ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .support { margin-block-start: 1rem; color: var(--muted); font-size: .85rem; }
+
+    .column-demo {
+      margin-block-start: 1rem;
+      padding: clamp(1.1rem, 3vw, 1.6rem);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #faf8f1;
+      column-count: var(--column-count, auto);
+      column-width: var(--column-width, auto);
+      column-gap: var(--column-gap, 2rem);
+      column-rule: var(--column-rule-width, 0px) var(--column-rule-style, solid) var(--column-rule-color, #c8d3bc);
+      column-fill: var(--column-fill, balance);
+    }
+    .column-demo h2 { margin-block: 0 .8rem; font-size: 1.5rem; column-span: var(--title-span, all); }
+    .column-demo h3 { margin-block: 1rem .35rem; break-after: avoid; }
+    .column-demo p { margin-block: 0 .85rem; }
+    .column-demo .lead { color: var(--green-dark); font-weight: 700; }
+    .column-demo .pull-quote { margin-block: 1rem; padding: .8rem; border-inline-start: 4px solid var(--green); background: #eaf0e2; color: var(--green-dark); break-inside: avoid; }
+
+    .wrap-stage { margin-block-start: 1rem; padding: clamp(1rem, 3vw, 1.4rem); border: 1px solid var(--line); border-radius: 14px; background: #faf8f1; }
+    .float-shape {
+      position: relative;
+      float: left;
+      width: var(--shape-size, 190px);
+      aspect-ratio: 1;
+      margin-block: .25rem 1rem;
+      margin-inline-end: var(--shape-margin, 24px);
+      shape-outside: var(--shape-outside, circle(50% at 50% 50%));
+      shape-margin: var(--shape-margin, 24px);
+      background:
+        radial-gradient(circle at 35% 30%, rgb(255 253 247 / .75), transparent 32%),
+        linear-gradient(145deg, #9ab777, #3f6b2a 70%);
+      clip-path: var(--shape-clip, none);
+    }
+    .float-shape.circle { border-radius: 50%; --shape-outside: circle(50% at 50% 50%); --shape-clip: none; }
+    .float-shape.polygon { border-radius: 0; --shape-outside: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%); --shape-clip: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%); }
+    .float-shape.none { border-radius: 18px; --shape-outside: none; --shape-clip: none; }
+    .float-shape::after { content: attr(data-label); position: absolute; inset: 0; display: grid; place-items: center; color: #fffdf7; font-weight: 800; }
+    .float-shape.circle::after, .float-shape.polygon::after { border-radius: inherit; }
+    .wrap-stage p { margin-block: 0 1rem; }
+    .wrap-stage::after { content: ""; display: block; clear: both; }
+
+    .wrap-no-float .float-shape { float: none; margin-inline: 0 auto 1rem; }
+    .wrap-no-float .wrap-copy { column-count: 1 !important; }
+
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .hero-art { min-height: 150px; }
+      .float-shape { --shape-size: 150px; }
+    }
+    @media (max-width: 480px) {
+      .page { width: min(100% - 1rem, 1120px); }
+      .card { border-radius: 14px; }
+      .control { flex-basis: 100%; }
+      .column-demo { column-gap: 1.2rem; }
+      .float-shape { --shape-size: 125px; --shape-margin: 16px; }
+      .wrap-stage { font-size: .94rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="page">
+    <header class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <span class="top-note">独立示例 · 无外部字体与资源</span>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Flow / 视觉基础 05</p>
+          <h1 id="page-title">多栏与文字环绕</h1>
+          <p class="intro">用多栏排布长文，用 float 与 shape-outside 让段落沿圆形、多边形等轮廓流动，建立杂志式的阅读节奏。</p>
+        </div>
+        <div class="hero-art" role="img" aria-label="双栏排版纹理"></div>
+      </section>
+
+      <section class="toolbar" aria-labelledby="controls-title">
+        <h2 id="controls-title" hidden="hidden">多栏与环绕控件</h2>
+        <div class="control">
+          <label for="columnCount">column-count <output id="columnCountValue" for="columnCount">3</output></label>
+          <input id="columnCount" type="range" min="1" max="5" step="1" value="3" />
+        </div>
+        <div class="control">
+          <label for="columnWidth">column-width <output id="columnWidthValue" for="columnWidth">auto</output></label>
+          <input id="columnWidth" type="range" min="0" max="320" step="20" value="0" />
+        </div>
+        <div class="control">
+          <label for="shapeSize">环绕图形尺寸 <output id="shapeSizeValue" for="shapeSize">190 px</output></label>
+          <input id="shapeSize" type="range" min="100" max="280" step="10" value="190" />
+        </div>
+        <div class="control">
+          <label for="shapeMargin">shape-margin <output id="shapeMarginValue" for="shapeMargin">24 px</output></label>
+          <input id="shapeMargin" type="range" min="0" max="60" step="2" value="24" />
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card wide" aria-labelledby="column-title">
+          <h2 id="column-title">多栏：count / width / span / rule</h2>
+          <p class="desc"><code>column-count</code> 指定栏数，<code>column-width</code> 指定理想栏宽；两者同时设置时浏览器会兼顾可用宽度。栏线、栏间距和跨栏标题可进一步建立层级。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <div class="control">
+              <label for="columnGap">栏间距 <output id="columnGapValue" for="columnGap">32 px</output></label>
+              <input id="columnGap" type="range" min="16" max="64" step="4" value="32" />
+            </div>
+            <div class="control">
+              <label for="ruleWidth">栏线宽度 <output id="ruleWidthValue" for="ruleWidth">1 px</output></label>
+              <input id="ruleWidth" type="range" min="0" max="5" step="1" value="1" />
+            </div>
+            <div class="control">
+              <label for="ruleStyle">栏线样式</label>
+              <select id="ruleStyle">
+                <option value="solid">solid</option>
+                <option value="dashed">dashed</option>
+                <option value="dotted">dotted</option>
+                <option value="double">double</option>
+              </select>
+            </div>
+            <label class="check-control"><input id="spanToggle" type="checkbox" checked /> 标题跨所有栏（column-span: all）</label>
+            <label class="check-control"><input id="balanceToggle" type="checkbox" checked /> 平衡栏高（column-fill: balance）</label>
+          </div>
+          <article class="column-demo" id="columnDemo">
+            <h2 id="articleHeading">山野观察笔记</h2>
+            <p class="lead">清晨的林间有光穿过叶片，露水沿着叶脉缓缓滑落。多栏排版让这类观察文字拥有更舒展的横向节奏。</p>
+            <h3>光与影的层次</h3>
+            <p>当一束阳光落在不同高度的枝叶上，亮度会形成明显的梯度。靠近树冠的区域明亮而温暖，靠近地面的阴影则更冷、更柔和。记录这些变化，比单纯描述颜色更能传达空间感。</p>
+            <p>排版也是类似的过程：标题、正文、引文和栏线共同组织信息的层次。合适的栏宽让视线不必移动太远，稳定的栏间距则帮助读者在一行结束后迅速找到下一行。</p>
+            <div class="pull-quote">阅读不是一次看完，而是在行与行之间不断确认方向。</div>
+            <h3>垂直节奏</h3>
+            <p>段落之间保留一致的间距，可以让长文保持呼吸。避免标题孤零零地留在栏底，也避免一句话被拆到两栏。跨栏标题像一条横向道路，把上下文重新连接起来。</p>
+            <p>当内容较少时，平衡栏高会让各栏长度接近；当容器高度固定时，自动填充模式会按顺序填满一栏再进入下一栏。实际页面需要根据阅读目标和响应式布局选择策略。</p>
+            <h3>响应式取舍</h3>
+            <p>窄屏上多栏通常不适合正文阅读。把 column-width 设置为合适的最小宽度，浏览器能根据容器自动减少栏数；标题则可以通过 column-span: all 保持完整，避免被挤压成窄小碎片。</p>
+          </article>
+          <pre id="columnCode">column-count: 3;
+column-width: auto;
+column-gap: 32px;
+column-rule: 1px solid #c8d3bc;
+column-fill: balance;
+
+h2 { column-span: all; }</pre>
+          <p class="support" id="columnSupport">正在检测多栏属性支持情况…</p>
+        </section>
+
+        <section class="card wide" aria-labelledby="wrap-title">
+          <h2 id="wrap-title">float + shape-outside：沿形状环绕</h2>
+          <p class="desc"><code>shape-outside</code> 必须作用于浮动元素，它不会改变元素自身的视觉形状；视觉轮廓由 <code>clip-path</code> 或 <code>border-radius</code> 控制。<code>shape-margin</code> 在环绕轮廓外再留出呼吸空间。</p>
+          <div class="card-controls" style="margin-block-start: 1rem;">
+            <fieldset>
+              <legend>图形轮廓</legend>
+              <div class="button-row" role="group" aria-label="选择环绕形状">
+                <button type="button" data-shape="circle" aria-pressed="true">circle</button>
+                <button type="button" data-shape="polygon" aria-pressed="false">polygon</button>
+                <button type="button" data-shape="none" aria-pressed="false">矩形对照</button>
+              </div>
+            </fieldset>
+            <label class="check-control"><input id="floatToggle" type="checkbox" checked /> 启用 float: left</label>
+          </div>
+          <div class="wrap-stage" id="wrapStage">
+            <div class="float-shape circle" id="floatShape" data-label="形状" aria-hidden="true"></div>
+            <div class="wrap-copy" id="wrapCopy">
+              <p>文字环绕是版式中最直观的空间关系。当图形是圆形时，段落会沿着圆弧逐行收窄；当图形是多边形时，文字边缘会出现折线；如果关闭 shape-outside，文字则只围绕矩形外框排列。</p>
+              <p>这种效果常用于杂志插图、人物肖像和植物图鉴。图形不需要是图片，纯色块、渐变甚至透明元素都可以参与环绕。重要的是先让元素浮动，再定义它的外部形状，否则 shape-outside 不会产生文字回流。</p>
+              <p>shape-margin 相当于环绕区域的“安全距离”。数值越大，文字离视觉图形越远。对于深色背景上的浅色文字，或者轮廓复杂的插画，适当增加间距可以减少压迫感，让阅读更轻松。</p>
+              <p>注意 shape-outside 只影响同一格式化上下文中的行框，不会自动处理其他浮动元素、网格或绝对定位内容。复杂版面可以借助容器和清晰的结构来控制文字流向。</p>
+            </div>
+          </div>
+          <pre id="wrapCode">.shape {
+  float: left;
+  width: 190px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  shape-outside: circle(50% at 50% 50%);
+  shape-margin: 24px;
+}</pre>
+          <p class="support" id="shapeSupport">正在检测 shape-outside 支持情况…</p>
+          <p class="property-note">切换到“矩形对照”可看到 <code>shape-outside: none</code> 时文字只避开元素矩形盒。移动端可缩小图形或取消浮动，优先保证正文行宽。</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const columnCount = document.querySelector('#columnCount');
+    const columnWidth = document.querySelector('#columnWidth');
+    const columnGap = document.querySelector('#columnGap');
+    const ruleWidth = document.querySelector('#ruleWidth');
+    const ruleStyle = document.querySelector('#ruleStyle');
+    const spanToggle = document.querySelector('#spanToggle');
+    const balanceToggle = document.querySelector('#balanceToggle');
+    const columnDemo = document.querySelector('#columnDemo');
+    const articleHeading = document.querySelector('#articleHeading');
+    const columnCode = document.querySelector('#columnCode');
+
+    function updateColumns() {
+      const count = columnCount.value;
+      const width = Number(columnWidth.value) === 0 ? 'auto' : `${columnWidth.value}px`;
+      columnDemo.style.setProperty('--column-count', count);
+      columnDemo.style.setProperty('--column-width', width);
+      columnDemo.style.setProperty('--column-gap', `${columnGap.value}px`);
+      columnDemo.style.setProperty('--column-rule-width', `${ruleWidth.value}px`);
+      columnDemo.style.setProperty('--column-rule-style', ruleStyle.value);
+      columnDemo.style.setProperty('--title-span', spanToggle.checked ? 'all' : 'none');
+      columnDemo.style.setProperty('--column-fill', balanceToggle.checked ? 'balance' : 'auto');
+      articleHeading.style.columnSpan = spanToggle.checked ? 'all' : 'none';
+      document.querySelector('#columnCountValue').textContent = count;
+      document.querySelector('#columnWidthValue').textContent = width;
+      document.querySelector('#columnGapValue').textContent = `${columnGap.value} px`;
+      document.querySelector('#ruleWidthValue').textContent = `${ruleWidth.value} px`;
+      columnCode.textContent = `column-count: ${count};\ncolumn-width: ${width};\ncolumn-gap: ${columnGap.value}px;\ncolumn-rule: ${ruleWidth.value}px ${ruleStyle.value} #c8d3bc;\ncolumn-fill: ${balanceToggle.checked ? 'balance' : 'auto'};\n\nh2 { column-span: ${spanToggle.checked ? 'all' : 'none'}; }`;
+    }
+
+    [columnCount, columnWidth, columnGap, ruleWidth, ruleStyle, spanToggle, balanceToggle].forEach(input => input.addEventListener('input', updateColumns));
+    updateColumns();
+
+    document.querySelector('#columnSupport').textContent = CSS.supports('column-count', '3')
+      ? '当前浏览器支持 CSS 多栏。没有固定高度时，balance 通常能获得较自然的栏高；自动换行与跨栏标题仍建议在目标设备上检查。'
+      : '当前浏览器不支持 CSS 多栏，文章会回退为单栏阅读。';
+
+    const floatShape = document.querySelector('#floatShape');
+    const wrapStage = document.querySelector('#wrapStage');
+    const shapeSize = document.querySelector('#shapeSize');
+    const shapeMargin = document.querySelector('#shapeMargin');
+    const floatToggle = document.querySelector('#floatToggle');
+    const shapeButtons = [...document.querySelectorAll('[data-shape]')];
+    const wrapCode = document.querySelector('#wrapCode');
+    let activeShape = 'circle';
+
+    const shapeValues = {
+      circle: {
+        outside: 'circle(50% at 50% 50%)',
+        css: 'border-radius: 50%;\n  shape-outside: circle(50% at 50% 50%);'
+      },
+      polygon: {
+        outside: 'polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%)',
+        css: 'clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);\n  shape-outside: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);'
+      },
+      none: {
+        outside: 'none',
+        css: 'shape-outside: none;'
+      }
+    };
+
+    function updateWrap() {
+      const size = `${shapeSize.value}px`;
+      const margin = `${shapeMargin.value}px`;
+      floatShape.classList.remove('circle', 'polygon', 'none');
+      floatShape.classList.add(activeShape);
+      floatShape.dataset.label = activeShape === 'circle' ? '圆形' : activeShape === 'polygon' ? '多边形' : '矩形';
+      floatShape.style.setProperty('--shape-size', `min(${size}, 42vw)`);
+      floatShape.style.setProperty('--shape-margin', margin);
+      wrapStage.classList.toggle('wrap-no-float', !floatToggle.checked);
+      document.querySelector('#shapeSizeValue').textContent = size;
+      document.querySelector('#shapeMarginValue').textContent = margin;
+      wrapCode.textContent = `.shape {\n  float: ${floatToggle.checked ? 'left' : 'none'};\n  width: ${size};\n  aspect-ratio: 1;\n  ${shapeValues[activeShape].css}\n  shape-margin: ${margin};\n}`;
+    }
+
+    shapeButtons.forEach(button => button.addEventListener('click', () => {
+      activeShape = button.dataset.shape;
+      shapeButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      updateWrap();
+    }));
+    [shapeSize, shapeMargin, floatToggle].forEach(input => input.addEventListener('input', updateWrap));
+    updateWrap();
+
+    document.querySelector('#shapeSupport').textContent = CSS.supports('shape-outside', 'circle(50%)')
+      ? '当前浏览器支持 shape-outside 基础形状。实际环绕还要求元素浮动，并处于同一文档流中。'
+      : '当前浏览器不支持 shape-outside，文字只会围绕元素的矩形外框排列。';
+  </script>
+</body>
+</html>

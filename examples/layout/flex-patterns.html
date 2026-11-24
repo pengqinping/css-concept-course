@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flexbox 常见布局模式</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(76rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .65rem; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.15; letter-spacing: -.035em; }
+    h2 { margin: 0 0 .35rem; font-size: 1.35rem; line-height: 1.3; }
+    h3 { margin: 0 0 .35rem; font-size: 1rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 49rem; color: var(--muted); font-size: 1.05rem; }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .description { max-width: 47rem; color: var(--muted); }
+    .heading-wrap { display: flex; gap: .75rem; align-items: start; }
+    .section-no { display: inline-grid; place-items: center; flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 50%; background: var(--green); color: #fff; font-weight: 800; }
+    code { padding: .08em .32em; border-radius: .3rem; background: var(--green-soft); color: var(--green-dark); font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .controls { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: end; margin: 1.1rem 0; }
+    .control-group { display: grid; gap: .3rem; }
+    .control-group > span, .control-group > label { color: var(--muted); font-size: .8rem; font-weight: 750; }
+    .button-group { display: flex; flex-wrap: wrap; gap: .35rem; }
+    button, select { min-height: 2.65rem; padding: .5rem .8rem; border: 1px solid #aeb7a4; border-radius: .65rem; background: #fff; color: var(--ink); font: inherit; font-size: .9rem; font-weight: 650; cursor: pointer; }
+    button:hover, select:hover { border-color: var(--green); background: #f7faef; }
+    button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
+    select { min-width: 9.5rem; }
+    input[type="range"] { width: min(13rem, 70vw); accent-color: var(--green); }
+    .range-row { display: flex; align-items: center; gap: .5rem; min-height: 2.65rem; }
+    output { min-width: 3.3rem; color: var(--green-dark); font: .83rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .stage-shell { padding: clamp(.7rem, 2vw, 1.1rem); border: 2px solid #aeb7a4; border-radius: .9rem; background-color: #f8f6ef; background-image: linear-gradient(#e7e2d5 1px, transparent 1px), linear-gradient(90deg, #e7e2d5 1px, transparent 1px); background-size: 1.5rem 1.5rem; }
+    .flex-stage {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      align-items: stretch;
+      gap: 1rem;
+      width: 100%;
+      min-height: 22rem;
+      padding: 1rem;
+      overflow: auto;
+      border: 1px solid #c6c0b1;
+      border-radius: .65rem;
+      background: rgb(255 253 247 / 85%);
+      resize: horizontal;
+    }
+    .flex-stage.column { flex-direction: column; min-height: 32rem; }
+    .flex-stage.nowrap { flex-wrap: nowrap; }
+    .flex-stage.reverse { flex-direction: row-reverse; }
+    .flex-stage.column.reverse { flex-direction: column-reverse; }
+    .flex-stage.min-auto .item { min-width: auto; }
+    .item {
+      min-width: 0;
+      min-height: 8rem;
+      padding: 1rem;
+      border: 2px solid var(--green-dark);
+      border-radius: .8rem;
+      background: var(--green-soft);
+      color: var(--green-dark);
+      box-shadow: 0 .3rem .8rem rgb(41 72 28 / 8%);
+    }
+    .item:nth-child(2) { background: var(--amber-soft); border-color: #7a4716; color: #70400f; }
+    .item:nth-child(3) { background: #e5e0f0; border-color: #62517c; color: #49375f; }
+    .item:nth-child(4) { background: #dcebf0; border-color: #3d6573; color: #294b57; }
+    .item:nth-child(5) { background: #f0e4d4; border-color: #84633f; color: #60482b; }
+    .item-label { display: inline-block; margin-bottom: .5rem; padding: .15rem .45rem; border-radius: .35rem; background: rgb(255 255 255 / 65%); font: .75rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .item p { margin: 0; font-size: .9rem; }
+    .grow { flex: 2 1 10rem; }
+    .shrink { flex: 1 2 14rem; }
+    .basis { flex: 1 1 7rem; }
+    .long { flex: 1 1 11rem; }
+    .long-text { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: .76rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .status-line { min-height: 1.7em; margin: .8rem 0 0; color: var(--green-dark); font-weight: 650; }
+    .tip { padding: .75rem .9rem; border-left: 4px solid var(--green); border-radius: 0 .55rem .55rem 0; background: var(--green-soft); color: var(--green-dark); font-size: .9rem; }
+    .formula { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; margin-top: 1rem; }
+    .formula-card { padding: .9rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .formula-card p { margin: 0; color: var(--muted); font-size: .9rem; }
+    pre { margin: 1rem 0 0; padding: 1rem; overflow: auto; border-radius: .75rem; background: #263021; color: #edf2e5; font: .82rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 42rem) {
+      .page { width: min(100% - 1rem, 76rem); padding-top: 1rem; }
+      .topbar { align-items: start; margin-bottom: 1.2rem; }
+      .controls { align-items: stretch; }
+      .control-group { flex: 1 1 9rem; }
+      .button-group button { flex: 1 1 auto; }
+      select { width: 100%; min-width: 0; }
+      .flex-stage { resize: none; padding: .7rem; gap: .7rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <p class="eyebrow">Layout / 02</p>
+    </div>
+    <header>
+      <p class="eyebrow">Flexbox Patterns</p>
+      <h1>Flexbox 常见布局模式</h1>
+      <p class="lead">在同一组子项上切换主轴、换行、对齐与视觉顺序，再拖动容器宽度，观察 <code>flex-grow</code>、<code>flex-shrink</code> 和 <code>flex-basis</code> 如何分配空间。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="playground-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">1</span>
+        <div>
+          <h2 id="playground-title">可交互 Flex 实验台</h2>
+          <p class="description">卡片内的 CSS 简写分别是 <code>2 1 10rem</code>、<code>1 2 14rem</code>、<code>1 1 7rem</code> 与 <code>1 1 11rem</code>，依次是 grow / shrink / basis。</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <span id="axis-label">主轴方向</span>
+          <div class="button-group" role="group" aria-labelledby="axis-label">
+            <button type="button" data-axis="row" aria-pressed="true">横向 row</button>
+            <button type="button" data-axis="column" aria-pressed="false">纵向 column</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <span id="wrap-label">换行</span>
+          <div class="button-group" role="group" aria-labelledby="wrap-label">
+            <button type="button" data-wrap="wrap" aria-pressed="true">wrap</button>
+            <button type="button" data-wrap="nowrap" aria-pressed="false">nowrap</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <span id="order-label">视觉顺序</span>
+          <div class="button-group" role="group" aria-labelledby="order-label">
+            <button type="button" data-order="normal" aria-pressed="true">正常</button>
+            <button type="button" data-order="reverse" aria-pressed="false">反转</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="justify">justify-content</label>
+          <select id="justify">
+            <option value="flex-start">flex-start</option>
+            <option value="center">center</option>
+            <option value="space-between">space-between</option>
+            <option value="space-around">space-around</option>
+            <option value="space-evenly">space-evenly</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="align">align-items</label>
+          <select id="align">
+            <option value="stretch">stretch</option>
+            <option value="flex-start">flex-start</option>
+            <option value="center">center</option>
+            <option value="flex-end">flex-end</option>
+            <option value="baseline">baseline</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="gap">gap</label>
+          <div class="range-row"><input id="gap" type="range" min="0" max="32" step="2" value="16"><output id="gapValue" for="gap">16px</output></div>
+        </div>
+        <div class="control-group">
+          <label for="containerWidth">舞台宽度</label>
+          <div class="range-row"><input id="containerWidth" type="range" min="45" max="100" step="1" value="100"><output id="widthValue" for="containerWidth">100%</output></div>
+        </div>
+        <div class="control-group">
+          <span>长文本压缩</span>
+          <div class="button-group">
+            <button type="button" id="minWidthToggle" aria-pressed="true">min-width: 0</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage-shell">
+        <div class="flex-stage" id="flexStage">
+          <article class="item grow">
+            <span class="item-label">01 · grow: 2</span>
+            <h3>优先分到剩余空间</h3>
+            <p>flex: 2 1 10rem；增长系数是其他可增长项目的两倍。</p>
+          </article>
+          <article class="item shrink">
+            <span class="item-label">02 · shrink: 2</span>
+            <h3>空间不足时多收缩</h3>
+            <p>flex: 1 2 14rem；basis 较大，收缩权重也更高。</p>
+          </article>
+          <article class="item basis">
+            <span class="item-label">03 · basis: 7rem</span>
+            <h3>初始尺寸由 basis 决定</h3>
+            <p>没有 width 时，7rem 是分配空间前的基准。</p>
+          </article>
+          <article class="item long">
+            <span class="item-label">04 · 长文本</span>
+            <h3>min-width: 0 允许省略</h3>
+            <span class="long-text">https://example.invalid/一个非常长的路径/用于验证min-width-zero与text-overflow</span>
+            <p>关闭 min-width: 0 后，默认最小尺寸会阻止收缩。</p>
+          </article>
+          <article class="item">
+            <span class="item-label">05 · flex: 1 1 10rem</span>
+            <h3>均衡项目</h3>
+            <p>有空间就增长，空间不足时按相同权重收缩。</p>
+          </article>
+        </div>
+      </div>
+      <p class="status-line" id="flexStatus" role="status" aria-live="polite"></p>
+      <p class="tip">操作建议：先选择 nowrap，再把舞台宽度拖到 45%，比较各卡片如何收缩；点击“min-width: 0”关闭它，长文本会撑出滚动区域。wrap 模式下，<code>align-items</code> 控制每行交叉轴对齐；多行整体位置则用 <code>align-content</code>。</p>
+      <pre aria-label="当前 flex 规则"><code id="flexCode"></code></pre>
+    </section>
+
+    <section class="panel" aria-labelledby="rules-title">
+      <h2 id="rules-title">空间分配的三步口诀</h2>
+      <div class="formula">
+        <article class="formula-card"><h3>1. basis 定基准</h3><p><code>flex-basis</code> 优先于 <code>width</code> / <code>height</code> 设置主轴初始尺寸；<code>auto</code> 才回退到尺寸属性或内容尺寸。</p></article>
+        <article class="formula-card"><h3>2. 有剩余就 grow</h3><p>总剩余空间乘以“自身 grow / 所有 grow 之和”。<code>flex-grow: 0</code> 的项目不参与增长。</p></article>
+        <article class="formula-card"><h3>3. 有缺口就 shrink</h3><p>负剩余空间按“自身 shrink × basis / 所有乘积之和”分配收缩，避免小 basis 项目被过度压缩。</p></article>
+        <article class="formula-card"><h3>min-width: 0 是逃生口</h3><p>Flex 项目默认 <code>min-width: auto</code>，长单词、图片等会撑住项目。设为 0 后才能小于内容最小尺寸。</p></article>
+        <article class="formula-card"><h3>order 只改视觉顺序</h3><p><code>order</code> 越大越靠后；键盘 Tab 与屏幕阅读器仍按 DOM 顺序，因此不要用它表达关键语义顺序。</p></article>
+        <article class="formula-card"><h3>gap 不等于 margin</h3><p><code>gap</code> 只产生项目之间的间距，不污染首尾边缘；容器换行时同时作用于行与列。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const stage = document.querySelector('#flexStage');
+      const status = document.querySelector('#flexStatus');
+      const code = document.querySelector('#flexCode');
+      const gapInput = document.querySelector('#gap');
+      const widthInput = document.querySelector('#containerWidth');
+      const justify = document.querySelector('#justify');
+      const align = document.querySelector('#align');
+      const minWidthToggle = document.querySelector('#minWidthToggle');
+      const axisButtons = [...document.querySelectorAll('[data-axis]')];
+      const wrapButtons = [...document.querySelectorAll('[data-wrap]')];
+      const orderButtons = [...document.querySelectorAll('[data-order]')];
+      let axis = 'row';
+      let wrap = 'wrap';
+      let order = 'normal';
+
+      function render() {
+        stage.classList.toggle('column', axis === 'column');
+        stage.classList.toggle('nowrap', wrap === 'nowrap');
+        stage.classList.toggle('reverse', order === 'reverse');
+        stage.style.gap = `${gapInput.value}px`;
+        stage.style.width = `${widthInput.value}%`;
+        stage.style.justifyContent = justify.value;
+        stage.style.alignItems = align.value;
+        document.querySelector('#gapValue').textContent = `${gapInput.value}px`;
+        document.querySelector('#widthValue').textContent = `${widthInput.value}%`;
+        axisButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.axis === axis)));
+        wrapButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.wrap === wrap)));
+        orderButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.order === order)));
+        const direction = axis === 'column' ? 'column' : 'row';
+        status.textContent = `主轴 ${axis}，${wrap}，justify-content: ${justify.value}，align-items: ${align.value}，gap: ${gapInput.value}px；视觉顺序${order === 'reverse' ? '反转' : '保持 DOM 顺序'}。`;
+        code.textContent = `.container {\n  display: flex;\n  flex-direction: ${direction}${order === 'reverse' ? '-reverse' : ''};\n  flex-wrap: ${wrap};\n  gap: ${gapInput.value}px;\n  justify-content: ${justify.value};\n  align-items: ${align.value};\n}\n.item {\n  min-width: 0; /* 允许文本项目收缩 */\n}\n.grow   { flex: 2 1 10rem; }\n.shrink { flex: 1 2 14rem; }\n.basis  { flex: 1 1 7rem; }`;
+      }
+
+      axisButtons.forEach(button => button.addEventListener('click', () => { axis = button.dataset.axis; render(); }));
+      wrapButtons.forEach(button => button.addEventListener('click', () => { wrap = button.dataset.wrap; render(); }));
+      orderButtons.forEach(button => button.addEventListener('click', () => { order = button.dataset.order; render(); }));
+      [gapInput, widthInput].forEach(input => input.addEventListener('input', render));
+      justify.addEventListener('change', render);
+      align.addEventListener('change', render);
+      minWidthToggle.addEventListener('click', () => {
+        const enabled = minWidthToggle.getAttribute('aria-pressed') !== 'true';
+        minWidthToggle.setAttribute('aria-pressed', String(enabled));
+        minWidthToggle.textContent = enabled ? 'min-width: 0' : 'min-width: auto';
+        stage.classList.toggle('min-auto', !enabled);
+        render();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>07 · 谁盖住谁</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    label { display: block; font-size: 14px; color: var(--muted); margin-bottom: .35rem; }
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+    code { font-family: var(--mono); font-size: 13px; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .stage { position: relative; height: 260px; min-width: 400px; border: 1px solid var(--line); border-radius: .6rem; background: repeating-linear-gradient(0deg, transparent 0 19px, #ebe6d9 19px 20px); overflow: hidden; }
+    .family { position: absolute; width: 300px; height: 160px; }
+    .fam-a { left: 24px; top: 24px; border: 2px dashed var(--green); background: rgba(47,111,79,.10); }
+    .fam-b { left: 60px; top: 60px; z-index: 2; border: 2px dashed var(--amber); background: rgba(178,107,31,.10); }
+    .tag { position: absolute; font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: .35rem; color: #fff; }
+    .tag-a { left: 4px; top: -13px; background: var(--green); }
+    .tag-b { right: 4px; bottom: -13px; background: var(--amber); }
+    .child { position: absolute; width: 96px; height: 60px; display: grid; place-items: center; font-family: var(--mono); font-size: 18px; font-weight: 700; color: #fff; border-radius: .4rem; }
+    #badge { left: 150px; top: 60px; background: var(--green); z-index: 9999; }
+    #cover { left: 114px; top: 24px; background: var(--amber); z-index: 0; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .25rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .verdict { margin-top: .5rem; padding: .55rem .75rem; border-radius: .5rem; background: #eef3ed; font-size: 14px; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/07-stacking-context.md">← 返回课程</a></p>
+  <h1>07 · 谁盖住谁</h1>
+  <p class="lede">家族 A 里有 z-index:9999，家族 B 里只有 z-index:0。先看谁赢，再用滑块改变 A 的家族层级去核对。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>默认状态下，A 的 z-index 是 1，B 是 2。A 家里的 9999 能盖住 B 家里的 0 吗？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>不能。浏览器先比家族：A(1) 低于 B(2)，B 家整体压在 A 家之上，所以 B 家里的 0 盖住 A 家里的 9999。把滑块拖过 2（A 变成 3 或 4），结果翻转；而子块的 9999 和 0 全程没变，说明这一轮比较发生在家族层，不在子块层。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label for="az">A 的 z-index（改变家族层级，不是子块的 9999）：<span id="azOut">1</span></label>
+    <input id="az" type="range" min="0" max="4" step="1" value="1" />
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="stage" id="stage">
+      <div class="family fam-a" id="familyA">
+        <span class="tag tag-a">家族 A</span>
+        <div class="child" id="badge">9999</div>
+      </div>
+      <div class="family fam-b" id="familyB">
+        <span class="tag tag-b">家族 B</span>
+        <div class="child" id="cover">0</div>
+      </div>
+    </div>
+    <p class="hint">两个子块位置完全重叠。用元素命中测试读取最上层的那个，结果见下方状态。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/07-stacking-context.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var slider = document.getElementById('az');
+    var familyA = document.getElementById('familyA');
+    var familyB = document.getElementById('familyB');
+    var badge = document.getElementById('badge');
+    var cover = document.getElementById('cover');
+    var readout = document.getElementById('readout');
+    var verdict = document.getElementById('verdict');
+    var css = document.getElementById('css');
+
+    function render() {
+      var az = Number(slider.value);
+      familyA.style.zIndex = String(az);
+      document.getElementById('azOut').textContent = String(az);
+
+      var csA = getComputedStyle(familyA);
+      var csB = getComputedStyle(familyB);
+      var azV = csA.zIndex;
+      var bzV = csB.zIndex;
+      var badgeV = getComputedStyle(badge).zIndex;
+      var coverV = getComputedStyle(cover).zIndex;
+
+      var r = badge.getBoundingClientRect();
+      var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      var hitName = '视口外，按层级推断';
+      if (hit && hit.id === 'badge') hitName = '9999（A 家）';
+      if (hit && hit.id === 'cover') hitName = '0（B 家）';
+      var aWins = hit ? hit.id === 'badge' : Number(azV) > Number(bzV);
+
+      readout.innerHTML =
+        '<div><span>家族 A 的 z-index</span><b>' + azV + '</b></div>' +
+        '<div><span>家族 B 的 z-index</span><b>' + bzV + '</b></div>' +
+        '<div><span>A 内子块 z-index</span><b>' + badgeV + '</b></div>' +
+        '<div><span>B 内子块 z-index</span><b>' + coverV + '</b></div>' +
+        '<div><span>命中测试 elementFromPoint</span><b>' + hitName + '</b></div>';
+
+      verdict.textContent = aWins
+        ? '结果：A 的 9999 在上。家族 A(' + azV + ') 已高于家族 B(' + bzV + ')；子块数字没有变化。'
+        : '结果：B 的 0 在上。家族 A(' + azV + ') 仍低于家族 B(' + bzV + ')，9999 输在家族层。';
+
+      css.textContent =
+        '.a      { position: absolute; z-index: ' + azV + '; }\n' +
+        '.badge  { position: absolute; z-index: ' + badgeV + '; }\n' +
+        '.b      { position: absolute; z-index: ' + bzV + '; }\n' +
+        '.cover  { position: absolute; z-index: ' + coverV + '; }';
+    }
+
+    slider.addEventListener('input', render);
+    window.addEventListener('scroll', render);
+    window.addEventListener('resize', render);
+    render();
+  })();
+</script>
+</body>
+</html>

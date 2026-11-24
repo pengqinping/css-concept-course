@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>12 · 为什么动画会卡</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    button { font: inherit; font-size: 14px; padding: .45rem .9rem; border: 1px solid var(--line); border-radius: .5rem; background: #fff; color: inherit; cursor: pointer; }
+    button.active { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    .btnrow { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .scroll { overflow-x: auto; padding: .4rem 0; }
+    .track { display: flex; align-items: flex-end; gap: 16px; height: 110px; min-width: 400px; position: relative; border-bottom: 2px solid var(--line); }
+    .mover { flex: none; width: 120px; height: 64px; display: grid; place-items: center; border-radius: .45rem; background: var(--green); color: #fff; font-family: var(--mono); font-size: 13px; will-change: transform; }
+    .sibling { flex: none; width: 10px; height: 84px; background: var(--amber); position: relative; border-radius: 3px; }
+    .sibling span { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--amber); white-space: nowrap; }
+    .stageflow { display: flex; gap: .5rem; flex-wrap: wrap; margin: .5rem 0; }
+    .node { padding: .35rem .7rem; border: 1px solid var(--line); border-radius: .5rem; background: #f6f3e9; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .node.on { background: #eef3ed; border-color: var(--green); color: var(--green); }
+    .node.enter { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; }
+    .node.skip { opacity: .4; text-decoration: line-through; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .verdict { margin-top: .5rem; padding: .55rem .75rem; border-radius: .5rem; background: #eef3ed; font-size: 14px; }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/12-rendering.md">← 返回课程</a></p>
+  <h1>12 · 为什么动画会卡</h1>
+  <p class="lede">属性改动从流水线的不同站点进入。落得越靠前，后面重做的越多。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>让方块从 120px 走到视觉上的 300px。改 width 与改 transform，哪种不会让旁边的兄弟标记位移？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>改 transform 不会。transform 只改视觉层的位置，布局盒宽度与流中占位不变（offsetWidth 仍是 120px），兄弟标记原地不动；改 width 会让布局盒变宽，兄弟标记被推开 180px。前提：transform 只走合成需要元素独立成层，本例已用 will-change 提示。用 Performance 录制 Main 轨道：改 width 出现 Layout 与 Paint 段，改 transform 主要剩 Composite Layers。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="btnrow">
+      <button id="btnWidth" type="button" aria-pressed="false">改 width</button>
+      <button id="btnTransform" type="button" aria-pressed="false">改 transform</button>
+      <button id="btnReset" type="button">复位</button>
+    </div>
+    <p class="hint">点击任一模式按钮即施加对应改动，再点"复位"回到起点。</p>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="scroll">
+      <div class="track" id="track">
+        <div class="mover" id="mover">方块</div>
+        <div class="sibling" id="sibling"><span>兄弟标记</span></div>
+      </div>
+    </div>
+    <h2 style="margin-top:1rem;">触发阶段（基于原理标注）</h2>
+    <div class="stageflow" id="pipeline"></div>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+    <p class="hint">验证方法：DevTools → Performance 录制 2 秒，展开 Main 轨道数 Layout / Paint 段；再用 Rendering 面板的 Paint flashing 与 Layout shift regions 复核。</p>
+  </section>
+
+  <footer><a href="../../docs/course/12-rendering.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var mover = document.getElementById('mover');
+    var sibling = document.getElementById('sibling');
+    var track = document.getElementById('track');
+    var pipeline = document.getElementById('pipeline');
+    var readout = document.getElementById('readout');
+    var verdict = document.getElementById('verdict');
+    var css = document.getElementById('css');
+    var btnW = document.getElementById('btnWidth');
+    var btnT = document.getElementById('btnTransform');
+    var btnR = document.getElementById('btnReset');
+    var mode = 'reset';
+
+    function apply(next) {
+      mode = next;
+      mover.style.width = mode === 'width' ? '300px' : '120px';
+      mover.style.transform = mode === 'transform' ? 'translateX(180px)' : 'none';
+      btnW.classList.toggle('active', mode === 'width');
+      btnT.classList.toggle('active', mode === 'transform');
+      btnW.setAttribute('aria-pressed', String(mode === 'width'));
+      btnT.setAttribute('aria-pressed', String(mode === 'transform'));
+      render();
+    }
+
+    function render() {
+      var mRect = mover.getBoundingClientRect();
+      var sRect = sibling.getBoundingClientRect();
+      var tRect = track.getBoundingClientRect();
+      var mLeft = Math.round(mRect.left - tRect.left);
+      var sLeft = Math.round(sRect.left - tRect.left);
+      var right = Math.round(mRect.right - tRect.left);
+
+      var stages;
+      if (mode === 'width') {
+        stages = [
+          ['样式计算', 'on'], ['布局', 'enter'], ['绘制', 'on'], ['合成', 'on']
+        ];
+      } else if (mode === 'transform') {
+        stages = [
+          ['样式计算', 'on'], ['布局', 'skip'], ['绘制', 'skip'], ['合成', 'enter']
+        ];
+      } else {
+        stages = [
+          ['样式计算', 'on'], ['布局', 'on'], ['绘制', 'on'], ['合成', 'on']
+        ];
+      }
+      pipeline.innerHTML = stages.map(function (s) {
+        var arrow = '';
+        return '<span class="node ' + s[1] + '">' + s[0] + '</span>' + arrow;
+      }).join('');
+
+      readout.innerHTML =
+        '<div><span>当前模式</span><b>' + (mode === 'reset' ? '复位' : '改 ' + mode) + '</b></div>' +
+        '<div><span>方块 offsetWidth（布局盒）</span><b>' + mover.offsetWidth + 'px</b></div>' +
+        '<div><span>方块视觉左边缘 getBoundingClientRect</span><b>' + mLeft + 'px</b></div>' +
+        '<div><span>方块视觉右边缘</span><b>' + right + 'px</b></div>' +
+        '<div><span>兄弟标记左边缘</span><b>' + sLeft + 'px</b></div>' +
+        '<div><span>兄弟标记相对起点位移</span><b>' + (sLeft - 136 >= 0 ? '+' : '') + (sLeft - 136) + 'px</b></div>';
+
+      verdict.textContent = mode === 'width'
+        ? '改 width：布局盒从 120px 变 300px，兄弟标记被推到 ' + sLeft + 'px（+180px）。这一改动从布局站进入，连带绘制与合成。'
+        : mode === 'transform'
+          ? '改 transform：布局盒仍是 ' + mover.offsetWidth + 'px，视觉右边缘到 ' + right + 'px，兄弟标记留在 ' + sLeft + 'px（未位移）。独立成层时从合成站进入。'
+          : '起点：方块布局盒 120px，兄弟标记在 136px。点击上方任一模式按钮施加改动。';
+
+      css.textContent = mode === 'width'
+        ? '.mover { width: 300px; transform: none; }  /* 布局站进入 */'
+        : mode === 'transform'
+          ? '.mover { width: 120px; transform: translateX(180px); }  /* offsetWidth 仍 120px */'
+          : '.mover { width: 120px; transform: none; }';
+    }
+
+    btnW.addEventListener('click', function () { apply('width'); });
+    btnT.addEventListener('click', function () { apply('transform'); });
+    btnR.addEventListener('click', function () { apply('reset'); });
+    render();
+  })();
+</script>
+</body>
+</html>

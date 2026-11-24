@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>滚动吸附：横向与纵向滚动容器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(76rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "←"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .65rem; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.15; letter-spacing: -.035em; }
+    h2 { margin: 0 0 .35rem; font-size: 1.35rem; line-height: 1.3; }
+    h3 { margin: 0 0 .35rem; font-size: 1rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 49rem; color: var(--muted); font-size: 1.05rem; }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .description { max-width: 48rem; color: var(--muted); }
+    .heading-wrap { display: flex; gap: .75rem; align-items: start; }
+    .section-no { display: inline-grid; place-items: center; flex: 0 0 auto; width: 2rem; height: 2rem; border-radius: 50%; background: var(--green); color: #fff; font-weight: 800; }
+    code { padding: .08em .32em; border-radius: .3rem; background: var(--green-soft); color: var(--green-dark); font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .controls { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: end; margin: 1rem 0; }
+    .control-group { display: grid; gap: .3rem; }
+    .control-group > span, .control-group > label { color: var(--muted); font-size: .8rem; font-weight: 750; }
+    .button-group { display: flex; flex-wrap: wrap; gap: .35rem; }
+    button, select { min-height: 2.65rem; padding: .5rem .8rem; border: 1px solid #aeb7a4; border-radius: .65rem; background: #fff; color: var(--ink); font: inherit; font-size: .9rem; font-weight: 650; cursor: pointer; }
+    button:hover, select:hover { border-color: var(--green); background: #f7faef; }
+    button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    select { min-width: 10rem; }
+    input[type="range"] { width: min(12rem, 70vw); accent-color: var(--green); }
+    .range-row { display: flex; align-items: center; gap: .5rem; min-height: 2.65rem; }
+    output { min-width: 3.5rem; color: var(--green-dark); font: .83rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .demo-shell { padding: clamp(.7rem, 2vw, 1.1rem); border: 2px solid #aeb7a4; border-radius: .9rem; background: #f8f6ef; }
+    .snap-scroll {
+      position: relative;
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: var(--green) #ded9cc;
+      overscroll-behavior: contain;
+    }
+    .snap-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .snap-scroll::-webkit-scrollbar-track { background: #ded9cc; border-radius: 999px; }
+    .snap-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb, var(--green)); border: 2px solid #ded9cc; border-radius: 999px; }
+    .snap-scroll.hide-scrollbar { scrollbar-width: none; }
+    .snap-scroll.hide-scrollbar::-webkit-scrollbar { display: none; }
+    .snap-x {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(15rem, 78%);
+      gap: 1rem;
+      padding: 1rem;
+      padding-inline: var(--snap-padding, 2rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--snap-padding, 2rem);
+      border: 1px solid #c6c0b1;
+      border-radius: .75rem;
+      background: #fffdf7;
+    }
+    .snap-y {
+      height: 21rem;
+      padding: 1rem;
+      padding-block: var(--snap-padding, 2rem);
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-snap-type: y proximity;
+      scroll-padding-block: var(--snap-padding, 2rem);
+      border: 1px solid #c6c0b1;
+      border-radius: .75rem;
+      background: #fffdf7;
+    }
+    .snap-card { position: relative; scroll-snap-align: start; scroll-snap-stop: normal; min-width: 0; min-height: 10rem; padding: clamp(1rem, 3vw, 1.4rem); border: 2px solid var(--green-dark); border-radius: .75rem; background: var(--green-soft); color: var(--green-dark); }
+    .snap-card:nth-child(2n) { border-color: #7a4716; background: var(--amber-soft); color: #70400f; }
+    .snap-card:nth-child(3n) { border-color: #62517c; background: #e5e0f0; color: #49375f; }
+    .snap-card.is-stop { scroll-snap-stop: always; border-style: double; border-width: 5px; }
+    .snap-card .number { display: block; margin-bottom: .5rem; font: .8rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .snap-card p { max-width: 32rem; margin: 0; font-size: .92rem; }
+    .snap-y .snap-card { min-height: 16rem; display: grid; align-content: center; }
+    .stop-tag { position: absolute; top: .55rem; right: .55rem; padding: .1rem .4rem; border-radius: .35rem; background: var(--green-dark); color: #fff; font: .7rem ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .status-line { min-height: 1.7em; margin: .8rem 0 0; color: var(--green-dark); font-weight: 650; }
+    .tip { padding: .75rem .9rem; border-left: 4px solid var(--green); border-radius: 0 .55rem .55rem 0; background: var(--green-soft); color: var(--green-dark); font-size: .9rem; }
+    .property-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem; margin-top: 1rem; }
+    .property-card { padding: .9rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .property-card p { margin: 0; color: var(--muted); font-size: .9rem; }
+    pre { margin: 1rem 0 0; padding: 1rem; overflow: auto; border-radius: .75rem; background: #263021; color: #edf2e5; font: .82rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 42rem) {
+      .page { width: min(100% - 1rem, 76rem); padding-top: 1rem; }
+      .topbar { align-items: start; margin-bottom: 1.2rem; }
+      .control-group { flex: 1 1 9rem; }
+      .button-group button { flex: 1 1 auto; }
+      select { width: 100%; min-width: 0; }
+      .snap-x { grid-auto-columns: 86%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html, .snap-scroll { scroll-behavior: auto !important; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <a class="back-link" href="../index.html">返回示例索引</a>
+      <p class="eyebrow">Layout / 04</p>
+    </div>
+    <header>
+      <p class="eyebrow">Scroll Snap</p>
+      <h1>滚动吸附：横向与纵向</h1>
+      <p class="lead">用触控板、鼠标滚轮、拖动滚动条或键盘方向键，观察卡片如何停在吸附点。按钮与参数控制会实时修改两个真实滚动容器。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="horizontal-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">1</span>
+        <div>
+          <h2 id="horizontal-title">横向滚动与强制停靠</h2>
+          <p class="description">第三张卡片设置了 <code>scroll-snap-stop: always</code>。用较大的滚轮手势滚动时，它会成为一次手势中无法越过的停靠点。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <span id="horizontal-type-label">snap-type</span>
+          <div class="button-group" role="group" aria-labelledby="horizontal-type-label">
+            <button type="button" data-x-type="mandatory" aria-pressed="true">mandatory</button>
+            <button type="button" data-x-type="proximity" aria-pressed="false">proximity</button>
+            <button type="button" data-x-type="none" aria-pressed="false">none</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="xAlign">snap-align</label>
+          <select id="xAlign"><option value="start">start</option><option value="center">center</option><option value="end">end</option></select>
+        </div>
+        <div class="control-group">
+          <span>强制停靠点</span>
+          <button type="button" id="stopToggle" aria-pressed="true">stop: always</button>
+        </div>
+        <div class="control-group">
+          <span>卡片导航</span>
+          <div class="button-group"><button type="button" id="xPrev">上一张</button><button type="button" id="xNext">下一张</button></div>
+        </div>
+      </div>
+      <div class="demo-shell">
+        <div class="snap-scroll snap-x" id="snapX" tabindex="0" role="region" aria-label="横向滚动吸附卡片，可使用左右方向键、Home 或 End">
+          <article class="snap-card"><span class="number">CARD 01 / 05</span><h3>从左侧留白开始</h3><p><code>scroll-padding-inline: 2rem</code> 让吸附点与容器边缘保持呼吸空间，而不是紧贴滚动条。</p></article>
+          <article class="snap-card"><span class="number">CARD 02 / 05</span><h3>每张卡片都是吸附目标</h3><p><code>scroll-snap-align: start</code> 把卡片起始边对齐到吸附端口起点；改为 center 可观察不同的对齐位置。</p></article>
+          <article class="snap-card is-stop" id="stopCard"><span class="stop-tag">STOP ALWAYS</span><span class="number">CARD 03 / 05</span><h3>不能一次越过</h3><p><code>scroll-snap-stop: always</code> 强制手势停在这里。注意：用“下一张”按钮进行的程序化跳转仍可能直接越过。</p></article>
+          <article class="snap-card"><span class="number">CARD 04 / 05</span><h3>连续吸附</h3><p>mandatory 在滚动结束后必须落在吸附点；proximity 只有足够接近时才吸附，手感更自由。</p></article>
+          <article class="snap-card"><span class="number">CARD 05 / 05</span><h3>到达边界</h3><p><code>overscroll-behavior: contain</code> 阻止容器到边界后继续把滚动传递给外层页面。</p></article>
+        </div>
+      </div>
+      <p class="status-line" id="xStatus" aria-live="off"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="vertical-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">2</span>
+        <div>
+          <h2 id="vertical-title">纵向滚动与 proximity</h2>
+          <p class="description">纵向容器默认使用 <code>scroll-snap-type: y proximity</code>：接近吸附点时自然停下，否则允许停在两屏之间，更适合长内容。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <span id="vertical-type-label">snap-type</span>
+          <div class="button-group" role="group" aria-labelledby="vertical-type-label">
+            <button type="button" data-y-type="proximity" aria-pressed="true">proximity</button>
+            <button type="button" data-y-type="mandatory" aria-pressed="false">mandatory</button>
+            <button type="button" data-y-type="none" aria-pressed="false">none</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="yAlign">snap-align</label>
+          <select id="yAlign"><option value="start">start</option><option value="center">center</option></select>
+        </div>
+        <div class="control-group">
+          <span>卡片导航</span>
+          <div class="button-group"><button type="button" id="yPrev">上一屏</button><button type="button" id="yNext">下一屏</button></div>
+        </div>
+      </div>
+      <div class="demo-shell">
+        <div class="snap-scroll snap-y" id="snapY" tabindex="0" role="region" aria-label="纵向滚动吸附卡片，可使用上下方向键、Page Down、Page Up、Home 或 End">
+          <article class="snap-card"><span class="number">SECTION 01 / 04</span><h3>用键盘也能滚动</h3><p>容器获得焦点后，方向键可滚动，Page Down / Page Up 翻页，Home / End 到达首尾。示例也监听了这些按键，让每次操作精确导航到吸附点。</p></article>
+          <article class="snap-card"><span class="number">SECTION 02 / 04</span><h3>对齐由子项声明</h3><p><code>scroll-snap-align</code> 写在每个卡片上，而不是只写在容器上。start 对齐起始边，center 则让卡片中心落在可视端口中心。</p></article>
+          <article class="snap-card"><span class="number">SECTION 03 / 04</span><h3>滚动条也可以设计</h3><p><code>scrollbar-width: thin</code> 与 <code>scrollbar-color</code> 控制标准滚动条；旧式 WebKit 内核通过 <code>::-webkit-scrollbar</code> 提供回退样式。</p></article>
+          <article class="snap-card"><span class="number">SECTION 04 / 04</span><h3>尊重减少动态偏好</h3><p>系统开启“减少动态效果”后，示例会把平滑滚动降为即时滚动。你仍可用下方开关手动选择 <code>scroll-behavior</code>。</p></article>
+        </div>
+      </div>
+      <p class="status-line" id="yStatus" aria-live="off"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="shared-title">
+      <div class="heading-wrap">
+        <span class="section-no" aria-hidden="true">3</span>
+        <div>
+          <h2 id="shared-title">两个容器共享的参数</h2>
+          <p class="description">调整内边距、滚动链和滚动条样式，然后回到上方实际滚动。所有设置都通过 CSS 自定义属性和标准属性即时生效。</p>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <label for="padding">scroll-padding</label>
+          <div class="range-row"><input id="padding" type="range" min="0" max="48" step="4" value="32"><output id="paddingValue" for="padding">32px</output></div>
+        </div>
+        <div class="control-group">
+          <label for="overscroll">overscroll-behavior</label>
+          <select id="overscroll"><option value="contain">contain · 隔离滚动链</option><option value="none">none · 禁用边缘效果</option><option value="auto">auto · 允许传递</option></select>
+        </div>
+        <div class="control-group">
+          <label for="scrollbarWidth">scrollbar-width</label>
+          <select id="scrollbarWidth"><option value="thin">thin</option><option value="auto">auto</option><option value="none">none</option></select>
+        </div>
+        <div class="control-group">
+          <label for="scrollbarColor">scrollbar-color</label>
+          <select id="scrollbarColor"><option value="green">深绿</option><option value="amber">赭石</option></select>
+        </div>
+        <div class="control-group">
+          <label for="behavior">scroll-behavior</label>
+          <select id="behavior"><option value="smooth">smooth</option><option value="auto">auto</option></select>
+        </div>
+      </div>
+      <p class="status-line" id="sharedStatus" role="status" aria-live="polite"></p>
+      <p class="sr-only" id="navigationAnnouncement" role="status" aria-live="polite"></p>
+      <p class="tip">在任一容器边界继续滚动，对比 <code>contain</code> 与 <code>auto</code>：前者把滚动留在容器内，后者可能把剩余滚动交给页面。<code>none</code> 还会禁用橡皮筋等边缘效果。iOS Safari 对滚动条样式与 overscroll 的支持有限，应以实际设备为准。</p>
+      <pre><code>.scroller {
+  overflow-x: auto;           /* 或 overflow-y: auto */
+  scroll-snap-type: x mandatory; /* 或 y proximity */
+  scroll-padding-inline: 2rem;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #3f6b2a #ded9cc;
+}
+.card {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;   /* 特殊卡片可设 always */
+}</code></pre>
+    </section>
+
+    <section class="panel" aria-labelledby="reference-title">
+      <h2 id="reference-title">滚动吸附速查</h2>
+      <div class="property-grid">
+        <article class="property-card"><h3>snap-type</h3><p>轴由 <code>x</code> / <code>y</code> 指定；mandatory 强制吸附，proximity 接近才吸附。none 会关闭吸附。</p></article>
+        <article class="property-card"><h3>snap-align</h3><p>写在被吸附元素上，可用 start / center / end；两值时第一个是块轴，第二个是行轴。</p></article>
+        <article class="property-card"><h3>snap-stop</h3><p><code>always</code> 阻止用户一次手势越过该元素；normal 允许掠过。不是“禁止访问”的语义属性。</p></article>
+        <article class="property-card"><h3>scroll-padding</h3><p>定义滚动端口的吸附留白，类似容器级 padding，但只影响滚动与吸附位置，不移动普通布局内容。</p></article>
+        <article class="property-card"><h3>overscroll-behavior</h3><p>contain 隔离滚动链；none 同时禁用边缘效果；auto 保留浏览器默认行为。</p></article>
+        <article class="property-card"><h3>可访问性</h3><p>保留可见焦点、足够大的点击目标、键盘导航与即时滚动回退；不要让吸附动画导致内容难以停下。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const padding = document.querySelector('#padding');
+      const overscroll = document.querySelector('#overscroll');
+      const scrollbarWidth = document.querySelector('#scrollbarWidth');
+      const scrollbarColor = document.querySelector('#scrollbarColor');
+      const behavior = document.querySelector('#behavior');
+      const stopToggle = document.querySelector('#stopToggle');
+      const stopCard = document.querySelector('#stopCard');
+      const snapX = document.querySelector('#snapX');
+      const snapY = document.querySelector('#snapY');
+      const xCards = [...snapX.children];
+      const yCards = [...snapY.children];
+      const xStatus = document.querySelector('#xStatus');
+      const yStatus = document.querySelector('#yStatus');
+      let xIndex = 0;
+      let yIndex = 0;
+      let xFrame = 0;
+      let yFrame = 0;
+
+      function effectiveBehavior() {
+        return reduceMotion.matches ? 'auto' : behavior.value;
+      }
+
+      function renderShared() {
+        document.documentElement.style.setProperty('--snap-padding', `${padding.value}px`);
+        document.querySelectorAll('.snap-scroll').forEach(scroller => {
+          scroller.style.scrollBehavior = behavior.value;
+          scroller.style.overscrollBehavior = overscroll.value;
+          scroller.style.scrollbarWidth = scrollbarWidth.value;
+          scroller.classList.toggle('hide-scrollbar', scrollbarWidth.value === 'none');
+        });
+        document.querySelectorAll('.snap-x, .snap-y').forEach(scroller => {
+          scroller.style.setProperty('--snap-padding', `${padding.value}px`);
+        });
+        const thumb = scrollbarColor.value === 'amber' ? '#a7631d' : '#3f6b2a';
+        snapX.style.setProperty('--scrollbar-thumb', thumb);
+        snapY.style.setProperty('--scrollbar-thumb', thumb);
+        snapX.style.scrollbarColor = `${thumb} #ded9cc`;
+        snapY.style.scrollbarColor = `${thumb} #ded9cc`;
+        document.querySelector('#paddingValue').textContent = `${padding.value}px`;
+        document.querySelector('#sharedStatus').textContent = `scroll-padding: ${padding.value}px；overscroll-behavior: ${overscroll.value}；scrollbar-width: ${scrollbarWidth.value}；有效滚动行为：${effectiveBehavior()}${reduceMotion.matches ? '（减少动态偏好优先）' : ''}。`;
+      }
+
+      function targetOffset(scroller, card, axis, align) {
+        const style = getComputedStyle(scroller);
+        const pad = parseFloat(axis === 'x' ? style.scrollPaddingInlineStart : style.scrollPaddingBlockStart) || 0;
+        const start = axis === 'x' ? card.offsetLeft : card.offsetTop;
+        if (align === 'center') {
+          const viewport = axis === 'x' ? scroller.clientWidth : scroller.clientHeight;
+          const size = axis === 'x' ? card.offsetWidth : card.offsetHeight;
+          return Math.max(0, start - (viewport - size) / 2 - pad);
+        }
+        if (align === 'end') {
+          const viewport = axis === 'x' ? scroller.clientWidth : scroller.clientHeight;
+          const size = axis === 'x' ? card.offsetWidth : card.offsetHeight;
+          return Math.max(0, start - viewport + size + pad);
+        }
+        return Math.max(0, start - pad);
+      }
+
+      function navigate(scroller, cards, axis, index) {
+        const nextIndex = Math.max(0, Math.min(cards.length - 1, index));
+        const align = axis === 'x' ? document.querySelector('#xAlign').value : document.querySelector('#yAlign').value;
+        const offset = targetOffset(scroller, cards[nextIndex], axis, align);
+        scroller.scrollTo(axis === 'x' ? { left: offset, behavior: effectiveBehavior() } : { top: offset, behavior: effectiveBehavior() });
+        document.querySelector('#navigationAnnouncement').textContent = `${axis === 'x' ? '横向卡片' : '纵向内容'}：第 ${nextIndex + 1} 项，共 ${cards.length} 项。`;
+        if (axis === 'x') updateXStatus(nextIndex);
+        else updateYStatus(nextIndex);
+      }
+
+      function nearestIndex(scroller, cards, axis) {
+        const align = axis === 'x' ? document.querySelector('#xAlign').value : document.querySelector('#yAlign').value;
+        const current = axis === 'x' ? scroller.scrollLeft : scroller.scrollTop;
+        let nearest = 0;
+        let distance = Infinity;
+        cards.forEach((card, index) => {
+          const value = Math.abs(targetOffset(scroller, card, axis, align) - current);
+          if (value < distance) { distance = value; nearest = index; }
+        });
+        return nearest;
+      }
+
+      function selectedType(axis) {
+        const button = document.querySelector(`[data-${axis}-type][aria-pressed="true"]`);
+        return `${axis} ${button.dataset[`${axis}Type`]}`;
+      }
+
+      function updateXStatus(forcedIndex) {
+        xFrame = 0;
+        xIndex = forcedIndex ?? nearestIndex(snapX, xCards, 'x');
+        document.querySelector('#xPrev').disabled = xIndex === 0;
+        document.querySelector('#xNext').disabled = xIndex === xCards.length - 1;
+        const type = selectedType('x');
+        xStatus.textContent = `当前最近第 ${xIndex + 1} / ${xCards.length} 张；scroll-snap-type: ${type}；align: ${document.querySelector('#xAlign').value}。`;
+      }
+      function updateYStatus(forcedIndex) {
+        yFrame = 0;
+        yIndex = forcedIndex ?? nearestIndex(snapY, yCards, 'y');
+        document.querySelector('#yPrev').disabled = yIndex === 0;
+        document.querySelector('#yNext').disabled = yIndex === yCards.length - 1;
+        const type = selectedType('y');
+        yStatus.textContent = `当前最近第 ${yIndex + 1} / ${yCards.length} 屏；scroll-snap-type: ${type}；align: ${document.querySelector('#yAlign').value}。`;
+      }
+
+      function setAxisType(axis, value) {
+        const scroller = axis === 'x' ? snapX : snapY;
+        scroller.style.scrollSnapType = value === 'none' ? 'none' : `${axis} ${value}`;
+        document.querySelectorAll(`[data-${axis}-type]`).forEach(button => {
+          button.setAttribute('aria-pressed', String(button.dataset[`${axis}Type`] === value));
+        });
+        updateXStatus();
+        updateYStatus();
+      }
+
+      document.querySelectorAll('[data-x-type]').forEach(button => button.addEventListener('click', () => setAxisType('x', button.dataset.xType)));
+      document.querySelectorAll('[data-y-type]').forEach(button => button.addEventListener('click', () => setAxisType('y', button.dataset.yType)));
+      document.querySelector('#xAlign').addEventListener('change', () => { xCards.forEach(card => card.style.scrollSnapAlign = document.querySelector('#xAlign').value); updateXStatus(); });
+      document.querySelector('#yAlign').addEventListener('change', () => { yCards.forEach(card => card.style.scrollSnapAlign = document.querySelector('#yAlign').value); updateYStatus(); });
+      document.querySelector('#xPrev').addEventListener('click', () => navigate(snapX, xCards, 'x', xIndex - 1));
+      document.querySelector('#xNext').addEventListener('click', () => navigate(snapX, xCards, 'x', xIndex + 1));
+      document.querySelector('#yPrev').addEventListener('click', () => navigate(snapY, yCards, 'y', yIndex - 1));
+      document.querySelector('#yNext').addEventListener('click', () => navigate(snapY, yCards, 'y', yIndex + 1));
+      stopToggle.addEventListener('click', () => {
+        const enabled = stopToggle.getAttribute('aria-pressed') !== 'true';
+        stopToggle.setAttribute('aria-pressed', String(enabled));
+        stopToggle.textContent = enabled ? 'stop: always' : 'stop: normal';
+        stopCard.classList.toggle('is-stop', enabled);
+        stopCard.style.scrollSnapStop = enabled ? 'always' : 'normal';
+      });
+
+      [padding, overscroll, scrollbarWidth, scrollbarColor, behavior].forEach(input => input.addEventListener('input', renderShared));
+      behavior.addEventListener('change', renderShared);
+      snapX.addEventListener('scroll', () => { if (!xFrame) xFrame = requestAnimationFrame(updateXStatus); }, { passive: true });
+      snapY.addEventListener('scroll', () => { if (!yFrame) yFrame = requestAnimationFrame(updateYStatus); }, { passive: true });
+      window.addEventListener('resize', () => { updateXStatus(); updateYStatus(); });
+
+      snapX.addEventListener('keydown', event => {
+        let target = null;
+        if (event.key === 'ArrowRight') target = xIndex + 1;
+        if (event.key === 'ArrowLeft') target = xIndex - 1;
+        if (event.key === 'Home') target = 0;
+        if (event.key === 'End') target = xCards.length - 1;
+        if (target === null) return;
+        event.preventDefault();
+        navigate(snapX, xCards, 'x', target);
+      });
+      snapY.addEventListener('keydown', event => {
+        let target = null;
+        if (event.key === 'ArrowDown') target = yIndex + 1;
+        if (event.key === 'ArrowUp') target = yIndex - 1;
+        if (event.key === 'PageDown') target = yIndex + 1;
+        if (event.key === 'PageUp') target = yIndex - 1;
+        if (event.key === 'Home') target = 0;
+        if (event.key === 'End') target = yCards.length - 1;
+        if (target === null) return;
+        event.preventDefault();
+        navigate(snapY, yCards, 'y', target);
+      });
+      if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', renderShared);
+      else reduceMotion.addListener(renderShared);
+
+      renderShared();
+      updateXStatus();
+      updateYStatus();
+    })();
+  </script>
+</body>
+</html>

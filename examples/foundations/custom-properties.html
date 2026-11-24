@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN" data-palette="forest">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>自定义属性 · CSS 基础示例</title>
+  <style>
+    @property --dial-angle {
+      syntax: "<angle>";
+      inherits: false;
+      initial-value: 0deg;
+    }
+    @property --meter-value {
+      syntax: "<percentage>";
+      inherits: false;
+      initial-value: 0%;
+    }
+    @property --halo {
+      syntax: "<color>";
+      inherits: false;
+      initial-value: #f4f1e9;
+    }
+    :root {
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --ink: #252a22;
+      --muted: #68705f;
+      --green: #3f6b2a;
+      --green-soft: #e6eddf;
+      --amber: #b96f35;
+      --line: #d8d4c9;
+      --ui-surface: #fffdf7;
+      --ui-accent: #3f6b2a;
+      --ui-text: #252a22;
+      --ui-muted: #e6eddf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green); text-underline-offset: .2em; }
+    .back-link { display: inline-block; margin: 1.25rem 0 0 1.25rem; font-weight: 700; }
+    main { width: min(70rem, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+    header { max-width: 54rem; margin-bottom: 1.5rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.2; color: var(--green); }
+    h2 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    h3 { margin: .25rem 0; font-size: 1rem; }
+    p { margin: .5rem 0; }
+    .lede, .hint, .caption { color: var(--muted); }
+    .panel {
+      margin-top: 1rem;
+      padding: clamp(1rem, 3vw, 1.5rem);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: var(--card);
+      box-shadow: 0 8px 24px rgb(63 107 42 / 5%);
+    }
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .demo-box { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: #f8f6ef; }
+    .tag { display: inline-block; margin-bottom: .5rem; padding: .15rem .5rem; border-radius: 999px; color: var(--green); background: var(--green-soft); font-size: .78rem; font-weight: 800; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    code { padding: .08em .3em; border-radius: .25rem; background: #eeeae0; font-size: .9em; }
+    pre { margin: .75rem 0 0; padding: 1rem; overflow-x: auto; border-radius: .65rem; color: #eef3e8; background: #273024; font-size: .85rem; }
+    pre code { padding: 0; color: inherit; background: none; }
+    button, input { font: inherit; }
+    button {
+      min-height: 2.75rem;
+      padding: .55rem .9rem;
+      border: 1px solid var(--green);
+      border-radius: .6rem;
+      color: var(--green);
+      background: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: var(--green-soft); }
+    button[aria-pressed="true"] { color: white; background: var(--green); }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #d59a3a; outline-offset: 3px; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1rem 0; }
+    .status { min-height: 1.65em; font-weight: 700; color: var(--green); }
+    fieldset { display: flex; flex-wrap: wrap; gap: .65rem; margin: 1rem 0; padding: .75rem; border: 1px solid var(--line); border-radius: .75rem; }
+    legend { padding: 0 .35rem; font-weight: 700; }
+    .radio-label { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .55rem; border-radius: .4rem; cursor: pointer; }
+    .radio-label:has(input:checked) { color: white; background: var(--green); }
+    .note { margin-top: .75rem; padding: .75rem 1rem; border-left: 4px solid var(--amber); border-radius: 0 .5rem .5rem 0; background: #fbf0df; }
+
+    .scope-card {
+      --accent: #3f6b2a;
+      --token-space: 1rem;
+      padding: var(--token-space);
+      border: 1px dashed var(--accent);
+      border-radius: .75rem;
+      background: #fffdf7;
+      transition: border-color 220ms ease;
+    }
+    .scope-card.is-overridden { --accent: #b96f35; }
+    .scope-preview {
+      padding: 1.25rem;
+      border-radius: .55rem;
+      color: white;
+      background: var(--accent);
+      font-weight: 800;
+      transition: background-color 220ms ease;
+    }
+    .scope-child {
+      margin-top: var(--token-space);
+      padding: .75rem;
+      border: 2px solid var(--accent);
+      border-radius: .5rem;
+      color: var(--accent);
+      background: #f8f6ef;
+      transition: color 220ms ease, border-color 220ms ease;
+    }
+    .token-map { display: grid; gap: .5rem; margin: .75rem 0 0; }
+    .token-row { display: flex; justify-content: space-between; gap: .75rem; padding: .5rem .65rem; border-radius: .45rem; background: #eeeae0; font-size: .88rem; }
+    .token-row code { background: none; }
+
+    .fallback-preview {
+      display: grid;
+      min-height: 7rem;
+      place-items: center;
+      padding: 1rem;
+      border: 2px solid var(--amber);
+      border-radius: .65rem;
+      color: #252a22;
+      background: var(--not-defined, #e8b36b);
+      text-align: center;
+      font-weight: 800;
+      transition: background-color 220ms ease;
+    }
+    .fallback-card.has-token { --not-defined: #3f6b2a; }
+    .fallback-card.has-token .fallback-preview { color: white; border-color: var(--green); }
+
+    html[data-palette="clay"] {
+      --ui-surface: #fff1e3;
+      --ui-accent: #a65331;
+      --ui-text: #40271d;
+      --ui-muted: #f4d7c2;
+    }
+    .token-ui {
+      padding: clamp(1rem, 4vw, 1.5rem);
+      border: 2px solid var(--ui-accent);
+      border-radius: .85rem;
+      color: var(--ui-text);
+      background: var(--ui-surface);
+      transition: color 220ms ease, background-color 220ms ease, border-color 220ms ease;
+    }
+    .token-ui .token-chip { display: inline-block; margin-top: .5rem; padding: .3rem .65rem; border-radius: 999px; color: var(--ui-surface); background: var(--ui-accent); font-size: .85rem; font-weight: 800; }
+    .token-swatches { display: flex; gap: .5rem; margin-top: .75rem; }
+    .token-swatches span { flex: 1; min-height: 2.5rem; border: 1px solid rgb(0 0 0 / 12%); border-radius: .4rem; background: var(--ui-accent); }
+    .token-swatches span:nth-child(2) { background: var(--ui-muted); }
+    .token-swatches span:nth-child(3) { background: var(--ui-surface); }
+
+    .typed-stage { display: grid; grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr); align-items: center; gap: 1.25rem; }
+    .typed-dial {
+      --dial-angle: 0deg;
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--green) var(--dial-angle), #ddd9ce 0);
+      animation: dial-spin 3s linear infinite paused;
+    }
+    .typed-dial::after {
+      content: "";
+      width: 62%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--halo);
+      box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
+      animation: halo-pulse 1.8s ease-in-out infinite paused;
+    }
+    .meter-track { height: 1rem; margin-top: 1rem; border-radius: 999px; background: #ddd9ce; overflow: hidden; }
+    .meter-fill {
+      width: var(--meter-value);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--amber);
+      animation: meter-fill 2.4s ease-in-out infinite alternate paused;
+    }
+    .typed-stage.is-running .typed-dial,
+    .typed-stage.is-running .typed-dial::after,
+    .typed-stage.is-running .meter-fill { animation-play-state: running; }
+    @keyframes dial-spin { to { --dial-angle: 360deg; } }
+    @keyframes halo-pulse { 50% { --halo: #e8b36b; } }
+    @keyframes meter-fill { to { --meter-value: 100%; } }
+    .compat { margin-top: .75rem; padding: .65rem .8rem; border-radius: .5rem; color: var(--muted); background: #eeeae0; font-size: .86rem; }
+    @media (max-width: 44rem) {
+      .grid.two { grid-template-columns: 1fr; }
+      .typed-stage { grid-template-columns: 1fr; justify-items: center; }
+      .typed-dial { width: min(13rem, 75%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      .typed-dial, .typed-dial::after, .meter-fill { animation: none !important; }
+      .typed-dial { --dial-angle: 220deg; }
+      .meter-fill { --meter-value: 68%; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../index.html">返回示例索引</a>
+  <main>
+    <header>
+      <h1>自定义属性与类型化动画</h1>
+      <p class="lede">自定义属性让值可以沿 DOM 继承、局部覆盖和集中换肤；注册 <code>@property</code> 后，浏览器还知道如何插值角度、百分比与颜色。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="inherit-title">
+      <span class="tag">01 · 继承与局部覆盖</span>
+      <h2 id="inherit-title">变量沿 DOM 传递，子元素也可以覆盖</h2>
+      <div class="grid two">
+        <div class="demo-box">
+          <div class="scope-card" id="scope-card">
+            <div class="scope-preview">父级预览：使用 --accent</div>
+            <div class="scope-child">子元素没有重新定义 --accent，因此继承父级的值；间距来自 --token-space。</div>
+          </div>
+          <div class="controls">
+            <button type="button" id="scope-toggle" aria-pressed="false" aria-controls="scope-card">局部覆盖 --accent</button>
+          </div>
+          <output class="status" id="scope-status" aria-live="polite">当前：--accent: #3f6b2a（深绿）。</output>
+        </div>
+        <div class="demo-box">
+          <pre><code>.scope-card {
+  --accent: #3f6b2a;
+  --token-space: 1rem;
+}
+
+/* 只影响这个子树 */
+.scope-card.is-overridden {
+  --accent: #b96f35;
+}
+
+.scope-preview {
+  background: var(--accent);
+  padding: var(--token-space);
+}</code></pre>
+          <p class="hint">自定义属性默认继承。局部覆盖不会改变祖先或兄弟节点；未定义的变量通过 <code>var()</code> 求值时，其声明会变为无效。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="fallback-title">
+      <span class="tag">02 · var() 回退</span>
+      <h2 id="fallback-title">变量缺失时使用回退值</h2>
+      <div class="grid two">
+        <div class="demo-box fallback-card" id="fallback-card">
+          <div class="fallback-preview">当前使用：<span id="fallback-value">回退橙色 #e8b36b</span></div>
+          <div class="controls">
+            <button type="button" id="fallback-toggle" aria-pressed="false" aria-controls="fallback-card">定义 --not-defined</button>
+          </div>
+        </div>
+        <div class="demo-box">
+          <pre><code>.preview {
+  /* 变量不存在或无效时，使用逗号后的值 */
+  background: var(--not-defined, #e8b36b);
+}
+
+.fallback-card.has-token {
+  --not-defined: #3f6b2a;
+}</code></pre>
+          <p class="hint">回退值只在自定义属性缺失或保证无效时使用；不要把它当作任意 CSS 语法错误的通用修复。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="tokens-title">
+      <span class="tag">03 · 主题令牌</span>
+      <h2 id="tokens-title">只改变量，不重写组件</h2>
+      <fieldset>
+        <legend>切换主题令牌</legend>
+        <label class="radio-label"><input type="radio" name="palette" value="forest" checked>森林绿</label>
+        <label class="radio-label"><input type="radio" name="palette" value="clay">陶土橙</label>
+      </fieldset>
+      <div class="token-ui">
+        <h3>一个组件，多套令牌</h3>
+        <p><code>--ui-surface</code>、<code>--ui-accent</code>、<code>--ui-text</code> 与 <code>--ui-muted</code> 一起换肤。</p>
+        <span class="token-chip">令牌驱动</span>
+        <div class="token-swatches" aria-label="主题颜色预览"><span></span><span></span><span></span></div>
+      </div>
+      <output class="status" id="palette-status" aria-live="polite">当前：森林绿令牌。</output>
+      <div class="token-map">
+        <div class="token-row"><code>--ui-accent</code><span>主操作与强调色</span></div>
+        <div class="token-row"><code>--ui-surface</code><span>组件表面</span></div>
+        <div class="token-row"><code>--ui-text</code><span>组件正文</span></div>
+        <div class="token-row"><code>--ui-muted</code><span>次级色块</span></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="property-title">
+      <span class="tag">04 · @property</span>
+      <h2 id="property-title">注册类型后，自定义属性可以平滑插值</h2>
+      <p>圆环角度、中心颜色和进度条宽度都通过注册过的自定义属性动画。</p>
+      <div class="typed-stage" id="typed-stage">
+        <div class="typed-dial" aria-hidden="true"></div>
+        <div>
+          <h3>--dial-angle / --halo / --meter-value</h3>
+          <p class="caption"><code>syntax</code> 定义可接受的类型，<code>inherits: false</code> 关闭继承，<code>initial-value</code> 提供缺失时的初始值。</p>
+          <div class="meter-track" aria-hidden="true"><div class="meter-fill"></div></div>
+          <div class="controls">
+            <button type="button" id="animation-toggle" aria-pressed="false" aria-controls="typed-stage">运行动画</button>
+          </div>
+        </div>
+      </div>
+      <pre><code>@property --dial-angle {
+  syntax: "&lt;angle&gt;";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes dial-spin {
+  to { --dial-angle: 360deg; }
+}</code></pre>
+      <p class="compat">不支持 <code>@property</code> 的浏览器仍会显示图形，但自定义属性可能只在关键帧之间跳变，不能平滑插值。系统开启“减弱动态效果”时，本示例会停止动画并显示静态状态。</p>
+    </section>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const scopeToggle = document.querySelector('#scope-toggle');
+    const scopeCard = document.querySelector('#scope-card');
+    const scopeStatus = document.querySelector('#scope-status');
+    const fallbackToggle = document.querySelector('#fallback-toggle');
+    const fallbackCard = document.querySelector('#fallback-card');
+    const fallbackValue = document.querySelector('#fallback-value');
+    const paletteStatus = document.querySelector('#palette-status');
+    const typedStage = document.querySelector('#typed-stage');
+    const animationToggle = document.querySelector('#animation-toggle');
+
+    scopeToggle.addEventListener('click', () => {
+      const overridden = scopeToggle.getAttribute('aria-pressed') !== 'true';
+      scopeToggle.setAttribute('aria-pressed', String(overridden));
+      scopeToggle.textContent = overridden ? '恢复父级变量' : '局部覆盖 --accent';
+      scopeCard.classList.toggle('is-overridden', overridden);
+      scopeStatus.textContent = overridden
+        ? '当前：--accent: #b96f35（陶土橙，局部覆盖）。'
+        : '当前：--accent: #3f6b2a（深绿）。';
+    });
+
+    fallbackToggle.addEventListener('click', () => {
+      const defined = fallbackToggle.getAttribute('aria-pressed') !== 'true';
+      fallbackToggle.setAttribute('aria-pressed', String(defined));
+      fallbackToggle.textContent = defined ? '移除 --not-defined' : '定义 --not-defined';
+      fallbackCard.classList.toggle('has-token', defined);
+      fallbackValue.textContent = defined ? '变量值 #3f6b2a' : '回退橙色 #e8b36b';
+    });
+
+    document.querySelectorAll('input[name="palette"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        root.dataset.palette = input.value;
+        paletteStatus.textContent = input.value === 'clay' ? '当前：陶土橙令牌。' : '当前：森林绿令牌。';
+      });
+    });
+
+    animationToggle.addEventListener('click', () => {
+      const running = animationToggle.getAttribute('aria-pressed') !== 'true';
+      animationToggle.setAttribute('aria-pressed', String(running));
+      animationToggle.textContent = running ? '暂停动画' : '运行动画';
+      typedStage.classList.toggle('is-running', running);
+    });
+  </script>
+</body>
+</html>

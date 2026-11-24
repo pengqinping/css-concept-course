@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 478" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="arDark" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#4A5544"/>
+    </marker>
+    <marker id="arAmber" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#B26B00"/>
+    </marker>
+  </defs>
+
+  <rect width="800" height="478" fill="#F7F8F4"/>
+
+  <text x="40" y="36" font-size="18" font-weight="bold" fill="#1F2A1B">层叠上下文剖面图：先比家族，再比家族内部</text>
+  <text x="40" y="60" font-size="13" fill="#4A5544">剖面中越靠上＝越靠近观察者；z-index 数字只在同一家族内部比较</text>
+  <text x="760" y="60" font-size="13" fill="#2F6F4F" text-anchor="end">↑ 越靠上越靠前</text>
+
+  <!-- 家族 B：层级更高，整体在前 -->
+  <rect x="60" y="110" width="680" height="115" rx="6" fill="#E8F1E9" stroke="#2F6F4F" stroke-width="1.5"/>
+  <text x="78" y="140" font-size="16" font-weight="bold" fill="#1F2A1B">家族 B · z-index: 2</text>
+  <rect x="78" y="158" width="230" height="50" rx="4" fill="#FFFFFF" stroke="#2F6F4F" stroke-width="1.2"/>
+  <text x="193" y="189" font-size="14" fill="#1F2A1B" text-anchor="middle">cover · z-index: 0</text>
+  <text x="330" y="188" font-size="14" fill="#1F2A1B">普通元素，却盖住了 9999</text>
+
+  <!-- 家族之间的比较（只比家族本身） -->
+  <line x1="92" y1="272" x2="92" y2="238" stroke="#4A5544" stroke-width="1.5" marker-end="url(#arDark)"/>
+  <text x="110" y="262" font-size="14" fill="#1F2A1B">① 先比家族：B(2) 在 A(1) 之上，B 整体压住 A</text>
+
+  <!-- 家族 A：9999 被关在内部 -->
+  <rect x="60" y="285" width="680" height="115" rx="6" fill="#F8EEDF" stroke="#B26B00" stroke-width="1.5"/>
+  <text x="78" y="315" font-size="16" font-weight="bold" fill="#1F2A1B">家族 A · z-index: 1</text>
+  <rect x="78" y="333" width="230" height="50" rx="4" fill="#FFFFFF" stroke="#B26B00" stroke-width="1.2"/>
+  <text x="193" y="364" font-size="14" fill="#1F2A1B" text-anchor="middle">badge · z-index: 9999</text>
+
+  <!-- 9999 向上撞到家族边界即止 -->
+  <line x1="193" y1="333" x2="193" y2="296" stroke="#B26B00" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arAmber)"/>
+  <line x1="178" y1="292" x2="208" y2="292" stroke="#B26B00" stroke-width="2"/>
+  <text x="330" y="364" font-size="14" fill="#1F2A1B">② 家族内部：9999 排第一，但停在边界内</text>
+  <text x="330" y="386" font-size="13" fill="#4A5544">浏览器画完 B 家族后，A 家内部数字再大也插不进去</text>
+
+  <rect x="60" y="424" width="680" height="36" rx="4" fill="#E8F1E9" stroke="#2F6F4F" stroke-width="1"/>
+  <text x="400" y="448" font-size="16" font-weight="bold" fill="#1F2A1B" text-anchor="middle">先比家族，再比家族内部</text>
+</svg>

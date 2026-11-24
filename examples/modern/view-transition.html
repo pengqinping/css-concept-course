@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>视图过渡与状态切换 · 现代 CSS</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9; --surface: #fffdf7; --green: #3f6b2a; --green-dark: #2d4d1e;
+      --green-soft: #e5ecd9; --ink: #263022; --muted: #66705f; --line: #d8d5c9;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    :focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+    .shell { width: min(1100px, calc(100% - 32px)); margin: auto; padding: 28px 0 64px; }
+    .topbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .brand { color: var(--green); font-weight: 800; letter-spacing: .08em; }
+    .hero { padding: clamp(24px, 5vw, 48px); border: 1px solid var(--line); border-radius: 28px; background: linear-gradient(135deg, var(--surface), #e9eddd); }
+    .eyebrow { margin: 0 0 10px; color: var(--green); font-size: .78rem; font-weight: 800; letter-spacing: .15em; }
+    h1 { max-width: 800px; margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; letter-spacing: -.04em; }
+    .hero p:last-child { max-width: 750px; margin: 16px 0 0; color: var(--muted); }
+    .panel { min-width: 0; margin-top: 22px; padding: clamp(20px, 4vw, 30px); border: 1px solid var(--line); border-radius: 22px; background: var(--surface); }
+    h2 { margin: 0; font-size: 1.3rem; }
+    .intro { margin: 8px 0 20px; color: var(--muted); }
+    .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .control-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .control-group > span { margin-right: 4px; color: var(--muted); font-size: .82rem; font-weight: 700; }
+    button { min-height: 42px; padding: 8px 15px; border: 1px solid #a9b39a; border-radius: 999px; background: transparent; color: var(--green-dark); font: inherit; font-weight: 700; cursor: pointer; }
+    button:hover, button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; min-height: 120px; }
+    .card { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: #fbfaf3; }
+    .card[hidden] { display: none; }
+    .card__art { position: relative; height: 150px; overflow: hidden; background: var(--art-bg, #dce6cf); }
+    .card__art::before { content: ""; position: absolute; width: 100px; height: 100px; top: 22px; left: 50%; border: 2px solid rgb(255 255 255 / 70%); border-radius: 50%; background: var(--art-dot, #6d8e51); transform: translateX(-50%); }
+    .card__art::after { content: ""; position: absolute; width: 180px; height: 70px; left: 50%; bottom: -25px; border-radius: 50% 50% 0 0; background: var(--art-hill, #8da674); transform: translateX(-50%) rotate(-8deg); }
+    .card[data-tone="clay"] { --art-bg: #eadbc8; --art-dot: #a96943; --art-hill: #c49b73; }
+    .card[data-tone="night"] { --art-bg: #d8ded8; --art-dot: #365141; --art-hill: #718a77; }
+    .card__copy { padding: 18px; }
+    .card__category { color: var(--green); font-size: .74rem; font-weight: 800; letter-spacing: .1em; }
+    .card h3 { margin: 4px 0 6px; font-size: 1.08rem; }
+    .card p { margin: 0; color: var(--muted); font-size: .86rem; }
+    .gallery.list-view { grid-template-columns: 1fr; }
+    .gallery.list-view .card { display: grid; grid-template-columns: 160px minmax(0, 1fr); }
+    .gallery.list-view .card[hidden] { display: none; }
+    .gallery.list-view .card__art { height: 100%; min-height: 132px; }
+    .empty { grid-column: 1 / -1; padding: 34px; border: 1px dashed var(--line); border-radius: 14px; text-align: center; color: var(--muted); }
+    .status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 18px 0 0; color: var(--muted); font-size: .86rem; }
+    .status strong { color: var(--green-dark); }
+    .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .note { padding: 18px; border-radius: 14px; background: #f2f3e9; }
+    .note h3 { margin: 0 0 7px; font-size: 1rem; }
+    .note p { margin: 0; color: var(--muted); font-size: .88rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .12em .35em; border-radius: 5px; background: var(--green-soft); color: var(--green-dark); font-size: .86em; }
+    pre { margin: 0; padding: 15px; overflow-x: auto; border-radius: 12px; background: #273223; color: #eff4e7; font-size: .78rem; line-height: 1.6; }
+
+    @supports (view-transition-name: none) {
+      .card { view-transition-name: var(--vt-name); }
+      ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+      ::view-transition-old(root) { animation: root-out .18s ease both; }
+      ::view-transition-new(root) { animation: root-in .3s .1s ease both; }
+      @keyframes root-out { to { opacity: 0; } }
+      @keyframes root-in { from { opacity: 0; } }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    }
+    @media (max-width: 760px) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .notes { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .shell { width: min(100% - 20px, 1100px); } .gallery { grid-template-columns: 1fr; } .gallery.list-view .card { grid-template-columns: 105px minmax(0, 1fr); } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a href="../index.html">← 返回示例索引</a><span class="brand">视图过渡实验室</span></header>
+    <section class="hero">
+      <p class="eyebrow">View Transition API / Shared elements</p>
+      <h1>让状态变化，保留空间连续性。</h1>
+      <p>筛选、排序与布局变化会更新同一组真实 DOM 节点。支持时用共享元素过渡连接新旧状态；否则直接更新，或使用轻量淡入回退。</p>
+    </section>
+
+    <main class="panel">
+      <h2>植物与宇宙观察册</h2>
+      <p class="intro">每张卡片有唯一的 <code>view-transition-name</code>，排序和跨布局移动时可以被浏览器追踪。</p>
+      <div class="toolbar">
+        <div class="control-group" role="group" aria-label="筛选分类">
+          <span>分类</span>
+          <button type="button" data-filter="all" data-transition-control aria-pressed="true">全部</button>
+          <button type="button" data-filter="nature" data-transition-control aria-pressed="false">自然</button>
+          <button type="button" data-filter="space" data-transition-control aria-pressed="false">宇宙</button>
+        </div>
+        <div class="control-group" role="group" aria-label="排序方式">
+          <span>排序</span>
+          <button type="button" data-sort="default" data-transition-control aria-pressed="true">原始</button>
+          <button type="button" data-sort="name" data-transition-control aria-pressed="false">名称</button>
+        </div>
+        <div class="control-group" role="group" aria-label="布局方式">
+          <span>布局</span>
+          <button type="button" data-layout="grid" data-transition-control aria-pressed="true">网格</button>
+          <button type="button" data-layout="list" data-transition-control aria-pressed="false">列表</button>
+        </div>
+      </div>
+
+      <div class="gallery" id="gallery">
+        <article class="card" data-category="nature" data-name="苔藓" style="--vt-name: card-moss">
+          <div class="card__art" aria-hidden="true"></div>
+          <div class="card__copy"><span class="card__category">自然 / 01</span><h3>苔藓微景观</h3><p>在微小尺度里观察叶序、湿度与光。</p></div>
+        </article>
+        <article class="card" data-category="space" data-name="月相" data-tone="night" style="--vt-name: card-moon">
+          <div class="card__art" aria-hidden="true"></div>
+          <div class="card__copy"><span class="card__category">宇宙 / 02</span><h3>月相笔记</h3><p>连续七晚记录月面明亮区域的变化。</p></div>
+        </article>
+        <article class="card" data-category="nature" data-name="蕨叶" data-tone="clay" style="--vt-name: card-fern">
+          <div class="card__art" aria-hidden="true"></div>
+          <div class="card__copy"><span class="card__category">自然 / 03</span><h3>蕨叶展开</h3><p>从拳卷叶到成熟叶片的形态追踪。</p></div>
+        </article>
+        <article class="card" data-category="space" data-name="行星" style="--vt-name: card-planet">
+          <div class="card__art" aria-hidden="true"></div>
+          <div class="card__copy"><span class="card__category">宇宙 / 04</span><h3>行星速写</h3><p>用颜色和轮廓比较不同行星的特征。</p></div>
+        </article>
+      </div>
+      <p class="empty" id="emptyState" hidden>当前筛选没有卡片。</p>
+      <div class="status">
+        <span id="transitionStatus" role="status" aria-live="polite">正在检测 View Transition API…</span>
+        <span><strong id="visibleCount">4</strong> 张卡片</span>
+      </div>
+    </main>
+
+    <section class="panel">
+      <div class="notes">
+        <div class="note"><h3>为什么能追踪位置？</h3><p>浏览器分别为新旧状态截图。相同 <code>view-transition-name</code> 的节点会从旧位置与尺寸动画到新位置，名称必须在同一时刻保持唯一。</p></div>
+        <pre>if (document.startViewTransition) {
+  document.startViewTransition(() =&gt; {
+    applyState(); // 在回调内同步更新 DOM
+  });
+} else {
+  applyState(); // 基础状态更新始终执行
+}</pre>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const gallery = document.querySelector('#gallery');
+    const cards = [...gallery.querySelectorAll('.card')];
+    const controls = [...document.querySelectorAll('[data-transition-control]')];
+    const status = document.querySelector('#transitionStatus');
+    const visibleCount = document.querySelector('#visibleCount');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const supportsVT = typeof document.startViewTransition === 'function' && CSS.supports('view-transition-name: none');
+    let state = { filter: 'all', sort: 'default', layout: 'grid' };
+    let transitioning = false;
+
+    function updateStatus(mode) {
+      const labels = { all: '全部', nature: '自然', space: '宇宙' };
+      const base = labels[state.filter] + ' · ' + (state.sort === 'name' ? '按名称排序' : '原始顺序') + ' · ' + (state.layout === 'grid' ? '网格' : '列表');
+      status.textContent = base + '；' + mode;
+    }
+
+    function applyState() {
+      const visible = cards.filter(card => state.filter === 'all' || card.dataset.category === state.filter);
+      const ordered = [...visible];
+      if (state.sort === 'name') ordered.sort((a, b) => a.dataset.name.localeCompare(b.dataset.name, 'zh-CN'));
+      cards.forEach(card => { card.hidden = !visible.includes(card); });
+      ordered.forEach(card => gallery.append(card));
+      gallery.classList.toggle('list-view', state.layout === 'list');
+      document.querySelector('#emptyState').hidden = visible.length > 0;
+      visibleCount.textContent = String(visible.length);
+    }
+
+    function setControlsDisabled(disabled) {
+      controls.forEach(control => { control.disabled = disabled; });
+    }
+
+    function changeState(mode) {
+      if (transitioning) return;
+      if (!supportsVT || reducedMotion.matches) {
+        applyState();
+        if (typeof gallery.animate === 'function' && !reducedMotion.matches) {
+          gallery.animate([{ opacity: .55, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'ease-out' });
+        }
+        updateStatus(reducedMotion.matches ? '已即时更新（遵循减少动态效果）' : '已使用轻量回退更新');
+        return;
+      }
+      transitioning = true;
+      setControlsDisabled(true);
+      const transition = document.startViewTransition(() => {
+        applyState();
+        updateStatus('原生共享元素过渡');
+      });
+      transition.finished.catch(() => {}).finally(() => {
+        transitioning = false;
+        setControlsDisabled(false);
+      });
+    }
+
+    document.querySelectorAll('[data-filter]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.filter = button.dataset.filter;
+        document.querySelectorAll('[data-filter]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        changeState('原生共享元素过渡');
+      });
+    });
+    document.querySelectorAll('[data-sort]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.sort = button.dataset.sort;
+        document.querySelectorAll('[data-sort]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        changeState('原生共享元素过渡');
+      });
+    });
+    document.querySelectorAll('[data-layout]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.layout = button.dataset.layout;
+        document.querySelectorAll('[data-layout]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        changeState('原生共享元素过渡');
+      });
+    });
+
+    status.textContent = supportsVT
+      ? '✓ 原生 View Transition API 可用；点击任意控制按钮开始过渡。'
+      : '当前浏览器使用状态更新与淡入回退，不影响任何功能。';
+  </script>
+</body>
+</html>
