@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>23 · 样式架构与设计令牌</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .card { border: 1px solid var(--line); border-radius: .6rem; padding: .8rem 1rem; margin: .6rem 0; background: #f6f3e9; }
+    .card__title { font-size: 18px; font-weight: 700; margin: 0 0 .3rem; }
+    .card__note { font-size: 14px; color: var(--muted); }
+
+    .mode-normal .card__title { color: var(--green); }
+    .mode-where :where(.card__title) { color: var(--green); }
+    .u-accent { color: var(--amber); }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/23-architecture.md">← 返回课程</a></p>
+  <h1>23 · 样式架构与设计令牌</h1>
+  <p class="lede">架构约束的是一条规则能影响谁。这里只看一个轴：:where() 的优先级为零，所以工具类更容易盖过它。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>标题同时带着组件类 card__title 和工具类 u-accent。把组件规则从普通类选择器换成 :where()，工具类的颜色会更容易生效吗？为什么？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>会。:where() 自身优先级为 0，整条 .mode-where :where(.card__title) 只剩一个类名 (0,0,1,0)，与 .u-accent 持平；工具类写在后面就胜出，标题变琥珀色。普通写法 .mode-normal .card__title 是 (0,0,2,0)，工具类盖不过，标题保持绿色。收窄影响范围靠边界，不是靠 !important。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label class="switch"><input id="useWhere" type="checkbox" /> 用 :where() 定义组件标题颜色</label>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="card mode-normal" id="card">
+      <h2 class="card__title u-accent">组件标题</h2>
+      <p class="card__note">同时命中组件规则与工具类规则，谁赢由优先级与书写顺序决定。</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/23-architecture.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var cb = document.getElementById('useWhere');
+    var card = document.getElementById('card');
+    var title = card.querySelector('.card__title');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function render() {
+      var on = cb.checked;
+      card.classList.toggle('mode-normal', !on);
+      card.classList.toggle('mode-where', on);
+      var color = getComputedStyle(title).color;
+      var tw = title.getBoundingClientRect().width;
+      var spec = on ? '(0,0,1,0)' : '(0,0,2,0)';
+
+      readout.innerHTML =
+        '<div><span>组件规则优先级</span><b>' + spec + '</b></div>' +
+        '<div><span>工具类优先级</span><b>(0,0,1,0)</b></div>' +
+        '<div><span>标题宽度（实测）</span><b>' + Math.round(tw) + 'px</b></div>' +
+        '<div><span>标题 color（实测）</span><b>' + color + '</b></div>' +
+        '<div><span>谁胜出</span><b>' + (on ? '工具类 u-accent' : '组件规则') + '</b></div>' +
+        '<div><span>标题是否跟随组件色</span><b>' + (on ? '否' : '是') + '</b></div>';
+
+      css.textContent =
+        '/* 工具类写在组件规则之后 */\n' +
+        '.u-accent { color: var(--amber); }\n' +
+        (on
+          ? '.mode-where :where(.card__title) { color: var(--green); }  /* (0,0,1,0)，:where 不贡献优先级 */\n/* 打平，后写的工具类胜出 */'
+          : '.mode-normal .card__title { color: var(--green); }  /* (0,0,2,0) */\n/* 组件规则更高，工具类盖不过 */');
+    }
+
+    cb.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

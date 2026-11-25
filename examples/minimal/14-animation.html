@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>14 · 插值的值也参与层叠</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--green); }
+    .control label { cursor: pointer; }
+    button { font: .95rem system-ui, sans-serif; padding: .5rem .9rem; border: 1px solid var(--green-dark); border-radius: .5rem; background: var(--green); color: #fff; cursor: pointer; }
+    button:hover { background: var(--green-dark); }
+    .stage { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    .demo { min-height: 9rem; padding: 1rem; border-radius: .6rem; }
+    .demo h3 { margin: 0 0 .4rem; font-size: 1rem; }
+    .trans { background: #f7f8f4; transition: background-color 600ms linear; color: var(--ink); border: 1px solid var(--line); border-radius: .5rem; }
+    .trans.on { background: #23291e; color: #f7f8f4; }
+    .trans.imp.on { background: #23291e !important; }
+    .anim { color: #23291e; animation: recolor 2s ease-in-out infinite alternate; background: #f7f8f4; border: 1px solid var(--line); border-radius: .5rem; }
+    .anim.imp { color: #23291e !important; }
+    @keyframes recolor { to { color: #c47f17; } }
+    .seats { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-top: 1rem; font: .85rem var(--mono); }
+    .seat { padding: .3rem .6rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); background: #fff; }
+    .seat.active { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); font-weight: 700; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 13rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .anim { animation: none !important; }
+      *, *::before, *::after { transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/14-animation.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 14 状态的变化</p>
+  </header>
+
+  <h1>插值出来的值，在层叠里也有席位</h1>
+  <p class="lead">transition 靠事件给出前后两帧，animation 靠 @keyframes 写出时间轴。从低到高：普通作者声明 → CSS 动画 → 作者 !important → CSS 过渡。</p>
+
+  <section class="panel">
+    <h2>调两个参数</h2>
+    <div class="controls">
+      <button id="toggle" type="button">触发 / 反向过渡</button>
+      <span class="control">
+        <input type="checkbox" id="imp" />
+        <label for="imp">给静态声明加 !important</label>
+      </span>
+    </div>
+    <div class="stage">
+      <div class="demo trans" id="trans"><h3>transition：背景色</h3><p>600ms 线性插值，观察中途的灰。</p></div>
+      <div class="demo anim" id="anim"><h3>animation：文字颜色</h3><p>深灰与琥珀之间循环，观察席位。</p></div>
+    </div>
+    <div class="seats" id="seats">
+      <span class="seat" data-seat="anim">动画盒席位</span>
+      <span class="seat" data-seat="trans">过渡盒席位</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>给两个变化都加上 !important：动画盒和过渡盒分别会怎样？哪一个是 !important 压不住的？先写答案再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>动画盒被压住：作者 !important 高于动画值，文字恒定深灰 #23291e。过渡盒压不住：过渡值高于所有重要声明，那 600ms 里你看到的仍是逐帧插值的灰，结束后才稳定在 !important 给出的深色。结论是 transition 不会被 !important 覆盖，animation 会。两者都是"插值产生的值参与层叠"，只是席位一高一低。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">动画盒 computed color</span><span class="val" id="rAColor"></span></div>
+      <div class="readout"><span class="key">过渡盒 computed background</span><span class="val" id="rTBg"></span></div>
+      <div class="readout"><span class="key">过渡进度</span><span class="val" id="rProgress"></span></div>
+      <div class="readout"><span class="key">computed transition-duration</span><span class="val" id="rDur"></span></div>
+      <div class="readout"><span class="key">computed animation-name</span><span class="val" id="rName"></span></div>
+      <div class="readout"><span class="key">过渡盒 rect 宽×高</span><span class="val" id="rRect"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/14-animation.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var btn = document.getElementById("toggle");
+    var imp = document.getElementById("imp");
+    var trans = document.getElementById("trans");
+    var anim = document.getElementById("anim");
+    var cssOut = document.getElementById("cssOut");
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var duration = 600;
+    var startedAt = -Infinity;
+
+    btn.addEventListener("click", function () {
+      trans.classList.toggle("on");
+      startedAt = performance.now();
+      renderCss();
+    });
+    imp.addEventListener("change", renderCss);
+
+    function renderCss() {
+      var on = imp.checked;
+      cssOut.textContent =
+        "/* 从低到高：普通声明 < 动画 < !important < 过渡 */\n" +
+        ".anim { color: #23291e; animation: recolor 2s ease-in-out infinite alternate; }\n" +
+        "@keyframes recolor { to { color: #c47f17; } }\n" +
+        (on ? ".anim.imp { color: #23291e !important; }  /* 当前启用：压住动画 */\n" : "") +
+        ".trans { transition: background-color 600ms linear; }\n" +
+        ".trans.on { background: #23291e; }\n" +
+        (on ? ".trans.imp.on { background: #23291e !important; }  /* 当前启用：过渡期间仍被插值盖过 */" : "") +
+        "\n/* 当前类名: .trans" + (trans.classList.contains("on") ? ".on" : "") + (on ? ".imp" : "") + " */";
+    }
+
+    function frame() {
+      var animCs = getComputedStyle(anim);
+      var transCs = getComputedStyle(trans);
+      var elapsed = performance.now() - startedAt;
+      var ongoing = !reduce && elapsed >= 0 && elapsed < duration;
+      var progress = ongoing ? Math.min(100, Math.round(elapsed / duration * 100)) : (elapsed >= duration ? 100 : 0);
+
+      document.getElementById("rAColor").textContent = animCs.color;
+      document.getElementById("rTBg").textContent = transCs.backgroundColor;
+      document.getElementById("rProgress").textContent = progress + "%" + (ongoing ? "（插值中）" : "");
+      document.getElementById("rDur").textContent = transCs.transitionDuration;
+      document.getElementById("rName").textContent = animCs.animationName;
+      var rect = trans.getBoundingClientRect();
+      document.getElementById("rRect").textContent = Math.round(rect.width) + " × " + Math.round(rect.height) + " px";
+
+      var aSeat = imp.checked ? "作者 !important" : "CSS 动画";
+      var tSeat = ongoing ? "CSS 过渡" : (trans.classList.contains("on") ? "静态声明" + (imp.checked ? " + !important" : "") : "静态声明");
+      document.querySelector('[data-seat="anim"]').textContent = "动画盒席位：" + aSeat;
+      document.querySelector('[data-seat="trans"]').textContent = "过渡盒席位：" + tSeat;
+      document.querySelector('[data-seat="anim"]').classList.toggle("active", true);
+      document.querySelector('[data-seat="trans"]').classList.toggle("active", ongoing);
+
+      document.getElementById("status").textContent =
+        (reduce ? "减少动态效果模式下装饰运动已关闭，动效直接呈现终态；" : "") +
+        (imp.checked ? "!important 已开启：动画被压住，过渡期间仍显示插值。" : "!important 未开启：动画值高于普通声明，过渡值最高。") +
+        " 判断时先问这一帧的值来自静态声明还是插值。";
+
+      requestAnimationFrame(frame);
+    }
+
+    renderCss();
+    requestAnimationFrame(frame);
+  })();
+</script>
+</body>
+</html>

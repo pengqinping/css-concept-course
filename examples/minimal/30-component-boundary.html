@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>30 · 交互状态与组件边界</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    demo-card { --accent: #172033; display: block; margin: .6rem 0; }
+    demo-card button { color: #b26b1f; }
+    body.use-part demo-card::part(action) { color: #2f6f4f; border-color: #b26b1f; }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/30-component-boundary.md">← 返回课程</a></p>
+  <h1>30 · 交互状态与组件边界</h1>
+  <p class="lede">组件边界是一道有闸门的墙：普通选择器过不去，::part() 与 CSS 变量按约定通道穿过。这里只看谁能改影子树里的按钮。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>页面写 demo-card button { color: red }，影子树里的按钮会变红吗？给内部按钮加 part="action" 后，::part(action) 能命中它吗？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>不会变红：普通后代选择器被 Shadow DOM 边界挡住，页面 querySelectorAll 命中 0 个内部按钮。::part(action) 只命中显式标了 part 的节点，能把它改绿并加琥珀边框。CSS 变量沿继承链进入影子树，但只有内部写了 var(--accent) 才生效；跨树普通声明由外层胜出，!important 则反转。Part 名是对外接口，改名会让外部规则直接失效。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label class="switch"><input id="usePart" type="checkbox" /> 启用 demo-card::part(action) 样式</label>
+    <p class="hint">页面里那条 demo-card button 规则始终存在，它选不中影子树内部。</p>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <demo-card id="card"></demo-card>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/30-component-boundary.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var cb = document.getElementById('usePart');
+    var card = document.getElementById('card');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function DemoCard() {
+      var root = this.attachShadow({ mode: 'open' });
+      root.innerHTML =
+        '<style>' +
+        ':host { display: block; border: 1px solid #d7d3c8; border-radius: .6rem;' +
+        ' padding: .8rem 1rem; background: #f6f3e9;' +
+        ' font: 15px/1.6 system-ui, sans-serif; color: var(--accent, #172033); }' +
+        '.action { color: var(--accent, #172033); border: 2px solid transparent;' +
+        ' border-radius: .4rem; padding: .4rem .8rem; font: inherit; background: #fff; }' +
+        '</style>' +
+        '<p>影子树内部的按钮：</p>' +
+        '<button class="action" part="action" type="button">组件内按钮</button>';
+    }
+    DemoCard.prototype = Object.create(HTMLElement.prototype);
+    customElements.define('demo-card', DemoCard);
+
+    var inner = card.shadowRoot.querySelector('.action');
+
+    function render() {
+      var on = cb.checked;
+      document.body.classList.toggle('use-part', on);
+      var cs = getComputedStyle(inner);
+      var inShadow = inner.getRootNode() instanceof ShadowRoot;
+      var lightHits = document.querySelectorAll('demo-card button').length;
+      var ir = inner.getBoundingClientRect();
+
+      readout.innerHTML =
+        '<div><span>内部按钮在 ShadowRoot 中</span><b>' + inShadow + '</b></div>' +
+        '<div><span>内部按钮盒尺寸（实测）</span><b>' + Math.round(ir.width) + ' x ' + Math.round(ir.height) + ' px</b></div>' +
+        '<div><span>页面选择器命中数（实测）</span><b>' + lightHits + '</b></div>' +
+        '<div><span>内部按钮 color（实测）</span><b>' + cs.color + '</b></div>' +
+        '<div><span>内部按钮 border-color（实测）</span><b>' + cs.borderTopColor + '</b></div>' +
+        '<div><span>命中通道</span><b>' + (on ? '::part(action)' : '被边界挡住') + '</b></div>';
+
+      css.textContent =
+        '/* 页面文档 */\n' +
+        'demo-card button { color: #b26b1f; }  /* 选不中影子树内部 */\n' +
+        (on
+          ? 'demo-card::part(action) { color: #2f6f4f; border-color: #b26b1f; }  /* 命中标了 part 的节点 */'
+          : '/* ::part() 未启用，内部保持 var(--accent) 的颜色 */') +
+        '\n/* 影子树内部 */\n' +
+        '.action { color: var(--accent, #172033); }';
+    }
+
+    cb.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

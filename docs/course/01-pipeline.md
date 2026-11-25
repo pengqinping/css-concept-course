@@ -119,4 +119,4 @@ demo 的重点不是背"哪个属性触发哪步"，而是建立一个动作：*
 2. 给一个元素加 `transition: transform 0.3s`，触发 `transform: translateX(100px)`，打开 Rendering 的 Paint flashing。**预期结果：动画期间画面不闪绿**（不重绘）；把 `transform` 换成 `width` 做同样动画，**预期结果：整片区域每帧反复闪绿**（重排 + 重绘）。
 3. 在控制台对 `width: 50%` 的元素依次执行 `getComputedStyle(el).width` 与 `el.getBoundingClientRect().width`。**预期结果：前者返回带小数的像素值（如 `320px`），后者是布局后的实际渲染宽度；给父级加 padding 或给元素设 `box-sizing: border-box` 时两者会不同**，因为一个停在样式计算、一个已是布局结果。
 
-> 下一篇：[谁说了算](02-cascade.md)。样式计算这一步要跑层叠，正好是下一篇的主题。
+> 下一篇：[选择器：如何精准找到元素](02-selectors.md)

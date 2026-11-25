@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>20 · 状态伪类在不同时刻点亮</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .stage { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    label { display: block; font-size: .95rem; }
+    .field label { margin-bottom: .35rem; font-weight: 700; }
+    .field input[type="email"] { width: 100%; max-width: 22rem; padding: .55rem .7rem; font: 1rem var(--mono); border: 2px solid var(--line); border-radius: .45rem; background: #fff; color: var(--ink); }
+    .field input:invalid { border-color: #b42318; }
+    .field input:user-invalid { border-color: #b42318; }
+    .field input:focus-visible { outline: 3px solid #3157d5; outline-offset: 2px; }
+    .field .hint { margin-top: .35rem; font-size: .85rem; color: var(--muted); }
+    .choice label { display: flex; align-items: center; gap: .55rem; cursor: pointer; }
+    .choice input { width: 1.15rem; height: 1.15rem; accent-color: #3157d5; }
+    .gates { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; font: .85rem var(--mono); }
+    .gate { padding: .3rem .55rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); background: #fff; }
+    .gate.active { border-color: var(--green); background: var(--green-soft); color: var(--green-dark); font-weight: 700; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 13rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/20-forms.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 20 表单状态</p>
+  </header>
+
+  <h1>伪类不是在说同一件事</h1>
+  <p class="lead">:valid / :invalid 说的是"当前值满足什么"，加载时就算；:user-invalid 说的是"人做过什么"，要交互并失焦后才亮。先接受原生控件，再做最小覆盖。</p>
+
+  <section class="panel">
+    <h2>调两个参数</h2>
+    <div class="stage">
+      <div class="field">
+        <label for="email">邮箱（必填）</label>
+        <input id="email" type="email" required autocomplete="email" aria-describedby="hint" />
+        <p class="hint" id="hint">用于接收确认邮件。试着输入 "x" 再点别处失焦。</p>
+      </div>
+      <div class="choice">
+        <label><input id="agree" type="checkbox" /> 我已阅读说明（观察 :checked）</label>
+        <p class="hint">只改 accent-color，保留原生绘制与键盘行为。</p>
+      </div>
+    </div>
+    <div class="gates" id="gates">
+      <span class="gate" data-pseudo="invalid">:invalid</span>
+      <span class="gate" data-pseudo="valid">:valid</span>
+      <span class="gate" data-pseudo="user-invalid">:user-invalid</span>
+      <span class="gate" data-pseudo="focus">:focus</span>
+      <span class="gate" data-pseudo="focus-visible">:focus-visible</span>
+      <span class="gate" data-pseudo="checked">:checked</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>页面刚打开、邮箱框为空时，:invalid 和 :user-invalid 哪个命中？输入 "x" 再失焦后呢？键盘 Tab 聚焦与鼠标点击时的 :focus-visible 一样吗？先写答案再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>加载时只有 :invalid 命中：空的 required 已经违反约束，所以边框立刻是红的，这是误区；:user-invalid 不亮。输入 "x" 并失焦后，:user-invalid 才亮。:focus 只要获得焦点就命中（鼠标点也算），:focus-visible 通常由键盘或文本输入场景命中，邮箱框因为是文本输入，鼠标点进去时一般也会命中。:checked 在复选框选中即亮，与值校验无关。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">邮箱 computed border-color</span><span class="val" id="rBorder"></span></div>
+      <div class="readout"><span class="key">邮箱 rect 宽×高</span><span class="val" id="rRect"></span></div>
+      <div class="readout"><span class="key">checkValidity()</span><span class="val" id="rValid"></span></div>
+      <div class="readout"><span class="key">命中伪类</span><span class="val" id="rHits"></span></div>
+      <div class="readout"><span class="key">复选框 computed accent-color</span><span class="val" id="rAccent"></span></div>
+      <div class="readout"><span class="key">复选框 rect 宽×高</span><span class="val" id="rCheckRect"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/20-forms.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var email = document.getElementById("email");
+    var agree = document.getElementById("agree");
+    var cssOut = document.getElementById("cssOut");
+
+    function matchesSafe(el, selector) {
+      try { return el.matches(selector); }
+      catch (err) { return false; }
+    }
+
+    var pseudoList = [
+      ["invalid", ":invalid"],
+      ["valid", ":valid"],
+      ["user-invalid", ":user-invalid"],
+      ["focus", ":focus"],
+      ["focus-visible", ":focus-visible"]
+    ];
+
+    function render() {
+      var hits = [];
+      pseudoList.forEach(function (pair) {
+        var on = matchesSafe(email, pair[1]);
+        document.querySelector('[data-pseudo="' + pair[0] + '"]').classList.toggle("active", on);
+        if (on) hits.push(pair[1]);
+      });
+      var checked = matchesSafe(agree, ":checked");
+      document.querySelector('[data-pseudo="checked"]').classList.toggle("active", checked);
+      if (checked) hits.push(":checked（复选框）");
+
+      var er = email.getBoundingClientRect();
+      var cr = agree.getBoundingClientRect();
+      document.getElementById("rBorder").textContent = getComputedStyle(email).borderTopColor;
+      document.getElementById("rRect").textContent = Math.round(er.width) + " × " + Math.round(er.height) + " px";
+      document.getElementById("rValid").textContent = email.checkValidity() ? "true" : "false";
+      document.getElementById("rHits").textContent = hits.length ? hits.join("  ") : "无";
+      document.getElementById("rAccent").textContent = getComputedStyle(agree).accentColor;
+      document.getElementById("rCheckRect").textContent = Math.round(cr.width) + " × " + Math.round(cr.height) + " px";
+
+      var ui = matchesSafe(email, ":user-invalid");
+      document.getElementById("status").textContent =
+        "当前值" + (email.checkValidity() ? "合法" : "不合法") + "；" +
+        (ui ? ":user-invalid 已亮（交互并失焦后仍不合法）" : ":user-invalid 未亮") +
+        "。加载即红的 :invalid 只是当前值判断，不等于'现在真的需要修'。";
+
+      cssOut.textContent =
+        ".field input:invalid { border-color: #b42318; }       /* 加载即命中（误区） */\n" +
+        ".field input:user-invalid { border-color: #b42318; }  /* 交互并失焦后才命中 */\n" +
+        ".field input:focus-visible { outline: 3px solid #3157d5; }\n" +
+        ".choice input { accent-color: #3157d5; }              /* 原生行为保留 */\n" +
+        "/* 当前命中: " + (hits.length ? hits.join("  ") : "无") + " */";
+    }
+
+    function schedule() { setTimeout(render, 0); }
+    ["input", "focus", "blur", "change", "keyup", "click"].forEach(function (ev) {
+      email.addEventListener(ev, schedule);
+    });
+    agree.addEventListener("change", schedule);
+    render();
+  })();
+</script>
+</body>
+</html>

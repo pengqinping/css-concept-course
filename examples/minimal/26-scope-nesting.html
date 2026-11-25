@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>26 · 谁真的缩小了范围</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .stage { --target: #2f6f4f; }
+    .probe { color: var(--target); }
+    .card { border: 1px solid var(--line); border-radius: .6rem; padding: .6rem .9rem; margin: .5rem 0; background: #f6f3e9; }
+    figure { border-left: 2px solid var(--amber); padding-left: .6rem; margin: .4rem 0; }
+    .hit { margin: .2rem 0; font-size: 14px; }
+    .flag { display: inline-block; font-size: 12px; color: var(--amber); }
+
+    .stage.plain .card p { color: var(--target); }
+    @scope (.card.scoped) to (figure) {
+      p { color: var(--target); }
+    }
+    .stage.has-on .card:has(.flag) { box-shadow: inset 0 0 0 2px var(--amber); }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/26-scope-nesting.md">← 返回课程</a></p>
+  <h1>26 · 谁真的缩小了范围</h1>
+  <p class="lede">嵌套只改书写方式，@scope 限定匹配子树，:has() 只反转匹配方向。这里只切后两个轴：范围与方向。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>在 @scope (.card) to (figure) 里给 p 上色，figure 内部的 p 会不会命中？打开 :has() 规则后，DOM 节点数会不会变化？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>figure 内的 p 不命中：它是下限，连同子树被排除；卡片外的 p 也不在根内。普通 .card p 写法则命中卡片内两个 p。:has() 完全不动 DOM，它只是把匹配箭头掉头，让 .card 因为内部的 .flag 而被选中，节点数在每次切换中都不变。@scope 也不是沙箱，继承属性照穿。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调两个参数</h2>
+    <div class="controls">
+      <label class="switch"><input id="useScope" type="checkbox" /> 启用 @scope 包裹</label>
+      <label class="switch"><input id="useHas" type="checkbox" /> 启用 :has() 规则</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="stage plain" id="stage">
+      <span class="probe" id="probe" hidden></span>
+      <div class="card" id="card">
+        <p class="hit" id="p1">卡片内的段落</p>
+        <figure>
+          <p class="hit" id="p2">figure 内的段落（下限之内）</p>
+        </figure>
+        <span class="flag">flag 状态标记</span>
+      </div>
+      <p class="hit" id="p3">卡片外的段落</p>
+    </div>
+    <p class="hint">绿色表示命中 --target。第二个开关让 .card 因内部的 .flag 被反向选中，加一圈琥珀色内阴影。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/26-scope-nesting.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var scope = document.getElementById('useScope');
+    var has = document.getElementById('useHas');
+    var stage = document.getElementById('stage');
+    var card = document.getElementById('card');
+    var probe = document.getElementById('probe');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+    var ps = [document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3')];
+    var names = ['卡片内', 'figure 内', '卡片外'];
+
+    function matches(el, sel) {
+      try { return el.matches(sel); } catch (e) { return false; }
+    }
+
+    function render() {
+      var s = scope.checked;
+      var h = has.checked;
+      stage.classList.toggle('plain', !s);
+      card.classList.toggle('scoped', s);
+      stage.classList.toggle('has-on', h);
+
+      var target = getComputedStyle(probe).color;
+      var hits = ps.filter(function (el) { return getComputedStyle(el).color === target; });
+      var hitNames = hits.length
+        ? hits.map(function (el) { return names[ps.indexOf(el)]; }).join('、')
+        : '无';
+      var domCount = stage.querySelectorAll('*').length;
+      var hasMatch = matches(card, ':has(.flag)');
+      var cw = card.getBoundingClientRect().width;
+
+      readout.innerHTML =
+        '<div><span>命中 --target 的段落</span><b>' + hitNames + '</b></div>' +
+        '<div><span>命中数量</span><b>' + hits.length + '</b></div>' +
+        '<div><span>宿主卡片宽度（实测）</span><b>' + Math.round(cw) + 'px</b></div>' +
+        '<div><span>DOM 元素总数（实测）</span><b>' + domCount + '</b></div>' +
+        '<div><span>:has(.flag) 是否命中 .card</span><b>' + hasMatch + '</b></div>' +
+        '<div><span>:has() 规则是否启用</span><b>' + (h ? '是' : '否') + '</b></div>';
+
+      css.textContent =
+        (s
+          ? '@scope (.card.scoped) to (figure) {\n  p { color: var(--target); }  /* 甜甜圈内命中 */\n}'
+          : '.stage.plain .card p { color: var(--target); }  /* 卡片内所有后代命中 */') +
+        '\n' +
+        (h
+          ? '.stage.has-on .card:has(.flag) { box-shadow: inset 0 0 0 2px var(--amber); }  /* 反向选中，DOM 不变 */'
+          : '/* :has() 规则未启用 */');
+    }
+
+    scope.addEventListener('change', render);
+    has.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

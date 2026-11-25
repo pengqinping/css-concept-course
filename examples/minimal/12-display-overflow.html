@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>12 · 四种"看不见"，谁还占位</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control select { font: .95rem var(--mono); padding: .35rem .5rem; border: 1px solid var(--line); border-radius: .45rem; background: #fff; color: var(--ink); }
+    .stage { padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    .marker { margin: .35rem 0; padding: .35rem .6rem; border: 1px dashed var(--green); border-radius: .4rem; background: var(--green-soft); font: .85rem var(--mono); color: var(--green-dark); }
+    .target { width: 220px; height: 96px; margin: .35rem 0; padding: 12px; border: 2px solid var(--green); border-radius: .5rem; background: var(--card); overflow: visible; }
+    .target .wide { width: 320px; height: 28px; border-radius: .3rem; background: var(--amber-soft); font: .8rem/28px var(--mono); color: var(--amber); white-space: nowrap; padding-left: .4rem; }
+    .target .label { display: inline-block; margin-top: .5rem; font: .8rem var(--mono); color: var(--green-dark); }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 13rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/12-display-overflow.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 12 看见与看不见</p>
+  </header>
+
+  <h1>看不见的四条路，结果各不相同</h1>
+  <p class="lead">有没有盒（display）、有没有绘制（visibility / opacity）、超出边界裁不裁（overflow），是互不相干的环节。占位、命中、可 Tab 三件事的答案可以任意组合。</p>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="controls">
+      <label class="control" for="mode">隐藏方式
+        <select id="mode">
+          <option value="normal">正常显示（对照）</option>
+          <option value="displayNone">display: none</option>
+          <option value="visibilityHidden">visibility: hidden</option>
+          <option value="opacityZero">opacity: 0</option>
+          <option value="overflowHidden">overflow: hidden</option>
+        </select>
+      </label>
+    </div>
+    <div class="stage">
+      <div class="marker">前面的兄弟块（位置固定）</div>
+      <div class="target" id="target"><div class="wide">超宽内容 320px</div><span class="label">目标块 220 × 96</span></div>
+      <div class="marker" id="after">后面的兄弟块（观察它是否上移）</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>把目标块从"正常显示"改成 visibility: hidden，后面的兄弟块会上移吗？再换成 display: none 呢？opacity: 0 时这块区域还能被点中吗？先写答案再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>visibility: hidden 只撤掉绘制，布局盒仍在原处，后面的兄弟不上移，命中也被撤掉。display: none 不生成盒，占位消失，兄弟向上补位，rect 宽高变成 0。opacity: 0 只关掉像素，盒仍在、仍占位、仍能命中，也通常仍能被 Tab 聚焦。overflow: hidden 根本不是隐藏元素，它只是把超出 220px 的那段 320px 内容裁掉，盒本身不变。CSS 没有一条属性能同时回答这四个问题。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">computed display</span><span class="val" id="rDisplay"></span></div>
+      <div class="readout"><span class="key">computed visibility</span><span class="val" id="rVis"></span></div>
+      <div class="readout"><span class="key">computed opacity</span><span class="val" id="rOpacity"></span></div>
+      <div class="readout"><span class="key">computed overflow</span><span class="val" id="rOverflow"></span></div>
+      <div class="readout"><span class="key">目标块 rect 宽×高</span><span class="val" id="rRect"></span></div>
+      <div class="readout"><span class="key">后面兄弟 rect.top</span><span class="val" id="rAfterTop"></span></div>
+      <div class="readout"><span class="key">是否仍占位</span><span class="val" id="rSpace"></span></div>
+      <div class="readout"><span class="key">中心点能否命中（实测）</span><span class="val" id="rHit"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/12-display-overflow.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var select = document.getElementById("mode");
+    var target = document.getElementById("target");
+    var after = document.getElementById("after");
+    var cssOut = document.getElementById("cssOut");
+
+    var decls = {
+      normal: "display: block; visibility: visible; opacity: 1; overflow: visible;",
+      displayNone: "display: none;",
+      visibilityHidden: "visibility: hidden;",
+      opacityZero: "opacity: 0;",
+      overflowHidden: "overflow: hidden;"
+    };
+    var notes = {
+      normal: "对照状态：盒在、绘制在、可命中，超宽内容溢出到盒外。",
+      displayNone: "不生成盒：占位、命中、可聚焦一起消失，兄弟上移。",
+      visibilityHidden: "隐藏绘制但保留布局盒：兄弟不上移，命中被撤掉。",
+      opacityZero: "整棵子树合成一张图再降透明度：占位与命中都保留。",
+      overflowHidden: "盒与绘制不变，只裁掉超出边界的内容；它仍是滚动容器。"
+    };
+
+    function render() {
+      var mode = select.value;
+      target.style.display = mode === "displayNone" ? "none" : "block";
+      target.style.visibility = mode === "visibilityHidden" ? "hidden" : "visible";
+      target.style.opacity = mode === "opacityZero" ? "0" : "1";
+      target.style.overflow = mode === "overflowHidden" ? "hidden" : "visible";
+
+      var cs = getComputedStyle(target);
+      var rect = target.getBoundingClientRect();
+      var afterTop = after.getBoundingClientRect().top;
+      var occupies = rect.width > 0 && rect.height > 0;
+
+      var hitText = "否（无盒）";
+      if (occupies) {
+        var hitEl = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        hitText = hitEl && (hitEl === target || target.contains(hitEl)) ? "是" : "否";
+      }
+
+      document.getElementById("rDisplay").textContent = cs.display;
+      document.getElementById("rVis").textContent = cs.visibility;
+      document.getElementById("rOpacity").textContent = cs.opacity;
+      document.getElementById("rOverflow").textContent = cs.overflow;
+      document.getElementById("rRect").textContent = Math.round(rect.width) + " × " + Math.round(rect.height) + " px";
+      document.getElementById("rAfterTop").textContent = afterTop.toFixed(1) + " px";
+      document.getElementById("rSpace").textContent = occupies ? "是" : "否（占位消失）";
+      document.getElementById("rHit").textContent = hitText;
+      document.getElementById("status").textContent = decls[mode] + "  " + notes[mode];
+
+      cssOut.textContent =
+        ".target { " + decls[mode] + " }\n" +
+        "/* computed: display=" + cs.display + " visibility=" + cs.visibility +
+        " opacity=" + cs.opacity + " overflow=" + cs.overflow + " */\n" +
+        "/* 目标 rect=" + Math.round(rect.width) + "x" + Math.round(rect.height) +
+        "  兄弟 top=" + afterTop.toFixed(1) + "px */";
+    }
+
+    select.addEventListener("change", render);
+    render();
+  })();
+</script>
+</body>
+</html>

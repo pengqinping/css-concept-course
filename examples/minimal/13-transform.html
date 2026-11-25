@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>13 · 变换改坐标系，不改布局盒</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="range"] { width: min(20rem, 60vw); accent-color: var(--green); }
+    .control output { font: 700 .95rem var(--mono); color: var(--green-dark); min-width: 3rem; }
+    .stage { display: flex; flex-wrap: wrap; gap: 1rem 2rem; padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    .board { position: relative; width: 300px; height: 250px; max-width: 100%; background: repeating-linear-gradient(0deg, transparent 0 24px, rgb(55 58 42 / 4%) 24px 25px); border: 1px solid var(--line); border-radius: .5rem; overflow: hidden; }
+    .ghost { position: absolute; left: 50px; top: 50px; width: 200px; height: 100px; border: 2px dashed var(--muted); border-radius: .35rem; }
+    .ghost .cap { position: absolute; top: -1.4rem; left: 0; font: .78rem var(--mono); color: var(--muted); white-space: nowrap; }
+    .box { position: absolute; left: 50px; top: 50px; width: 200px; height: 100px; border-radius: .35rem; background: linear-gradient(135deg, var(--green-soft), var(--green)); border: 2px solid var(--green-dark); color: #fff; font: 700 .95rem/100px var(--mono); text-align: center; transform-origin: 50% 50%; }
+    .legend { align-self: flex-start; font: .85rem/1.7 var(--mono); color: var(--muted); max-width: 22rem; }
+    .legend b { color: var(--amber); }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 13rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/13-transform.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 13 视觉变形</p>
+  </header>
+
+  <h1>歪了的是外观，没歪的是布局盒</h1>
+  <p class="lead">transform 发生在布局之后、绘制之前：元素仍占原来的布局盒，兄弟不让位，offsetWidth 不变；变的是视觉位置、命中区域与包围盒。</p>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="controls">
+      <label class="control" for="deg">rotate 角度
+        <input id="deg" type="range" min="0" max="90" step="1" value="0" />
+        <output id="degOut" for="deg">0deg</output>
+      </label>
+    </div>
+    <div class="stage">
+      <div class="board">
+        <div class="ghost"><span class="cap">虚线 = 布局盒 200 × 100</span></div>
+        <div class="box" id="box">transform: rotate</div>
+      </div>
+      <div class="legend">
+        <p>虚线框是未变换的布局盒，绿色块是变换后的外观。</p>
+        <p><b>offsetWidth / offsetHeight 始终 200 × 100。</b></p>
+        <p>非 none 的 transform 还会成为后代的定位参照，并创建层叠上下文；即使 rotate(0deg) 也一样。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>把 rotate 从 0deg 拖到 30deg：元素的 offsetWidth 会变吗？getBoundingClientRect().width 呢？先写下两个数字再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>offsetWidth 不变，仍是 200px，因为 transform 在布局结束后才换坐标系，布局盒尺寸与兄弟位置都定死了。getBoundingClientRect().width 约 223px：旋转后视觉包围盒宽 = 200 × cos30 + 100 × sin30 ≈ 173.2 + 50 = 223.2px，高 = 200 × sin30 + 100 × cos30 ≈ 100 + 86.6 = 186.6px。兄弟元素不会为这个变大的包围盒让位。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">computed transform</span><span class="val" id="rMatrix"></span></div>
+      <div class="readout"><span class="key">computed transform-origin</span><span class="val" id="rOrigin"></span></div>
+      <div class="readout"><span class="key">offsetWidth × offsetHeight</span><span class="val" id="rOffset"></span></div>
+      <div class="readout"><span class="key">getBoundingClientRect 宽×高</span><span class="val" id="rRect"></span></div>
+      <div class="readout"><span class="key">虚线布局盒 rect 宽×高</span><span class="val" id="rGhost"></span></div>
+      <div class="readout"><span class="key">包围盒相对布局盒的变化</span><span class="val" id="rDelta"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/13-transform.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var slider = document.getElementById("deg");
+    var box = document.getElementById("box");
+    var ghost = document.querySelector(".ghost");
+    var cssOut = document.getElementById("cssOut");
+
+    function render() {
+      var deg = Number(slider.value);
+      box.style.transform = "rotate(" + deg + "deg)";
+      document.getElementById("degOut").textContent = deg + "deg";
+
+      var cs = getComputedStyle(box);
+      var rect = box.getBoundingClientRect();
+      var grect = ghost.getBoundingClientRect();
+      var rw = rect.width - grect.width;
+      var rh = rect.height - grect.height;
+
+      document.getElementById("rMatrix").textContent = cs.transform;
+      document.getElementById("rOrigin").textContent = cs.transformOrigin;
+      document.getElementById("rOffset").textContent = box.offsetWidth + " × " + box.offsetHeight + " px（不变）";
+      document.getElementById("rRect").textContent = rect.width.toFixed(1) + " × " + rect.height.toFixed(1) + " px";
+      document.getElementById("rGhost").textContent = Math.round(grect.width) + " × " + Math.round(grect.height) + " px";
+      document.getElementById("rDelta").textContent = (rw >= 0 ? "+" : "") + rw.toFixed(1) + " / " + (rh >= 0 ? "+" : "") + rh.toFixed(1) + " px";
+      document.getElementById("status").textContent =
+        "rotate(" + deg + "deg)：布局盒仍是 200 × 100，视觉包围盒变成 " + rect.width.toFixed(1) + " × " + rect.height.toFixed(1) +
+        "px。位移、旋转、缩放都只改绘制时的坐标映射。";
+
+      cssOut.textContent =
+        ".box { width: 200px; height: 100px; transform: rotate(" + deg + "deg); }\n" +
+        "/* computed matrix: " + cs.transform + " */\n" +
+        "/* offsetWidth=" + box.offsetWidth + "  rect.width=" + rect.width.toFixed(1) + " */";
+    }
+
+    slider.addEventListener("input", render);
+    render();
+  })();
+</script>
+</body>
+</html>

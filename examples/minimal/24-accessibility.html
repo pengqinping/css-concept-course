@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>24 · 页面是给谁用的</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .stage { border: 1px solid var(--line); border-radius: .6rem; padding: 1rem; background: #f6f3e9; }
+    .demo-btn { font: inherit; font-size: 15px; padding: .55rem 1rem; border: 1px solid var(--green); border-radius: .5rem; background: var(--paper); color: var(--green); cursor: pointer; }
+    .demo-btn:focus { outline: 3px solid #0b63ce; outline-offset: 3px; }
+    @supports selector(:focus-visible) {
+      .demo-btn:focus:not(:focus-visible) { outline: none; }
+    }
+    body.no-outline .demo-btn:focus { outline: none; }
+    .stage.force { background: Canvas; color: CanvasText; }
+    .stage.force .demo-btn { background: ButtonFace; color: ButtonText; border-color: ButtonText; }
+    .stage.force .demo-btn:focus { outline-color: Highlight; }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/24-accessibility.md">← 返回课程</a></p>
+  <h1>24 · 页面是给谁用的</h1>
+  <p class="lede">可访问性先问语义与键盘，再问好不好看。这里只看一层：焦点与用户偏好。CSS 的职责是让焦点始终可见。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>给按钮设置 outline: none 后，只用键盘 Tab 到它时用户会看到什么？强制颜色模式下，用 box-shadow 画的焦点环还靠得住吗？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>看不到任何焦点环，键盘用户失去当前位置。正确做法是把 3px outline 写在基础 :focus 里，用 :focus-visible 只区分显示时机（鼠标点击不显示、键盘 Tab 仍显示），不能把 outline: none 写在外面裸露生效。强制颜色会用系统色覆盖作者色并忽略阴影，box-shadow 焦点环可能整圈消失，所以焦点优先用 outline，边框与文字也要独立表意。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调两个参数</h2>
+    <div class="controls">
+      <label class="switch"><input id="force" type="checkbox" /> 模拟强制颜色 forced-colors</label>
+      <label class="switch"><input id="noOutline" type="checkbox" /> 设置 outline: none</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="stage" id="stage">
+      <p>点击下方按钮后按 Tab，直到焦点落回这个示例按钮：</p>
+      <button class="demo-btn" id="demoBtn" type="button">示例按钮</button>
+    </div>
+    <p class="hint">鼠标点它时 :focus-visible 不成立、没有环；键盘 Tab 到位时基础 :focus 给出 3px 蓝环。切换第二个开关后会怎样？</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/24-accessibility.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var force = document.getElementById('force');
+    var noOutline = document.getElementById('noOutline');
+    var stage = document.getElementById('stage');
+    var btn = document.getElementById('demoBtn');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function matches(el, sel) {
+      try { return el.matches(sel); } catch (e) { return false; }
+    }
+
+    function render() {
+      var f = force.checked;
+      var n = noOutline.checked;
+      stage.classList.toggle('force', f);
+      document.body.classList.toggle('no-outline', n);
+
+      var focused = document.activeElement === btn;
+      var visible = matches(btn, ':focus-visible');
+      var cs = getComputedStyle(btn);
+      var style = focused ? cs.outlineStyle : '(未聚焦)';
+      var width = focused ? cs.outlineWidth : '-';
+      var ringOk = focused && cs.outlineStyle !== 'none';
+      var br = btn.getBoundingClientRect();
+
+      readout.innerHTML =
+        '<div><span>当前模拟的偏好</span><b>' + (f ? 'forced-colors: active' : 'no-preference') + '</b></div>' +
+        '<div><span>按钮盒尺寸（实测）</span><b>' + Math.round(br.width) + ' x ' + Math.round(br.height) + ' px</b></div>' +
+        '<div><span>焦点在示例按钮上</span><b>' + focused + '</b></div>' +
+        '<div><span>:focus-visible 是否匹配</span><b>' + (focused ? visible : '—') + '</b></div>' +
+        '<div><span>outline-style / width（实测）</span><b>' + style + ' / ' + width + '</b></div>' +
+        '<div><span>焦点环是否保留</span><b>' + (ringOk ? '是' : (focused ? '否' : '未测试')) + '</b></div>';
+
+      css.textContent =
+        '.demo-btn:focus { outline: 3px solid #0b63ce; outline-offset: 3px; }\n' +
+        '@supports selector(:focus-visible) {\n' +
+        '  .demo-btn:focus:not(:focus-visible) { outline: none; }\n' +
+        '}\n' +
+        (f ? '@media (forced-colors: active) {\n  .demo-btn { border: 1px solid ButtonText; color: ButtonText; background: ButtonFace; }\n}\n' : '') +
+        (n ? 'body.no-outline .demo-btn:focus { outline: none; }  /* 键盘焦点消失 */' : '/* 未设置 outline: none，基础焦点环有效 */');
+    }
+
+    btn.addEventListener('focus', render);
+    btn.addEventListener('blur', render);
+    force.addEventListener('change', render);
+    noOutline.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

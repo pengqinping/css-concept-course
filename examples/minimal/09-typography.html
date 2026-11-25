@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>09 · 字号与行盒高度</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="range"] { width: min(20rem, 60vw); accent-color: var(--green); }
+    .control output { font: 700 .95rem var(--mono); color: var(--green-dark); min-width: 3.2rem; }
+    .stage { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    .sample { margin: 0; font-size: 20px; line-height: 1.2; width: 20rem; max-width: 100%; }
+    .metric-wrap { flex: 1 1 16rem; min-width: 14rem; }
+    .metric-wrap .caption { margin: 0 0 .5rem; font: .85rem var(--mono); color: var(--muted); }
+    .line-box { position: relative; height: var(--lhpx, 24px); background: var(--green-soft); border: 1px dashed var(--green); display: flex; align-items: flex-start; }
+    .glyph { font-size: 20px; line-height: 1; padding-left: .5rem; color: var(--green-dark); }
+    .rule { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--muted); }
+    .rule.top { top: 0; }
+    .rule.baseline { top: var(--basepx, 18px); border-top: 2px solid var(--amber); }
+    .rule.bottom { bottom: 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .5rem; font: .8rem var(--mono); color: var(--muted); }
+    .legend b { color: var(--amber); font-weight: 700; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 11rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/09-typography.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 09 排版</p>
+  </header>
+
+  <h1>字号管字形，行高管节奏</h1>
+  <p class="lead">line-height 比字体度量多出来的部分，平均分成上下半行距。无单位数作为数值继承，子元素按自己的字号重算；固定长度则原样继承。</p>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="controls">
+      <label class="control" for="lh">行高倍数（字号固定 20px）
+        <input id="lh" type="range" min="1" max="2" step="0.1" value="1.2" />
+        <output id="lhOut" for="lh">1.2</output>
+      </label>
+    </div>
+    <div class="stage">
+      <p class="sample" id="sample">第一行：字号描述字形大小。<br />第二行：行高描述行盒高度。</p>
+      <div class="metric-wrap">
+        <p class="caption">单行行盒剖面（示意度量：ascent 18px + descent 6px = 24px）</p>
+        <div class="line-box" id="lineBox">
+          <span class="glyph">Ag</span>
+          <i class="rule top"></i><i class="rule baseline"></i><i class="rule bottom"></i>
+        </div>
+        <div class="legend"><span>上下虚线 = 行盒边界</span><span><b>琥珀线 = 基线</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>字号固定 20px，把 line-height 从 1.2 调到 1.8：单行行盒高度增加多少像素？两行段落的总高度又增加多少？先算再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>单行从 20 × 1.2 = 24px 变成 20 × 1.8 = 36px，增加 12px；两行段落总高从 48px 变成 72px，增加 24px。半行距也由 (24 − 24) ÷ 2 = 0px 变成 (36 − 24) ÷ 2 = 6px，基线距顶边从 18px 变成 6 + 18 = 24px。图中 18/6 是为心算挑的示意度量，不是某款字体的真实参数；行盒高度与段落总高则来自浏览器实测。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">computed line-height</span><span class="val" id="rLh"></span></div>
+      <div class="readout"><span class="key">段落总高（2 行，rect）</span><span class="val" id="rTotal"></span></div>
+      <div class="readout"><span class="key">半行距（示意）</span><span class="val" id="rHalf"></span></div>
+      <div class="readout"><span class="key">基线距顶边（示意）</span><span class="val" id="rBase"></span></div>
+      <div class="readout"><span class="key">相对 1.2 的单行差</span><span class="val" id="rDelta"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/09-typography.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var slider = document.getElementById("lh");
+    var sample = document.getElementById("sample");
+    var lineBox = document.getElementById("lineBox");
+    var cssOut = document.getElementById("cssOut");
+
+    function render() {
+      var n = Number(slider.value);
+      sample.style.lineHeight = String(n);
+      document.getElementById("lhOut").textContent = n.toFixed(1);
+
+      var lhPx = parseFloat(getComputedStyle(sample).lineHeight);
+      var total = sample.getBoundingClientRect().height;
+      var half = (lhPx - 24) / 2;
+      var baseline = half + 18;
+
+      lineBox.style.setProperty("--lhpx", lhPx + "px");
+      lineBox.style.setProperty("--basepx", baseline + "px");
+
+      document.getElementById("rLh").textContent = lhPx.toFixed(1) + " px";
+      document.getElementById("rTotal").textContent = total.toFixed(1) + " px";
+      document.getElementById("rHalf").textContent = half.toFixed(1) + " px";
+      document.getElementById("rBase").textContent = baseline.toFixed(1) + " px";
+      document.getElementById("rDelta").textContent = "+" + (lhPx - 24).toFixed(1) + " px";
+
+      document.getElementById("status").textContent =
+        "20px × " + n.toFixed(1) + " = " + lhPx.toFixed(1) + "px 单行行盒；两行合计 " + total.toFixed(1) +
+        "px。字号不变而行距变化，是因为变的是行高这个乘数。";
+
+      cssOut.textContent =
+        ".sample { font-size: 20px; line-height: " + n.toFixed(1) + "; }\n" +
+        "/* computed line-height: " + lhPx.toFixed(1) + "px = 20 × " + n.toFixed(1) + " */\n" +
+        "/* 两行段落 rect 高度: " + total.toFixed(1) + "px */";
+    }
+
+    slider.addEventListener("input", render);
+    render();
+  })();
+</script>
+</body>
+</html>

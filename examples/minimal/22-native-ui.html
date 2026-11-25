@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>22 · 原生弹层</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    button { font: inherit; font-size: 14px; padding: .5rem .9rem; border: 1px solid var(--green); background: var(--green); color: #fff; border-radius: .5rem; cursor: pointer; }
+    button.secondary { background: transparent; color: var(--green); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .badge { position: fixed; top: 12px; right: 12px; z-index: 9999; background: var(--amber); color: #fff; padding: .35rem .6rem; border-radius: .4rem; font-size: 12px; font-family: var(--mono); }
+    dialog, [popover] { border: 1px solid var(--line); border-radius: .8rem; padding: 1rem 1.2rem; max-width: 22rem; background: var(--paper); color: #24261f; }
+    dialog::backdrop { background: rgb(16 24 40 / 55%); }
+    [popover]::backdrop { background: rgb(16 24 40 / 12%); }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="badge" id="badge">z-index: 9999</div>
+
+  <p class="back"><a href="../../docs/course/22-native-ui.md">← 返回课程</a></p>
+  <h1>22 · 原生弹层</h1>
+  <p class="lede">dialog.showModal() 与 popover 都进 top layer：绘制在所有常规内容之上，不受祖先 overflow 裁剪。只演示一件事：层级不是数值。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>右上角那个 z-index: 9999 的橙色徽标，在模态 dialog 打开后能盖住它吗？打开 popover 呢？按 Escape 谁会关闭？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>都不能。top layer 是浏览器单独的一层，z-index 只在自己的层叠上下文里比大小，9999 到不了那里；徽标还在常规层，会被 dialog 的遮罩盖在下面。模态 dialog 让背景 inert、圈定焦点、Escape 可关；popover 默认非模态，支持 light dismiss（点外部或 Escape 关闭）。判断模态看 :modal，不看有没有遮罩。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="btn-row">
+      <button id="openDialog" type="button">打开 dialog.showModal()</button>
+      <button id="togglePop" type="button" class="secondary">切换 popover</button>
+    </div>
+    <p class="hint">打开后 Tab 试背景是否可聚焦，再按 Escape。徽标的 z-index 始终是 9999。</p>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <p>三种原生能力各解一种问题：details/summary 是零 JS 的折叠；dialog.showModal() 是模态；popover 是轻量浮层。它们的状态由浏览器维护，CSS 只读不写。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/22-native-ui.md">← 返回课程</a></footer>
+
+  <dialog id="dlg">
+    <p>这是一个模态 dialog。背景已 inert，Tab 跑不到后面的链接，Escape 可关闭。</p>
+    <button id="closeDialog" type="button" class="secondary">关闭 dialog</button>
+  </dialog>
+
+  <div id="pop" popover>
+    <p>这是一个 popover。它进了 top layer，但默认不是模态，背景仍可交互。</p>
+    <button id="closePop" type="button" class="secondary">关闭 popover</button>
+  </div>
+</main>
+<script>
+  (function () {
+    var badge = document.getElementById('badge');
+    var dlg = document.getElementById('dlg');
+    var pop = document.getElementById('pop');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function matches(el, sel) {
+      try { return el.matches(sel); } catch (e) { return false; }
+    }
+
+    function render() {
+      var modal = matches(dlg, ':modal');
+      var popOpen = matches(pop, ':popover-open');
+      var z = getComputedStyle(badge).zIndex;
+      var dr = dlg.getBoundingClientRect();
+      var dlgSize = modal ? Math.round(dr.width) + ' x ' + Math.round(dr.height) + ' px' : '未打开';
+
+      readout.innerHTML =
+        '<div><span>dialog 是否模态（:modal）</span><b>' + modal + '</b></div>' +
+        '<div><span>popover 是否打开（:popover-open）</span><b>' + popOpen + '</b></div>' +
+        '<div><span>dialog 盒尺寸（实测）</span><b>' + dlgSize + '</b></div>' +
+        '<div><span>徽标 z-index（实测）</span><b>' + z + '</b></div>' +
+        '<div><span>背景是否 inert</span><b>' + (modal ? '是' : '否') + '</b></div>' +
+        '<div><span>徽标能否盖住 dialog</span><b>' + (modal ? '不能，dialog 在 top layer' : '当前无模态 dialog') + '</b></div>';
+
+      css.textContent =
+        '.badge { position: fixed; z-index: ' + z + '; }  /* 仍在常规层 */\n' +
+        'dialog::backdrop { background: rgb(16 24 40 / 55%); }\n' +
+        '[popover]::backdrop { background: rgb(16 24 40 / 12%); }\n' +
+        'dialog:modal  /* 只有 showModal() 才命中 */\n' +
+        '[popover]:popover-open';
+    }
+
+    document.getElementById('openDialog').addEventListener('click', function () {
+      if (typeof dlg.showModal === 'function') { dlg.showModal(); }
+      render();
+    });
+    document.getElementById('closeDialog').addEventListener('click', function () { dlg.close(); });
+    document.getElementById('togglePop').addEventListener('click', function () {
+      if (matches(pop, ':popover-open')) {
+        if (typeof pop.hidePopover === 'function') { pop.hidePopover(); }
+      } else if (typeof pop.showPopover === 'function') {
+        pop.showPopover();
+      }
+      render();
+    });
+    document.getElementById('closePop').addEventListener('click', function () {
+      if (typeof pop.hidePopover === 'function') { pop.hidePopover(); }
+    });
+    dlg.addEventListener('close', render);
+    pop.addEventListener('toggle', render);
+    render();
+  })();
+</script>
+</body>
+</html>

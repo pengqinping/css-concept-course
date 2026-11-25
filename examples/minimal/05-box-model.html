@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>04 · 元素到底占多大 | CSS 概念课</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 48rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem 1.75rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="range"] { width: 8rem; accent-color: var(--green); }
+    .control output { font: .9rem var(--mono); color: var(--green-dark); min-width: 3rem; }
+    .stage { padding: 1.5rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; overflow-x: auto; }
+    .box-row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
+    .box-unit h3 { margin: 0 0 .5rem; font-size: .95rem; }
+    .demo-box { width: 300px; padding: 20px; border: 5px solid var(--amber); min-height: 72px; display: flex; align-items: center; justify-content: center; font: .85rem var(--mono); }
+    .box-cc { box-sizing: content-box; background: var(--green-soft); color: var(--green-dark); }
+    .box-bb { box-sizing: border-box; background: var(--amber-soft); color: var(--amber); }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 16rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } .readout .key { min-width: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/05-box-model.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 04 盒模型</p>
+  </header>
+
+  <h1>width 描述的是哪一层</h1>
+  <p class="lead">box-sizing 不改变任何尺寸，只改变 width 描述哪一层：content-box 描述内容层，border-box 描述"内容 + 内边距 + 边框"那一层。width 固定为 300px。</p>
+
+  <section class="panel">
+    <h2>调一调</h2>
+    <div class="controls">
+      <span class="control">
+        <label for="pad">padding（左右各一份）</label>
+        <input type="range" id="pad" min="0" max="30" step="1" value="20" />
+        <output id="padOut">20px</output>
+      </span>
+      <span class="control">
+        <label for="bd">border-width（左右各一份）</label>
+        <input type="range" id="bd" min="0" max="10" step="1" value="5" />
+        <output id="bdOut">5px</output>
+      </span>
+    </div>
+    <div class="stage">
+      <div class="box-row">
+        <div class="box-unit">
+          <h3>box-sizing: content-box</h3>
+          <div class="demo-box box-cc" id="boxCC">content 层</div>
+        </div>
+        <div class="box-unit">
+          <h3>box-sizing: border-box</h3>
+          <div class="demo-box box-bb" id="boxBB">content 层</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>width 固定 300px、border 不变，把 padding 从 0 调到 10px：两种模式的占位宽度各增加多少？先写下两组数字再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p><strong>content-box 增加 20px</strong>（左右各 10px）；按默认 border=5px 算，占位从 310px 变成 330px，公式 300 + 2×padding + 2×border。<strong>border-box 增加 0px</strong>，占位始终锁在 300px；变的是内容宽，按默认 border=5px 从 290px 变成 270px，公式 300 - 2×padding - 2×border。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">content-box 占位 / computed width</span><span class="val" id="rCC"></span></div>
+      <div class="readout"><span class="key">content-box 公式</span><span class="val" id="fCC"></span></div>
+      <div class="readout"><span class="key">border-box 占位 / computed width</span><span class="val" id="rBB"></span></div>
+      <div class="readout"><span class="key">border-box 公式</span><span class="val" id="fBB"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/05-box-model.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  const pad = document.getElementById("pad");
+  const bd = document.getElementById("bd");
+  const boxCC = document.getElementById("boxCC");
+  const boxBB = document.getElementById("boxBB");
+  const cssOut = document.getElementById("cssOut");
+
+  function render() {
+    const p = Number(pad.value);
+    const b = Number(bd.value);
+    [boxCC, boxBB].forEach(function (box) {
+      box.style.padding = p + "px";
+      box.style.borderWidth = b + "px";
+    });
+    document.getElementById("padOut").textContent = p + "px";
+    document.getElementById("bdOut").textContent = b + "px";
+
+    const ccRect = boxCC.getBoundingClientRect().width;
+    const bbRect = boxBB.getBoundingClientRect().width;
+    const ccContent = getComputedStyle(boxCC).width;
+    const bbContent = getComputedStyle(boxBB).width;
+
+    cssOut.textContent =
+      ".box { width: 300px; padding: " + p + "px; border: " + b + "px solid; }\n" +
+      ".a { box-sizing: content-box; }  /* 300 标在内容层 */\n" +
+      ".b { box-sizing: border-box; }  /* 300 标在边框外沿 */";
+
+    document.getElementById("rCC").textContent = ccRect + "px / " + ccContent;
+    document.getElementById("fCC").textContent = "300 + 2×" + p + " + 2×" + b + " = " + ccRect;
+    document.getElementById("rBB").textContent = bbRect + "px / " + bbContent;
+    document.getElementById("fBB").textContent = "300 - 2×" + p + " - 2×" + b + " = " + parseFloat(bbContent);
+    document.getElementById("status").textContent =
+      "content-box 的 width 是内容层，padding 与 border 向外加价，实测占位 " + ccRect + "px；" +
+      "border-box 的 width 锁住整盒，实测占位 " + bbRect + "px，内容被吃到 " + bbContent + "。";
+  }
+
+  [pad, bd].forEach(function (el) { el.addEventListener("input", render); });
+  render();
+</script>
+</body>
+</html>

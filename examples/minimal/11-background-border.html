@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>11 · 背景画到哪一层</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control select { font: .95rem var(--mono); padding: .35rem .5rem; border: 1px solid var(--line); border-radius: .45rem; background: #fff; color: var(--ink); }
+    .stage { padding: 1.5rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #e8e2d2; }
+    .card { width: 26rem; max-width: 100%; border: 10px solid rgb(0 0 0 / 25%); padding: 1.5rem; background: linear-gradient(90deg, #f4f8ef, #3f6b2a); background-clip: border-box; border-radius: .6rem; }
+    .card .inner { padding: .75rem; background: rgb(255 255 255 / 70%); border-radius: .35rem; font: .95rem/1.5 var(--mono); }
+    .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; font: .85rem var(--mono); }
+    .chip { padding: .3rem .6rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); background: #fff; }
+    .chip.active { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); font-weight: 700; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 12rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/11-background-border.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 11 背景与边框</p>
+  </header>
+
+  <h1>背景画到哪条边，由 clip 说了算</h1>
+  <p class="lead">边框始终画在背景之上。半透明边框会透出底下的背景，所以改动 background-clip 时，变化首先出现在那圈边框区域。</p>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="controls">
+      <label class="control" for="clip">background-clip
+        <select id="clip">
+          <option value="border-box">border-box（默认）</option>
+          <option value="padding-box">padding-box</option>
+          <option value="content-box">content-box</option>
+        </select>
+      </label>
+    </div>
+    <div class="stage">
+      <div class="card" id="card"><div class="inner" id="inner">10px 半透明黑边框 + 渐变背景</div></div>
+      <div class="chips" id="chips">
+        <span class="chip" data-clip="border-box">画到边框外沿</span>
+        <span class="chip" data-clip="padding-box">止于内边距外沿</span>
+        <span class="chip" data-clip="content-box">只覆盖内容</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>把 background-clip 从 border-box 改成 padding-box，那圈 10px 半透明边框会变成什么？再改成 content-box，padding 区又会发生什么？先写答案再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>border-box 时背景一直画到边框外沿，边框区是渐变与 25% 黑的叠加。改成 padding-box 后背景止于内边距外沿，边框区只剩 25% 黑叠在舞台底色上，与内部背景之间出现清晰接缝。再改成 content-box，padding 区也不画背景，于是从边框内沿到内容之间又多出一条舞台底色的带。背景没变、边框没变，变的只是绘制区域。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">computed background-clip</span><span class="val" id="rClip"></span></div>
+      <div class="readout"><span class="key">computed border-top-width</span><span class="val" id="rBorder"></span></div>
+      <div class="readout"><span class="key">computed border-top-color</span><span class="val" id="rBorderColor"></span></div>
+      <div class="readout"><span class="key">computed padding-top</span><span class="val" id="rPad"></span></div>
+      <div class="readout"><span class="key">卡片 rect 宽×高</span><span class="val" id="rCardRect"></span></div>
+      <div class="readout"><span class="key">内容块 rect 宽×高</span><span class="val" id="rInnerRect"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/11-background-border.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var select = document.getElementById("clip");
+    var card = document.getElementById("card");
+    var inner = document.getElementById("inner");
+    var cssOut = document.getElementById("cssOut");
+
+    var notes = {
+      "border-box": "背景画到边框外沿；边框区透出渐变，接缝不明显。",
+      "padding-box": "背景止于内边距外沿；边框区只剩 25% 黑，与内部背景之间出现接缝。",
+      "content-box": "背景只覆盖内容；padding 区也不画，露出舞台底色。"
+    };
+
+    function render() {
+      var value = select.value;
+      card.style.backgroundClip = value;
+      document.querySelectorAll(".chip").forEach(function (el) {
+        el.classList.toggle("active", el.dataset.clip === value);
+      });
+
+      var cs = getComputedStyle(card);
+      var cr = card.getBoundingClientRect();
+      var ir = inner.getBoundingClientRect();
+      var clip = cs.backgroundClip;
+
+      document.getElementById("rClip").textContent = clip;
+      document.getElementById("rBorder").textContent = cs.borderTopWidth;
+      document.getElementById("rBorderColor").textContent = cs.borderTopColor;
+      document.getElementById("rPad").textContent = cs.paddingTop;
+      document.getElementById("rCardRect").textContent = Math.round(cr.width) + " × " + Math.round(cr.height) + " px";
+      document.getElementById("rInnerRect").textContent = Math.round(ir.width) + " × " + Math.round(ir.height) + " px";
+      document.getElementById("status").textContent = "当前 " + clip + "：" + notes[value] + " 盒模型尺寸不受裁剪区域影响。";
+
+      cssOut.textContent =
+        ".card {\n" +
+        "  border: 10px solid rgb(0 0 0 / 25%);\n" +
+        "  padding: 1.5rem;\n" +
+        "  background: linear-gradient(90deg, #f4f8ef, #3f6b2a);\n" +
+        "  background-clip: " + value + ";\n" +
+        "}\n" +
+        "/* computed: border-top-width=" + cs.borderTopWidth + "  padding-top=" + cs.paddingTop + " */";
+    }
+
+    select.addEventListener("change", render);
+    render();
+  })();
+</script>
+</body>
+</html>

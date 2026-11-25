@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>21 · 表格：语义先于视觉</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .sheet { border-collapse: separate; border-spacing: 6px; width: 100%; }
+    .sheet.collapsed { border-collapse: collapse; }
+    .sheet caption { text-align: left; font-size: 13px; color: var(--muted); margin-bottom: .4rem; }
+    .sheet th, .sheet td { border: 1px solid #8aa0ab; padding: .5rem .7rem; text-align: left; font-size: 14px; }
+    .sheet thead th { background: #eef1ec; }
+    .tbl-wrap { overflow-x: auto; }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/21-tables.md">← 返回课程</a></p>
+  <h1>21 · 表格：语义先于视觉</h1>
+  <p class="lede">结构来自 table / th scope / caption，CSS 只决定边框归谁。这里只切换一个量：border-collapse。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>把 border-collapse 从 separate 切到 collapse，相邻两格之间会从两条 1px 边框变成一条共享的 1px 线。哪种模式是单线共享？声明的 border-spacing 在另一种模式下还生效吗？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>collapse 是单线共享：相邻边框合并成一条，宽度相同时按 double &gt; solid &gt; dashed &gt; dotted 裁决胜者。separate 是默认值，每格画自己的完整边框，两条并排，border-spacing 生效（这里 6px）；collapse 下 border-spacing 虽仍写着 6px 却不生效，圆角也常丢失。切换开关，核对实测盒间距从 6px 变 0px。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label class="switch"><input id="collapse" type="checkbox" /> 使用 border-collapse: collapse</label>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="tbl-wrap">
+      <table class="sheet" id="sheet">
+        <caption>本周订单（结构由标签给，线由算法给）</caption>
+        <thead><tr><th scope="col">订单号</th><th scope="col">金额</th><th scope="col">状态</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">#1042</th><td>328.00</td><td>已付</td></tr>
+          <tr><th scope="row">#1043</th><td>76.50</td><td>待付</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">两个相邻单元格都写 border: 1px solid；注意开关切换后格与格之间的空隙。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/21-tables.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var cb = document.getElementById('collapse');
+    var sheet = document.getElementById('sheet');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+    var c1 = sheet.querySelector('tbody td');
+    var c2 = c1.nextElementSibling;
+
+    function render() {
+      var on = cb.checked;
+      sheet.classList.toggle('collapsed', on);
+      var cs = getComputedStyle(sheet);
+      var mode = cs.borderCollapse;
+      var spacing = cs.borderSpacing;
+      var r1 = c1.getBoundingClientRect();
+      var r2 = c2.getBoundingClientRect();
+      var gap = Math.round((r2.left - r1.right) * 100) / 100;
+
+      readout.innerHTML =
+        '<div><span>border-collapse（实测）</span><b>' + mode + '</b></div>' +
+        '<div><span>border-spacing（声明值）</span><b>' + spacing + '</b></div>' +
+        '<div><span>相邻两格盒间距（实测）</span><b>' + gap + 'px</b></div>' +
+        '<div><span>border-spacing 是否生效</span><b>' + (on ? '否（collapse 忽略）' : '是') + '</b></div>' +
+        '<div><span>相邻边框</span><b>' + (on ? '合并为一条 1px' : '两条 1px 并排') + '</b></div>';
+
+      css.textContent =
+        '.sheet { border-collapse: ' + mode + '; border-spacing: 6px; }\n' +
+        '.sheet th, .sheet td { border: 1px solid #8aa0ab; }' +
+        (on ? '\n/* collapse：相邻边框合并，border-spacing 被忽略 */' : '\n/* separate（默认）：两条边框并排，spacing 生效 */');
+    }
+
+    cb.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

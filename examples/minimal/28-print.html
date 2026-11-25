@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>28 · 打印样式</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    button { font: inherit; font-size: 14px; padding: .5rem .9rem; border: 1px solid var(--green); background: var(--green); color: #fff; border-radius: .5rem; cursor: pointer; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .page { border: 1px solid var(--line); border-radius: .6rem; background: #fff; padding: 1rem 1.2rem; }
+    .page-header { border-bottom: 2px solid var(--green); padding-bottom: .5rem; margin-bottom: .8rem; font-weight: 700; }
+    .nav { background: #14231b; color: #f4f1e9; padding: .4rem .6rem; border-radius: .4rem; font-size: 13px; margin-bottom: .8rem; }
+    .toolbar { font-size: 13px; color: var(--muted); margin-bottom: .8rem; }
+    .doc a { color: var(--green); }
+    figure { border: 1px dashed var(--line); padding: .8rem; text-align: center; margin: .8rem 0; }
+    figcaption { font-size: 13px; color: var(--muted); }
+
+    @media print {
+      .page-header, .nav, .toolbar { display: none; }
+      .page { border: 0; padding: 0; background: #fff; color: #000; }
+      .doc a[href^="http"]::after { content: " (" attr(href) ")"; }
+    }
+    body.print-view .page-header,
+    body.print-view .nav,
+    body.print-view .toolbar { display: none; }
+    body.print-view .page { border: 0; padding: 0; background: #fff; color: #000; }
+    body.print-view .doc a[href^="http"]::after { content: " (" attr(href) ")"; }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/28-print.md">← 返回课程</a></p>
+  <h1>28 · 打印样式</h1>
+  <p class="lede">@media print 管元素画什么，@page 管纸张多大。这里只看一件事：页眉等元素在打印时是否退出布局。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>页面有一行页眉、一条深色导航、一个工具栏。调用 window.print() 后，页眉在打印时还会显示吗？外部链接地址会不会出现？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>不显示。@media print 在输出目标是打印或打印预览时参与层叠，.page-header { display: none } 让页眉退出布局，导航与工具栏同理，链接后用 ::after 追加地址。@page 描述纸张尺寸与页边距，不是选择器，选不中任何元素；页边距盒里的页码由 counter(page) 填。打开模拟开关核对 display 读数。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="btn-row">
+      <label class="switch"><input id="preview" type="checkbox" /> 模拟打印视图</label>
+      <button id="printBtn" type="button">打印预览（window.print）</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="page" id="page">
+      <div class="page-header" id="header">页面页眉 · 报告标题</div>
+      <div class="nav" id="nav">主导航（打印时隐藏）</div>
+      <div class="toolbar" id="toolbar">工具栏（打印时隐藏）</div>
+      <div class="doc">
+        <p>正文保留。外部链接例如 <a href="https://example.com/spec">规范地址</a>，打印时会追加地址文本。</p>
+        <figure>插图区域<figcaption>图注与插图同页</figcaption></figure>
+      </div>
+    </div>
+    <p class="hint">模拟视图用类复用 @media print 的规则，便于在屏幕上核对；真实打印仍以打印预览为准。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/28-print.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var preview = document.getElementById('preview');
+    var header = document.getElementById('header');
+    var nav = document.getElementById('nav');
+    var toolbar = document.getElementById('toolbar');
+    var page = document.getElementById('page');
+    var link = document.querySelector('.doc a');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function render() {
+      var on = preview.checked;
+      document.body.classList.toggle('print-view', on);
+      var hDisplay = getComputedStyle(header).display;
+      var nDisplay = getComputedStyle(nav).display;
+      var tDisplay = getComputedStyle(toolbar).display;
+      var bg = getComputedStyle(page).backgroundColor;
+      var after = getComputedStyle(link, '::after').content;
+      var ph = page.getBoundingClientRect().height;
+
+      readout.innerHTML =
+        '<div><span>当前视图</span><b>' + (on ? '打印模拟' : '屏幕') + '</b></div>' +
+        '<div><span>页面盒高度（实测）</span><b>' + Math.round(ph) + 'px</b></div>' +
+        '<div><span>页眉 display（实测）</span><b>' + hDisplay + '</b></div>' +
+        '<div><span>导航 display（实测）</span><b>' + nDisplay + '</b></div>' +
+        '<div><span>工具栏 display（实测）</span><b>' + tDisplay + '</b></div>' +
+        '<div><span>页面背景（实测）</span><b>' + bg + '</b></div>' +
+        '<div><span>链接 ::after content（实测）</span><b>' + after + '</b></div>';
+
+      css.textContent =
+        '@media print {\n' +
+        '  .page-header, .nav, .toolbar { display: none; }\n' +
+        '  .page { background: #fff; color: #000; }\n' +
+        '  .doc a[href^="http"]::after { content: " (" attr(href) ")"; }\n' +
+        '}\n' +
+        (on
+          ? 'body.print-view 复用以上规则（当前生效）'
+          : '/* 屏幕视图：以上 @media print 规则未参与层叠 */');
+    }
+
+    document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+    preview.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>29 · 分栏、绕行与叠色</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .stage { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: 1rem; }
+    .portrait { float: left; inline-size: 160px; block-size: 160px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #9fc3a8, #2f6f4f 70%); margin: 0 1rem .5rem 0; }
+    .stage.on .portrait { shape-outside: circle(50% at 50% 50%); shape-margin: .5rem; }
+    .text p { margin: 0 0 .55rem; font-size: 14px; }
+    .clear { display: flow-root; }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } .portrait { inline-size: 110px; block-size: 110px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/29-shapes-mix.md">← 返回课程</a></p>
+  <h1>29 · 分栏、绕行与叠色</h1>
+  <p class="lede">四层对象各管一层。这里只看绕行：shape-outside 改的是文字的避让区，不是图片的轮廓。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>图片已经写了 border-radius: 50%，看起来是圆的。打开 shape-outside: circle() 前后，文字是矩形避让还是沿圆避让？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>只写 border-radius 时，行盒仍按浮动盒的矩形外框绕行，圆图周围是方角留白；加上 shape-outside: circle(50%) 后，文字沿圆边排列。shape-outside 只改文字避让区，不裁剪元素本身，视觉轮廓要靠 border-radius 或 clip-path 同步；它必须作用于浮动元素，shape-margin 是避让区外侧的额外留白，不是元素 margin。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label class="switch"><input id="shape" type="checkbox" /> 启用 shape-outside: circle(50%)</label>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="stage on" id="stage">
+      <div class="portrait" id="portrait"></div>
+      <div class="text">
+        <p>这段文本演示浮动元素旁边的行盒如何避让。圆的轮廓由 border-radius 画出，但文字走哪条边，由 shape-outside 决定。两者用的是同一个几何时，文字才会贴着圆弧排列。</p>
+        <p>把开关关掉，行盒回到矩形外框：即使图片看起来是圆的，文字仍保留方角留白。这就是视觉轮廓与避让区分离的直接证据，也是最容易误判的一处。</p>
+        <p>shape-margin 只在避让区外侧再留一圈空隙，并不会移动图片本身，也不会清除浮动；收尾仍由容器的 flow-root 负责。把文字缩短时，避让差异会变得不明显，所以这里保留足够的行数。</p>
+      </div>
+      <div class="clear"></div>
+    </div>
+    <p class="hint">看图片左上与右下的文字边缘：开关切换后一个沿圆弧、一个走方角。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/29-shapes-mix.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var cb = document.getElementById('shape');
+    var stage = document.getElementById('stage');
+    var portrait = document.getElementById('portrait');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function render() {
+      var on = cb.checked;
+      stage.classList.toggle('on', on);
+      var cs = getComputedStyle(portrait);
+      var r = portrait.getBoundingClientRect();
+
+      readout.innerHTML =
+        '<div><span>float（实测）</span><b>' + cs.cssFloat + '</b></div>' +
+        '<div><span>shape-outside（实测）</span><b>' + cs.shapeOutside + '</b></div>' +
+        '<div><span>shape-margin（实测）</span><b>' + cs.shapeMargin + '</b></div>' +
+        '<div><span>浮动盒尺寸（实测）</span><b>' + Math.round(r.width) + ' x ' + Math.round(r.height) + ' px</b></div>' +
+        '<div><span>文字避让区</span><b>' + (on ? '沿圆避让' : '矩形外框避让') + '</b></div>';
+
+      css.textContent =
+        '.portrait { float: left; inline-size: 160px; aspect-ratio: 1;\n' +
+        '            border-radius: 50%; margin: 0 1rem .5rem 0; }\n' +
+        (on
+          ? '.portrait { shape-outside: circle(50% at 50% 50%); shape-margin: .5rem; }  /* 改避让区 */'
+          : '.portrait { shape-outside: none; }  /* 文字按矩形外框绕行 */');
+    }
+
+    cb.addEventListener('change', render);
+    render();
+  })();
+</script>
+</body>
+</html>

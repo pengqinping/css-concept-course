@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>10 · 组件自己的断点</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    label { display: block; font-size: 14px; color: var(--muted); margin-bottom: .35rem; }
+    input[type="range"] { width: 100%; accent-color: var(--green); }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .scroll { overflow-x: auto; padding: .4rem 0; }
+    .slot { container-type: inline-size; container-name: cardslot; }
+    .card { display: block; padding: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: #fff; }
+    .card .thumb { border-radius: .5rem; background: var(--green); min-height: 92px; display: grid; place-items: center; color: #fff; font-family: var(--mono); font-size: 13px; }
+    .card .body h3 { margin: .6rem 0 .25rem; font-size: 15px; }
+    .card .body p { margin: 0; color: var(--muted); font-size: 13px; }
+    @container cardslot (min-width: 420px) {
+      .card { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: center; }
+      .card .body h3 { margin-block-start: 0; }
+    }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .verdict { margin-top: .5rem; padding: .55rem .75rem; border-radius: .5rem; background: #eef3ed; font-size: 14px; }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/17-container-query.md">← 返回课程</a></p>
+  <h1>10 · 组件自己的断点</h1>
+  <p class="lede">@media 读视口，@container 读最近的查询容器。拖动宽度时视口不变，只有组件自己的空间在变。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>断点写在 <code>@container (min-width: 420px)</code>。容器宽度小于 420px 时，卡片是几列？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>1 列。条件不成立，卡片保持默认的 <code>display: block</code>，图文上下堆叠；拖到正好 420px 时条件成立，切成 2 列。注意整个过程视口宽度没有变化，变的只是容器宽度——这就是容器查询与媒体查询的分工。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <label for="cw">查询容器宽度（改变组件自己的可用空间，不是视口）：<span id="cwOut">320</span>px</label>
+    <input id="cw" type="range" min="240" max="720" step="1" value="320" />
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="scroll">
+      <div class="slot" id="slot">
+        <article class="card" id="card">
+          <div class="thumb">图片区</div>
+          <div class="body">
+            <h3>同一张卡片</h3>
+            <p>代码没变，只是所在容器的宽度变了。</p>
+          </div>
+        </article>
+      </div>
+    </div>
+    <p class="hint">断点 420px 读的是 .slot 的宽度，不是浏览器窗口宽度。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/17-container-query.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var slider = document.getElementById('cw');
+    var slot = document.getElementById('slot');
+    var card = document.getElementById('card');
+    var readout = document.getElementById('readout');
+    var verdict = document.getElementById('verdict');
+    var css = document.getElementById('css');
+
+    function render() {
+      var w = Number(slider.value);
+      slot.style.width = w + 'px';
+      document.getElementById('cwOut').textContent = String(w);
+
+      var realW = Math.round(slot.getBoundingClientRect().width);
+      var cardCS = getComputedStyle(card);
+      var twoCols = cardCS.display === 'grid';
+      var cols = twoCols ? '2 列（grid）' : '1 列（block）';
+      var vw = window.innerWidth;
+
+      readout.innerHTML =
+        '<div><span>容器宽度 getBoundingClientRect</span><b>' + realW + 'px</b></div>' +
+        '<div><span>视口宽度 window.innerWidth</span><b>' + vw + 'px</b></div>' +
+        '<div><span>card 的 display</span><b>' + cardCS.display + '</b></div>' +
+        '<div><span>当前列数</span><b>' + cols + '</b></div>' +
+        '<div><span>断点条件</span><b>min-width: 420px</b></div>';
+
+      verdict.textContent = twoCols
+        ? '结果：容器 ' + realW + 'px >= 420px，@container 命中，卡片两列；视口仍是 ' + vw + 'px。'
+        : '结果：容器 ' + realW + 'px < 420px，@container 不命中，卡片单列；视口仍是 ' + vw + 'px。';
+
+      css.textContent =
+        '.slot { container-type: inline-size; container-name: cardslot; width: ' + realW + 'px; }\n' +
+        '.card { display: ' + cardCS.display + '; }\n' +
+        '@container cardslot (min-width: 420px) {\n' +
+        '  .card { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }\n' +
+        '}';
+    }
+
+    slider.addEventListener('input', render);
+    window.addEventListener('resize', render);
+    render();
+  })();
+</script>
+</body>
+</html>

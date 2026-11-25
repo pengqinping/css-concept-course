@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>10 · 对比度是比值，不是色值</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="range"] { width: min(22rem, 65vw); accent-color: var(--green); }
+    .control output { font: 700 .95rem var(--mono); color: var(--green-dark); min-width: 3rem; }
+    .stage { padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    .sample { margin: 0; padding: 1.2rem 1.4rem; border-radius: .6rem; color: #ffffff; background: #3f6b2a; font-size: 18px; line-height: 1.6; }
+    .sample strong { font-weight: 700; }
+    .thresholds { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; font: .85rem var(--mono); }
+    .chip { padding: .3rem .6rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); background: #fff; }
+    .chip.pass { border-color: var(--green); background: var(--green-soft); color: var(--green-dark); font-weight: 700; }
+    .chip.fail { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); font-weight: 700; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 11rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/10-color.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 10 颜色</p>
+  </header>
+
+  <h1>颜色数值相等，不等于一样可读</h1>
+  <p class="lead">对比度是"前景与背景的相对亮度之比"，不是颜色自身的属性。正文门槛 4.5:1，大号文本与控件边界约 3:1。</p>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="controls">
+      <label class="control" for="mix">背景明度：把 #3f6b2a 与白混合的比例
+        <input id="mix" type="range" min="0" max="100" step="1" value="0" />
+        <output id="mixOut" for="mix">0%</output>
+      </label>
+    </div>
+    <div class="stage">
+      <p class="sample" id="sample"><strong>白字放在变化的背景上</strong><br />可读性看对比度比值，不看"看起来亮不亮"。</p>
+      <div class="thresholds">
+        <span class="chip" id="chip45">正文 4.5:1</span>
+        <span class="chip" id="chip3">大字号/控件 3:1</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>背景从纯 #3f6b2a 提到与白 50:50 混合（约 #9fb594）时，白字的对比度大约是多少？还过 4.5:1 吗？先把数写下来再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>50% 混合时约 2.2:1，不达标：正文要 4.5:1，连大字号的 3:1 也不够。背景是纯 #3f6b2a 时约 6.3:1，达标。比值按相对亮度算：各自换算成 0–1 的亮度后，用 (较亮 + 0.05) ÷ (较暗 + 0.05)。所以"颜色数值相等"不能推出"看起来一样亮"，背景一变，比值就变。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">computed color</span><span class="val" id="rFg"></span></div>
+      <div class="readout"><span class="key">computed background-color</span><span class="val" id="rBg"></span></div>
+      <div class="readout"><span class="key">样本块 rect 宽×高</span><span class="val" id="rRect"></span></div>
+      <div class="readout"><span class="key">前景相对亮度</span><span class="val" id="rLfg"></span></div>
+      <div class="readout"><span class="key">背景相对亮度</span><span class="val" id="rLbg"></span></div>
+      <div class="readout"><span class="key">对比度比值</span><span class="val" id="rRatio"></span></div>
+      <div class="readout"><span class="key">正文 4.5:1</span><span class="val" id="r45"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/10-color.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var slider = document.getElementById("mix");
+    var sample = document.getElementById("sample");
+    var cssOut = document.getElementById("cssOut");
+
+    function channels(str) {
+      var m = str.match(/[\d.]+/g).map(Number);
+      return [m[0], m[1], m[2]];
+    }
+    function lum(css) {
+      var c = channels(css).map(function (v) {
+        var s = v / 255;
+        return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    }
+
+    function render() {
+      var t = Number(slider.value) / 100;
+      var base = [63, 107, 42];
+      var rgb = base.map(function (v) { return Math.round(v * (1 - t) + 255 * t); });
+      var hex = "#" + rgb.map(function (v) { return ("0" + v.toString(16)).slice(-2); }).join("");
+      sample.style.backgroundColor = hex;
+      document.getElementById("mixOut").textContent = slider.value + "%";
+
+      var fgCss = getComputedStyle(sample).color;
+      var bgCss = getComputedStyle(sample).backgroundColor;
+      var lf = lum(fgCss), lb = lum(bgCss);
+      var ratio = (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05);
+      var pass45 = ratio >= 4.5, pass3 = ratio >= 3;
+
+      document.getElementById("rFg").textContent = fgCss;
+      var rect = sample.getBoundingClientRect();
+      document.getElementById("rBg").textContent = bgCss + "  (" + hex + ")";
+      document.getElementById("rRect").textContent = Math.round(rect.width) + " × " + Math.round(rect.height) + " px";
+      document.getElementById("rLfg").textContent = lf.toFixed(3);
+      document.getElementById("rLbg").textContent = lb.toFixed(3);
+      document.getElementById("rRatio").textContent = ratio.toFixed(2) + " : 1";
+      document.getElementById("r45").textContent = pass45 ? "达标" : "不达标";
+
+      var chip45 = document.getElementById("chip45");
+      var chip3 = document.getElementById("chip3");
+      chip45.className = "chip " + (pass45 ? "pass" : "fail");
+      chip45.textContent = "正文 4.5:1 " + (pass45 ? "达标" : "不达标");
+      chip3.className = "chip " + (pass3 ? "pass" : "fail");
+      chip3.textContent = "大字号/控件 3:1 " + (pass3 ? "达标" : "不达标");
+
+      document.getElementById("status").textContent =
+        "当前 " + hex + " 与白字的比值是 " + ratio.toFixed(2) + ":1。" +
+        (pass45 ? "达到正文门槛。" : "低于正文 4.5:1 门槛；" + (pass3 ? "仍可满足大字号 3:1。" : "连大字号 3:1 也不满足。"));
+
+      cssOut.textContent =
+        ".sample { color: #ffffff; background: " + hex + "; }  /* 混合 " + slider.value + "% */\n" +
+        "/* 实测 fg=" + fgCss + "  bg=" + bgCss + " */\n" +
+        "/* ratio = (" + Math.max(lf, lb).toFixed(3) + " + 0.05) / (" + Math.min(lf, lb).toFixed(3) + " + 0.05) = " + ratio.toFixed(2) + ":1 */";
+    }
+
+    slider.addEventListener("input", render);
+    render();
+  })();
+</script>
+</body>
+</html>

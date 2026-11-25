@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>27 · 让浏览器替你算</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: #24261f;
+      background: #f4f1e9;
+      --paper: #fbfaf6;
+      --line: #d7d3c8;
+      --muted: #686b61;
+      --green: #2f6f4f;
+      --amber: #b26b1f;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    body { margin: 0; padding: 2rem 1.25rem 3rem; line-height: 1.6; }
+    main { max-width: 60rem; margin: 0 auto; }
+    a { color: var(--green); }
+    .back { font-size: 14px; }
+    h1 { font-size: 26px; margin: .5rem 0 .25rem; }
+    .lede { color: var(--muted); margin: 0 0 1.4rem; font-size: 15px; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: .9rem; padding: 1rem 1.15rem; margin-bottom: 1rem; }
+    .panel h2 { font-size: 14px; color: var(--muted); margin: 0 0 .6rem; font-weight: 600; }
+    p { margin: 0 0 .6rem; }
+    button { font: inherit; font-size: 14px; padding: .5rem .9rem; border: 1px solid var(--green); background: var(--green); color: #fff; border-radius: .5rem; cursor: pointer; }
+    .switch { display: inline-flex; align-items: center; gap: .45rem; font-size: 14px; color: var(--muted); }
+    input[type="checkbox"] { accent-color: var(--green); width: 1rem; height: 1rem; vertical-align: middle; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    pre { font-family: var(--mono); font-size: 13px; background: #f0ede3; border: 1px solid var(--line); border-radius: .6rem; padding: .75rem .9rem; margin: 0; white-space: pre-wrap; overflow-x: auto; }
+    details { border: 1px solid var(--line); border-radius: .6rem; background: #f6f3e9; padding: .5rem .8rem; }
+    summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; }
+    details p { margin: .6rem 0 0; font-size: 14px; }
+    .readout { font-family: var(--mono); font-size: 13px; }
+    .readout div { display: flex; justify-content: space-between; gap: 1rem; padding: .22rem 0; border-bottom: 1px dotted var(--line); }
+    .readout div:last-child { border-bottom: 0; }
+    .readout b { color: var(--green); }
+    .hint { color: var(--muted); font-size: 13px; margin-top: .6rem; }
+    footer { margin-top: 1.5rem; font-size: 14px; color: var(--muted); }
+
+    .stage { position: relative; border: 1px solid var(--line); border-radius: .6rem; padding: 2rem 1rem 3.5rem; background: #f6f3e9; }
+    #anchorBtn { background: var(--green); }
+    .tip { position: absolute; left: 0; top: 0; background: #14231b; color: #f4f1e9; padding: .5rem .7rem; border-radius: .4rem; font-size: 13px; white-space: nowrap; }
+    .tip[hidden] { display: none; }
+    @supports (anchor-name: --demo-anchor) {
+      #anchorBtn { anchor-name: --demo-anchor; }
+      .tip { position: fixed; inset: auto; position-anchor: --demo-anchor; position-area: bottom span-right; margin-block-start: .5rem; }
+    }
+    .stage.force .tip { position: absolute; position-anchor: none; position-area: none; inset: auto; }
+
+    @media (max-width: 40rem) { body { padding: 1rem .8rem 2rem; } h1 { font-size: 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../../docs/course/27-modern-features.md">← 返回课程</a></p>
+  <h1>27 · 让浏览器替你算</h1>
+  <p class="lede">锚点定位把浮层相对锚点的坐标交给浏览器。能力检测 + 基础独立可用，关掉增强后内容依然可读。</p>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>一个跟随按钮的提示框，关掉锚点定位（或遇到旧浏览器）后会掉回哪里？提示框会消失吗？</p>
+    <details>
+      <summary>揭晓 / 验证</summary>
+      <p>掉回基础 position: absolute，由 JS 读锚点按钮的 getBoundingClientRect 把它放到按钮下方，依然可见。基础定位写在前面，增强包在 @supports 里；关掉后删掉的只是增强，不是内容。同理，视图过渡删掉 startViewTransition 后内容立即更新，滚动动画关掉时间轴后基础状态保持可见。@supports 只证明语法被接受，不保证行为完整。</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="btn-row">
+      <button id="toggleTip" type="button">显示 / 隐藏提示</button>
+      <label class="switch"><input id="force" type="checkbox" /> 禁用原生锚点（走回退）</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>观察台</h2>
+    <div class="stage" id="stage">
+      <button id="anchorBtn" type="button">提示锚点</button>
+      <div class="tip" id="tip" hidden>这是跟随锚点的提示框</div>
+    </div>
+    <p class="hint">点上方按钮切换提示框；打开开关后比较提示框的位置来源。</p>
+  </section>
+
+  <section class="panel">
+    <h2>状态（浏览器实测）</h2>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS</h2>
+    <pre id="css"></pre>
+  </section>
+
+  <footer><a href="../../docs/course/27-modern-features.md">← 返回课程</a></footer>
+</main>
+<script>
+  (function () {
+    var force = document.getElementById('force');
+    var stage = document.getElementById('stage');
+    var btn = document.getElementById('anchorBtn');
+    var tip = document.getElementById('tip');
+    var readout = document.getElementById('readout');
+    var css = document.getElementById('css');
+
+    function render() {
+      var supported = typeof CSS !== 'undefined' && typeof CSS.supports === 'function'
+        && CSS.supports('anchor-name', '--demo-anchor');
+      var forced = force.checked;
+      var native = supported && !forced;
+      stage.classList.toggle('force', forced);
+
+      if (native) {
+        tip.style.left = '';
+        tip.style.top = '';
+      } else {
+        var sr = stage.getBoundingClientRect();
+        var br = btn.getBoundingClientRect();
+        tip.style.left = Math.round(br.left - sr.left) + 'px';
+        tip.style.top = Math.round(br.bottom - sr.top + 8) + 'px';
+      }
+
+      var hidden = tip.hasAttribute('hidden');
+      var br2 = btn.getBoundingClientRect();
+      var tr = tip.getBoundingClientRect();
+      var tipPos = hidden ? '(隐藏)' : Math.round(tr.left) + ', ' + Math.round(tr.top) + ' px';
+      var pos = getComputedStyle(tip).position;
+
+      readout.innerHTML =
+        '<div><span>CSS.supports(anchor-name)</span><b>' + supported + '</b></div>' +
+        '<div><span>当前路径</span><b>' + (native ? '原生锚点定位' : '基础定位回退') + '</b></div>' +
+        '<div><span>提示框 position（实测）</span><b>' + pos + '</b></div>' +
+        '<div><span>锚点按钮位置（实测）</span><b>' + Math.round(br2.left) + ', ' + Math.round(br2.bottom) + ' px</b></div>' +
+        '<div><span>提示框位置（实测）</span><b>' + tipPos + '</b></div>' +
+        '<div><span>提示框内容可见</span><b>' + (!hidden) + '</b></div>';
+
+      css.textContent =
+        '.tip { position: absolute; left: 0; top: 0; }  /* 基础定位，始终有效 */\n' +
+        '@supports (anchor-name: --demo-anchor) {\n' +
+        '  #anchorBtn { anchor-name: --demo-anchor; }\n' +
+        '  .tip { position: fixed; position-anchor: --demo-anchor;\n' +
+        '         position-area: bottom span-right; }\n' +
+        '}\n' +
+        (forced
+          ? '.stage.force .tip { position: absolute; position-anchor: none; position-area: none; }  /* 强制回退 */'
+          : '/* 未强制回退：' + (native ? '原生锚点生效' : '浏览器不支持，基础定位生效') + ' */');
+    }
+
+    document.getElementById('toggleTip').addEventListener('click', function () {
+      if (tip.hasAttribute('hidden')) { tip.removeAttribute('hidden'); }
+      else { tip.setAttribute('hidden', ''); }
+      render();
+    });
+    force.addEventListener('change', render);
+    window.addEventListener('resize', render);
+    render();
+  })();
+</script>
+</body>
+</html>

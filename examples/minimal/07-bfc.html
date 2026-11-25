@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>06 · 为什么布局会塌 | CSS 概念课</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 48rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--green); }
+    .control label { cursor: pointer; }
+    .stage { border-top: 2px dashed var(--line); }
+    .bfc-parent { background: #e8e3d5; }
+    body.bfc-on .bfc-parent { display: flow-root; }
+    .bfc-child { margin: 50px 0 0; padding: .3rem .7rem; background: var(--card); border-radius: .4rem; font: .95rem var(--mono); }
+    .hint { color: var(--muted); font-size: .9rem; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 16rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } .readout .key { min-width: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/07-bfc.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 06 BFC</p>
+  </header>
+
+  <h1>一道边界，把 margin 关在里面</h1>
+  <p class="lead">BFC 不是一串触发条件，而是一道边界。它把盒内的竖直 margin 折叠关在里面，不让穿出去改写外面的布局。米色块是父元素背景，顶部虚线是参照位置。</p>
+
+  <section class="panel">
+    <h2>调一调</h2>
+    <div class="controls">
+      <span class="control">
+        <input type="checkbox" id="bfc" />
+        <label for="bfc">父元素 display: flow-root（建立 BFC 边界）</label>
+      </span>
+    </div>
+    <div class="stage" id="stage">
+      <div class="bfc-parent" id="parent">
+        <div class="bfc-child" id="child">子元素，margin-top: 50px</div>
+      </div>
+    </div>
+    <p class="hint">父元素没有 border、没有 padding；子元素的 margin-top 固定 50px。开关之外没有任何数值变化。</p>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>打开 flow-root 后，父元素高度如何变化？子元素相对父顶部的位置又怎么变？先写下答案再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p><strong>父元素高度增加 50px</strong>（从只包住子元素高度，变成 50px + 子元素高度）；子元素相对父顶部的偏移从 0 变成 50px。父元素自身的 computed margin-top 始终是 0px，变的是那 50px 空隙画在父元素外面还是里面。</p>
+        <p>没开时，父子 Margin 折叠且结果放在父元素外面，父元素整体被推下去，父子之间没有空隙。开了 flow-root，边界挡住折叠，50px 变成父元素内部的一段空白，父元素不再被推下去。border 和 padding 也能阻断，但机理是插进实体让两者不再相邻，不是立边界。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">父元素 BFC 状态</span><span class="val" id="rBfc"></span></div>
+      <div class="readout"><span class="key">父元素高度 (rect.height)</span><span class="val" id="rHeight"></span></div>
+      <div class="readout"><span class="key">子元素相对父顶部偏移</span><span class="val" id="rOffset"></span></div>
+      <div class="readout"><span class="key">父 computed margin-top</span><span class="val" id="rMargin"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/07-bfc.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  const bfcToggle = document.getElementById("bfc");
+  const parent = document.getElementById("parent");
+  const child = document.getElementById("child");
+  const cssOut = document.getElementById("cssOut");
+
+  function render() {
+    const on = bfcToggle.checked;
+    document.body.classList.toggle("bfc-on", on);
+
+    const parentRect = parent.getBoundingClientRect();
+    const childRect = child.getBoundingClientRect();
+    const height = parentRect.height;
+    const offset = childRect.top - parentRect.top;
+    const parentMargin = getComputedStyle(parent).marginTop;
+
+    cssOut.textContent =
+      ".parent { background: #e8e3d5; display: " + (on ? "flow-root" : "block") + "; }\n" +
+      "          /* 无 border / padding */\n" +
+      ".child  { margin-top: 50px; }";
+
+    document.getElementById("rBfc").textContent = on ? "有边界（display: flow-root）" : "无边界（display: block）";
+    document.getElementById("rHeight").textContent = height.toFixed(1) + "px";
+    document.getElementById("rOffset").textContent = offset.toFixed(1) + "px";
+    document.getElementById("rMargin").textContent = parentMargin;
+    document.getElementById("status").textContent = on
+      ? "有边界：折叠停在门口，50px 成为父元素内部空白，父元素高度增加 50px，子元素相对父顶部下移 50px；父元素 margin-top 仍是 0px。"
+      : "无边界：子元素的 50px 上 margin 与父元素上边缘折叠，结果落在父元素外面，父元素整体下移 50px；父元素 margin-top 仍是 0px。";
+  }
+
+  bfcToggle.addEventListener("change", render);
+  render();
+</script>
+</body>
+</html>

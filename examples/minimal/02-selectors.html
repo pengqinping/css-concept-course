@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>02 · 从右往左读选择器</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --card: #fffdf7;
+      --green: #3f6b2a;
+      --green-dark: #29481c;
+      --green-soft: #e4ecd9;
+      --ink: #263021;
+      --muted: #66705e;
+      --line: #d8d3c5;
+      --amber: #a7631d;
+      --amber-soft: #f6e6cc;
+      --radius: 1.15rem;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--green-dark); text-underline-offset: .2em; }
+    a:hover { color: var(--green); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .page { width: min(72rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-link { font-weight: 700; text-decoration: none; }
+    .back-link::before { content: "\2190\00a0"; }
+    .eyebrow { margin: 0; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: .2rem 0 .5rem; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.15; letter-spacing: -.03em; }
+    h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    p { margin: .4rem 0; }
+    .lead { max-width: 50rem; color: var(--muted); }
+    .panel { margin-top: 1.25rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 .4rem 1.4rem rgb(55 58 42 / 5%); }
+    .controls { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; align-items: center; margin: .5rem 0 1.25rem; }
+    .control { display: inline-flex; align-items: center; gap: .55rem; font-size: .95rem; }
+    .control select { font: .95rem var(--mono); padding: .35rem .5rem; border: 1px solid var(--line); border-radius: .45rem; background: #fff; color: var(--ink); }
+    .stage { padding: 1.25rem 1rem; border: 1px dashed var(--line); border-radius: .7rem; background: #fff; }
+    .list { margin: 0; padding: 0; list-style: none; display: grid; gap: .5rem; max-width: 26rem; }
+    .list li { padding: .55rem .8rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--card); font: .95rem/1.4 var(--mono); transition: background-color 160ms ease, outline-color 160ms ease; }
+    .list li.hit { background: var(--amber-soft); outline: 3px solid var(--amber); outline-offset: 2px; font-weight: 700; }
+    .list li span { padding: 0 .25rem; border-radius: .25rem; background: var(--green-soft); color: var(--green-dark); }
+    .gates { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: 1rem; font: .85rem var(--mono); }
+    .gate { padding: .3rem .55rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); background: #fff; }
+    .gate.active { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); font-weight: 700; }
+    pre { margin: 0; padding: 1rem; border-radius: .7rem; background: #23301f; color: #eef3e6; overflow-x: auto; font: .9rem/1.6 var(--mono); }
+    .readouts { display: grid; gap: .45rem; margin-top: 1rem; font: .9rem/1.5 var(--mono); }
+    .readout { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+    .readout .key { min-width: 9rem; color: var(--muted); }
+    .readout .val { color: var(--green-dark); font-weight: 700; }
+    .status { margin-top: .9rem; padding: .7rem .9rem; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: .4rem; font-size: .92rem; }
+    details.reveal { margin-top: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; }
+    details.reveal summary { cursor: pointer; padding: .7rem .9rem; font-weight: 700; color: var(--green-dark); }
+    details.reveal[open] summary { border-bottom: 1px solid var(--line); }
+    details.reveal .answer { padding: .8rem .9rem; }
+    footer { margin-top: 2rem; font-size: .95rem; }
+    @media (max-width: 48rem) { .page { padding-top: 1.25rem; } .topbar { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="back-link" href="../../docs/course/02-selectors.md">返回课程</a>
+    <p class="eyebrow">CSS 概念课 / 02 选择器</p>
+  </header>
+
+  <h1>从右往左，把选择器读成筛选关卡</h1>
+  <p class="lead">右端锚定"是谁"，往左每一段只对同一个候选元素再问一句。组合器没有选中任何元素，它只回答"这个候选的父/兄是谁"。</p>
+
+  <section class="panel">
+    <h2>调一个参数</h2>
+    <div class="controls">
+      <label class="control" for="sel">选择器
+        <select id="sel">
+          <option value="li">li</option>
+          <option value=".list li">.list li</option>
+          <option value=".list li:has(span)">.list li:has(span)</option>
+          <option value=".list li:nth-child(2n)">.list li:nth-child(2n)</option>
+        </select>
+      </label>
+    </div>
+    <div class="stage">
+      <ul class="list" id="list">
+        <li>纯文本项</li>
+        <li>内含 <span>span</span> 的项</li>
+        <li class="mark">带类名的项</li>
+      </ul>
+    </div>
+    <div class="gates" id="gates">
+      <span class="gate" data-gate="0">右端锚点 li</span><span>→</span>
+      <span class="gate" data-gate="1">伪类逐项再筛</span><span>→</span>
+      <span class="gate" data-gate="2">左侧确认祖先</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>先预测</h2>
+    <p>选到 ".list li:has(span)" 时，哪一项会被高亮？这条链里右端锚点是谁，左边两段各在问什么？先写下来再揭晓。</p>
+    <details class="reveal">
+      <summary>揭晓 / 验证</summary>
+      <div class="answer">
+        <p>只有第二项（内含 span 的 li）高亮。右端锚点是最右侧的 li，它先圈出 3 个候选；":has(span)" 对同一个候选再问一句"你内部有 span 吗"，把集合缩到 1 个；左侧 ".list" 最后确认这个候选的祖先带 list 类。读选择器的顺序与写它的顺序是反的。若换成 ".list li:nth-child(2n)"，"再筛"这一步按所有兄弟从 1 计数，命中的是第二项。</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>当前生效的核心 CSS 与实测读数</h2>
+    <pre><code id="cssOut"></code></pre>
+    <div class="readouts">
+      <div class="readout"><span class="key">右端锚点候选数</span><span class="val" id="rAnchor"></span></div>
+      <div class="readout"><span class="key">实际命中数量</span><span class="val" id="rCount"></span></div>
+      <div class="readout"><span class="key">命中项序号</span><span class="val" id="rItems"></span></div>
+      <div class="readout"><span class="key">首个命中项 computed 背景</span><span class="val" id="rColor"></span></div>
+      <div class="readout"><span class="key">首个命中项 rect 宽×高</span><span class="val" id="rRect"></span></div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <footer><a href="../../docs/course/02-selectors.md">← 返回课程</a></footer>
+</main>
+
+<script>
+  (function () {
+    var sel = document.getElementById("sel");
+    var list = document.getElementById("list");
+    var cssOut = document.getElementById("cssOut");
+    var items = Array.prototype.slice.call(list.querySelectorAll("li"));
+
+    function render() {
+      var selector = sel.value;
+      var anchorCount = list.querySelectorAll("li").length;
+      var matched;
+      try { matched = Array.prototype.slice.call(list.querySelectorAll(selector)); }
+      catch (err) { matched = []; }
+
+      items.forEach(function (li) { li.classList.remove("hit"); });
+      matched.forEach(function (li) { li.classList.add("hit"); });
+
+      var indexes = matched.map(function (li) { return items.indexOf(li) + 1; });
+      var gateIndex = selector === "li" ? 0 : (selector === ".list li" ? 2 : 1);
+      document.querySelectorAll(".gate").forEach(function (el) {
+        var g = Number(el.dataset.gate);
+        el.classList.toggle("active", g === 0 || g === gateIndex);
+      });
+
+      var color = matched.length ? getComputedStyle(matched[0]).backgroundColor : "无命中";
+      var rect = matched.length ? matched[0].getBoundingClientRect() : null;
+      var rectText = rect ? Math.round(rect.width) + " × " + Math.round(rect.height) + " px" : "无命中";
+
+      document.getElementById("rAnchor").textContent = anchorCount + " 个 li";
+      document.getElementById("rCount").textContent = String(matched.length);
+      document.getElementById("rItems").textContent = indexes.length ? "第 " + indexes.join("、") + " 项" : "无";
+      document.getElementById("rColor").textContent = color;
+      document.getElementById("rRect").textContent = rectText;
+
+      var steps = {
+        "li": "右端 li 给出全部 3 个候选，没有往左的额外检查。",
+        ".list li": "右端 li 给出 3 个候选；左侧 .list 逐个确认祖先，3 个都通过。",
+        ".list li:has(span)": "右端 li 给出 3 个候选；:has(span) 筛到 1 个；.list 再确认祖先。",
+        ".list li:nth-child(2n)": "右端 li 给出 3 个候选；:nth-child(2n) 按所有兄弟从 1 计数，筛到 1 个；.list 再确认祖先。"
+      };
+      document.getElementById("status").textContent = "当前选择器 " + selector + "：" + steps[selector];
+
+      cssOut.textContent =
+        "/* 从右往左：" + selector + " */\n" +
+        selector + " {\n" +
+        "  background: var(--amber-soft);   /* 命中 " + matched.length + " 项 */\n" +
+        "  outline: 3px solid var(--amber);\n" +
+        "}";
+    }
+
+    sel.addEventListener("change", render);
+    render();
+  })();
+</script>
+</body>
+</html>
