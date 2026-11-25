@@ -10,9 +10,11 @@
 
 ## 先建立直觉
 
-:::figure 29-shapes-mix|混合隔离剖面：颜色在哪一层合成
+![混合隔离剖面：颜色在哪一层合成](figures/29-shapes-mix.svg)
+
+*图 29-1 · 混合隔离剖面：颜色在哪一层合成*
+
 图说明：一张剖面图——最外是页面背景，卡片根部标 `isolation: isolate`，画成一道边界；边界内依次是卡片背景、设置了 `mix-blend-mode: multiply` 的图片、卡片文字。箭头显示图片只与边界内的卡片背景混合，边界外的页面背景被挡住；只有去掉 `isolation`，图片才会把页面背景当作 backdrop 卷进来。读者应当看出：`mix-blend-mode` 决定算法，`isolation` 决定算法的作用范围。
-:::
 
 图要记住的一句话：`isolation: isolate` 自己不混色，它只画一条线，决定混色发生在哪一组里。
 
@@ -106,10 +108,15 @@
 
 ## 动手验证
 
-:::demo 29-shapes-mix|切换 isolation，看图片跟谁混色
-先预测：图片设了 `mix-blend-mode: multiply`，卡片背景米色、页面背景深绿。关闭卡片上的 `isolation: isolate` 后，图片颜色会变吗？把模式从 `multiply` 换成 `screen` 呢？先写下答案。
+[打开 demo：切换 isolation，看图片跟谁混色](../../examples/minimal/29-shapes-mix.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/29-shapes-mix.html" title="切换 isolation，看图片跟谁混色" loading="lazy"></iframe>
+
+> **先预测**：图片设了 `mix-blend-mode: multiply`，卡片背景米色、页面背景深绿。关闭卡片上的 `isolation: isolate` 后，图片颜色会变吗？把模式从 `multiply` 换成 `screen` 呢？先写下答案。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：用开关切换隔离，用下拉选混合模式（normal / multiply / screen）。状态文本显示当前生效的 CSS、混合组边界（卡片 / 页面）与图片的合成结果描述；核对"边界变了才换 backdrop，模式变了才换算法"。
-:::
 
 ## 容易误判的地方
 

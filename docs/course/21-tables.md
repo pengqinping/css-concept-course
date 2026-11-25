@@ -21,9 +21,11 @@
 
 ## 先建立直觉
 
-:::figure 21-tables|两种边框模型与列宽决策
+![两种边框模型与列宽决策](figures/21-tables.svg)
+
+*图 21-1 · 两种边框模型与列宽决策*
+
 左边是 `separate`：每个格子自带完整边框，相邻两条并排，间距由 `border-spacing` 控制；右边是 `collapse`：相邻边框合并成一条，宽度相同时按样式优先级选胜者。图的下半部分是列宽：`auto` 先看内容再分，`fixed` 先定轨道再塞内容。看图时只问一句：这条线、这一列，到底由谁决定？
-:::
 
 一句话记住：**结构由标签决定，边框和列宽由算法决定**。CSS 改的是算法的参数，不是结构本身。
 
@@ -101,10 +103,15 @@ CSS 计数器三个动作：在祖先上 `counter-reset` 建立并重置计数�
 
 ## 动手验证
 
-:::demo 21-tables|切换边框与布局，看线和列宽怎么变
-先预测：把 `border-collapse` 从 `separate` 切到 `collapse`，相邻两格之间的边框厚度会从 2px 变成多少？把 `table-layout` 从 `auto` 切到 `fixed`，往某一格塞一段很长的文字，那一列会变宽吗？写下答案再揭晓。
+[打开 demo：切换边框与布局，看线和列宽怎么变](../../examples/minimal/21-tables.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/21-tables.html" title="切换边框与布局，看线和列宽怎么变" loading="lazy"></iframe>
+
+> **先预测**：把 `border-collapse` 从 `separate` 切到 `collapse`，相邻两格之间的边框厚度会从 2px 变成多少？把 `table-layout` 从 `auto` 切到 `fixed`，往某一格塞一段很长的文字，那一列会变宽吗？写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，调这两个开关，核对面板显示的边框厚度与三列像素宽度；再用计数器开关看序号从 1 还是从 5 开始。
-:::
 
 ## 容易误判的地方
 

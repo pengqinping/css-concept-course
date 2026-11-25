@@ -1,8 +1,21 @@
 # 05 · 元素到底占多大
 
-> 一句话模型：一个盒子由 content / padding / border / margin 四层叠成；`box-sizing` 不改变任何尺寸，只改变 `width` 描述的是哪一层——**content-box 描述内容层，border-box 描述"内容 + 内边距 + 边框"那一层**。
+> **前置**：会用第 04 篇的"继承 / 初始值 / 指定值"判断一个属性最终取什么值；知道 `width` 是声明，不是结果。
+>
+> 上一篇：[值从哪里来](04-inheritance.md) ｜ [本阶段目录](README.md)
 
-## 先看一个现象
+## 1. 本章目标
+
+- 给定 `width: 300px; padding: 20px; border: 5px`，能分别算出 `content-box` 与 `border-box` 下的**内容宽**和**占位宽**，四个数字一个不错。
+- 能解释 `box-sizing` 到底改变了什么、没改变什么。
+- 能判断一个 flex 容器为什么被内容撑破，并说出修法。
+- 能预测两个相邻块级元素的垂直间距（折叠后取哪个值）。
+
+**为什么现在学这个**：第 04 篇解决了"值从哪来"，但从这一篇开始，值要变成盒子。后面所有的布局章节——包含块（06）、BFC（07）、Flex（15）、Grid（16）——都以"盒子占多大"为计算起点。这一步算错，后面全是空转。
+
+## 2. 新增模型
+
+先看一组最常见的代码：
 
 ```css
 .box {
@@ -12,111 +25,154 @@
 }
 ```
 
-你以为拿尺子量是 `300px`，实际是 `350px`——`padding` 和 `border` 各自左右各来一份，悄悄加了 `40 + 10 = 50px`。
+你以为它占 `300px`，实际是 `350px`。`padding` 和 `border` 左右各来一份，多出 `40 + 10 = 50px`。
 
-改成 `box-sizing: border-box` 再量，变成了 `300px`。但这时真正放内容的地盘只剩 `250px`。你以为少的是边角，实际少的是整块内容宽度。
+改成 `box-sizing: border-box`，占位变成 `300px`——但真正放内容的宽度只剩 `250px`。
 
-再加上 `margin: 20px`，横向总占空间分别是 `390px` 和 `340px`——`margin` 又加了 `40px`，但这次它不属于盒子自身。
+**模型：一个盒子由四层从内到外叠成，`width` 只是"某一层的宽度"，而 `box-sizing` 决定它指的是哪一层。**
 
-还有一种更隐蔽的溢出：三列等宽的 flex 容器里，只要某一列塞进一长串不换行的文字，它就不会等宽，而是把整个容器撑出去。这跟 padding/border 无关，是另一个默认在作怪（第 4 步会揭晓）。
+![四层盒剖面与两种 box-sizing 对照](figures/05-box-model.svg)
 
-## 先建立直觉
+*图 5-1 · 四层盒剖面与两种 box-sizing 对照*
 
-:::figure 05-box-model|四层盒剖面与两种 box-sizing 对照
-左半边是从内到外的剖面：content（放内容）、padding（内容与边框之间的缓冲）、border（边框本身）、margin（盒子之外、用来推开别人的透明间距）。右半边用同一组数字 `width:300px; padding:20px; border:5px` 并排画两个盒子：content-box 下内容层是 `300px`、总宽 `350px`；border-box 下总宽锁在 `300px`、内容层被挤到 `250px`。对照着看，两种模式只是"300 标在哪一层"不同。
-:::
+左半边是从内到外的剖面：content（装内容）、padding（内容与边框之间的缓冲）、border（边框本身）、margin（盒外、推开别人的透明间距）。右半边用同一组数字并排画两个盒子：content-box 下内容层 300px、总占位 350px；border-box 下总占位锁在 300px、内容层被挤到 250px。两种模式的差别只有一个：`300px` 标在哪一层。
 
-一句话抓住这张图：**`box-sizing` 换的不是盒子，是尺子的起点。**
+**这张图的一句话结论：`box-sizing` 换的不是盒子，是尺子的起点。**
 
-## 机制拆成四步
+术语落地：
 
-### 1. 四层各管什么，margin 为什么在盒外
+- **content box**：装文字和子元素的区域。
+- **padding box**：content 加上内边距。
+- **border box**：再加边框，也就是你眼睛看到的盒子外沿。
+- **margin box**：最外层，包含盒外间距。
 
-从里到外：
+`width` 描述的是前三个之一，永远不含 margin。
 
-- **content**：装文字和子元素的地方，`width`/`height` 默认描述它。
-- **padding**：内容与边框之间的缓冲，会被背景填充，透明但占位。
-- **border**：边框本身，占据实实在在的宽度。
-- **margin**：盒子之外的透明间距，不填充背景、不能放内容，作用是"我和别人之间留多远"。
+## 3. 可运行的 demo
 
-为什么 margin 必须在盒外？因为它表达的是**关系**而不是**自身**：两块内容之间的呼吸，属于它们之间的空隙，不属于任何一块。把它算进盒子，就等于把"关系"塞进了"物体"，布局和折叠都会乱套（第 3 步会看到后果）。
+在往下读原理之前，先动手看一遍现象。带着"为什么 border-box 那栏不动"的疑问读下一节，会比先看规则有效得多。
 
-所以 `width` 再怎么算，都只在前三层里打转；margin 另算。
+[打开 demo：调 padding 和 border，实时算占位宽度](../../examples/minimal/05-box-model.html)
 
-一个验证技巧：默认 `background-clip: border-box`，背景会铺到边框外沿，但绝不会铺进 margin。打开背景色就能一眼看出盒子到哪为止、哪一段是 margin。
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/05-box-model.html" title="调 padding 和 border，实时算占位宽度" loading="lazy"></iframe>
 
-### 2. box-sizing 换的是 width 描述哪一层
+> **先预测**：`width: 300px` 固定，把 padding 从 `0` 调到 `20px`、border 从 `0` 调到 `5px`。content-box 与 border-box 的"内容宽"和"占位宽"分别是多少？先把四组数字写下来再打开。
+>
+> **验证**：拖动两个滑块，页面会同时显示当前生效的 CSS 和两栏实测读数。用 `getBoundingClientRect().width` 的数值核对你的预测。
 
-固定用开头那组数字：`width: 300px; padding: 20px; border: 5px`（左右各一份），两种模式放在一起对照：
+如果你发现调滑块时 border-box 那栏的"占位宽"始终钉在 `300px`，说明你已经抓住了这个模型的要害。
+
+## 4. 原理与规则
+
+### 4.1 四层各管什么，margin 为什么在盒外
+
+从内到外，每一层有自己的职责：
+
+- **content**：装文字和子元素，`width` / `height` 默认描述它。
+- **padding**：内容与边框之间的缓冲，会填充背景，透明但占位。
+- **border**：边框，占据实在的宽度。
+- **margin**：盒外间距，不填背景、不放内容，只表达"我和别人隔多远"。
+
+**margin 为什么必须在盒外？** 因为它描述的是**关系**，不是**自身**。两段内容之间的呼吸属于它们之间的空隙，不属于任何一方。把它算进盒子，等于把关系塞进物体，布局和折叠都会乱套（4.3 会看到后果）。
+
+一个自查技巧：背景默认画到 border box 外沿，但绝不铺进 margin。给盒子一个背景色，一眼就能看出盒子到哪为止、哪一段是 margin。
+
+### 4.2 box-sizing 换的是 width 描述哪一层
+
+固定用同一组数字：`width: 300px; padding: 20px; border: 5px`（左右各一份）。
 
 | 量的是什么 | content-box（默认） | border-box |
 | --- | --- | --- |
-| `width: 300px` 描述的是 | 内容层 = `300px` | 内容 + padding + border = `300px` |
-| 内容实际宽 | `300px` | `300 - 2×20 - 2×5 = 250px` |
-| 盒子实际占位（不含 margin） | `300 + 40 + 10 = 350px` | `300px` |
-| 加上左右 `margin: 20px` 后 | `350 + 40 = 390px` | `300 + 40 = 340px` |
+| `width: 300px` 描述的是 | 内容层 = 300px | 内容 + padding + border = 300px |
+| 内容实际宽 | 300px | 300 − 2×20 − 2×5 = 250px |
+| 盒子占位（不含 margin） | 300 + 40 + 10 = 350px | 300px |
+| 加上左右 margin 20px 后 | 390px | 340px |
 
-数字是同一组，只有 `300px` 标在哪一层变了。这就是为什么两种模式看起来"换数字"——其实换的是参考点。
+数字是同一组，只有 `300px` 标在哪一层变了。这就是为什么两种模式看起来像"换了一堆数字"——其实换的是参考点。
 
-为什么要有两种？`content-box` 是历史默认，padding 和 border 会在你声明的宽度上"额外加价"，算栅格时容易溢出；`border-box` 让"我声明多宽就占多宽"，把 padding 和 border 从外面挪到里面消化，更适合按列算尺寸。所以很多项目会把 `*, *::before, *::after { box-sizing: border-box }` 设为全局默认。
+**为什么会有两种？** `content-box` 是历史默认：你声明内容多宽，padding 和 border 再额外加价，按栅格算列宽时容易溢出。`border-box` 让"声明多宽就占多宽"，把 padding 和 border 挪到里面消化，更适合按列算尺寸。因此多数项目会设全局默认：
 
-注意 border-box 不是"内容宽也是 300px"——恰恰相反，内容宽被 padding 和 border 吃掉了。
+```css
+*, *::before, *::after { box-sizing: border-box; }
+```
 
-### 3. 垂直 margin 折叠：相邻兄弟取较大值
+**失效条件**：`border-box` 不会让内容宽也等于 300px——恰恰相反，内容宽被吃掉了。当 padding 与 border 之和超过 `width` 时，内容宽会被压到 0，此时浏览器会让盒子**撑大**以保证内容最小宽度，`border-box` 的"锁宽"就失效了。
 
-看两个上下相邻的块：
+### 4.3 垂直 margin 折叠：相邻兄弟取较大值
 
 ```css
 .a { margin-bottom: 30px; }
 .b { margin-top: 20px; }
 ```
 
-它们的间距是 `30px`，不是 `50px`——两个垂直 margin 相遇时会**折叠**成一个，取较大的那个。max(30, 20) = 30。
+两者间距是 `30px`，不是 `50px`：两个垂直 margin 相遇时折叠成一个，取较大的那个。`max(30, 20) = 30`。
 
-为什么会折叠？因为垂直 margin 表达的是"两段内容之间要呼吸"，两个相邻的呼吸叠在一起会浪费空间。浏览器把它理解成"这一段间距至少要有多少"，于是取最大值而不是相加。这正好呼应第 1 步：margin 是关系，不是实体，所以它可以重叠。
+**为什么会折叠？** 因为垂直 margin 表达"两段内容之间至少留多少呼吸"，两个相邻的呼吸叠在一起是浪费。浏览器把它理解成"至少"而不是"累加"，于是取最大值。这正好呼应 4.1：margin 是关系，不是实体，所以它可以重叠。
 
-边界要说清：折叠只发生在**垂直方向**、**正常流的块级盒之间**。水平 margin 从不折叠；flex 或 grid 子项之间的 margin 也不折叠——它们各有各的布局规则。父子之间的垂直 margin 也会折叠，那是第 06 篇"格式化上下文"要处理的事。
+**失效条件**（这些情况不折叠，间距相加）：
+- 水平方向：左右 margin 从不折叠。
+- 元素处于 flex 或 grid 容器中：子项之间不折叠。
+- 两者之间有边框、内边距、行内内容或建立了 BFC 的边界：折叠被阻断（详见 [第 07 篇](07-bfc.md)）。
 
-### 4. min-width: auto 让 flex/grid 子项撑破容器
+### 4.4 min-width: auto 让 flex / grid 子项撑破容器
 
-普通块级元素的 `min-width` 初始值是 `auto`，但浏览器把它当 `0` 用——所以你能把块压到很窄。flex 和 grid 的子项不一样：它们的 `auto` 会解析成**基于内容的最小尺寸**，也就是内容再挤也不能小于的宽度（比如一个不换行的长单词、一张固定宽的图片）。
+普通块级元素的 `min-width: auto` 被当作 `0` 使用，所以你能把块压得很窄。flex 和 grid 子项不同：它们的 `auto` 解析为**基于内容的最小尺寸**——内容再挤也不能小于的宽度，比如一个不换行的长单词。
 
 ```css
 .row  { display: flex; width: 300px; }
-.item { flex: 1; }  /* 内容是一串不换行的长文本 */
+.item { flex: 1; }  /* 某一项里是长串不换行文本 */
 ```
 
-你以为三项均分，实际长文本那项把容器撑破了，出现横向溢出。原因是 `min-width: auto` 挡住了收缩：`flex: 1` 想把它压到 100px，内容说"我最少要 200px"，auto 选了后者。
+你以为三项均分，实际长文本那项把容器撑破了。原因是 `min-width: auto` 挡住了收缩：`flex: 1` 想把它压到 100px，内容说"我至少要 200px"，auto 选了后者。
 
-为什么浏览器默认这样？因为把内容压到看不清比溢出更糟——这是保护性默认。要让它按你的意愿收缩，得显式解除保护：
+**为什么这是默认？** 把内容压到看不清比溢出更糟，这是保护性默认。要让它按你的意愿收缩，得显式解除：
 
 ```css
 .item { flex: 1; min-width: 0; }
 ```
 
-`min-width: 0` 把"内容最小尺寸"改成 `0`，子项就能真正均分了；代价是内容可能被截断或溢出，需要配合 `overflow` 或省略号处理。
+`min-width: 0` 把下限改成 0，子项才能真正均分；代价是内容可能被截断，需要配合 `overflow` 或省略号。
 
-grid 子项踩的是同一个坑：`grid-template-columns: repeat(3, 1fr)` 遇到长内容时，那一列会突破 `1fr` 的均分。解法写成 `repeat(3, minmax(0, 1fr))`，本质也是把最小尺寸从 `auto` 改成 `0`。
+grid 踩的是同一个坑：`repeat(3, 1fr)` 遇到长内容时那列会突破均分，解法是 `repeat(3, minmax(0, 1fr))`，本质同样是把下限从 `auto` 改成 `0`。
 
-## 动手验证
+## 5. 常见坑
 
-:::demo 05-box-model|调 padding 和 border，实时算占位宽度
-先预测：`width: 300px` 固定，把 padding 从 `0` 调到 `20px`、border 从 `0` 调到 `5px`，content-box 与 border-box 下的"内容宽"和"占位宽"分别变成多少？先把两组数字写下来。
-验证：打开 demo，拖动 padding 和 border 两个滑块，页面显示当前生效的 CSS 和实时读数——content-box 占位 = `300 + 2×padding + 2×border`，border-box 内容 = `300 - 2×padding - 2×border`。对照你写下的数字核对。
-:::
+**坑 1：三列各写 `width: 33.33%`，加了 padding 就换行**
 
-demo 的重点不是背公式，而是建立一个动作：**看到 `width`，先问一句"这是描述哪一层"，再决定要不要加 padding 和 border。** 如果调滑块时 border-box 那栏的"占位宽"始终是 `300px`，说明你已经抓住了关键；变的只是里面的内容宽。
+- **原因**：`content-box` 下 padding 在 `width` 之外额外加价，三列实际总宽超过 100%。
+- **确认**：DevTools 里逐列看 `getBoundingClientRect().width`，若大于 `33.33%` 的换算值，就是这个问题。
+- **修法**：全局 `box-sizing: border-box`，或改用 `flex: 1` / `grid` 让浏览器分配。
 
-## 容易误判的地方
+**坑 2：都写了 `flex: 1`，含长 URL 的卡片明显更宽**
 
-- **"`width: 300px` 就是占 300px 宽"** → 只在 `border-box` 下成立；默认 `content-box` 下还要加 padding 和 border，本例是 `350px`。margin 无论哪种模式都要另加。
-- **"`box-sizing: border-box` 让内容宽也是 300px"** → 反过来：总宽锁在 `300px`，内容被 padding 和 border 吃掉，本例只剩 `250px`。
-- **"`flex: 1` 一定等宽"** → 不一定。`min-width: auto` 会阻止子项收缩到内容最小尺寸以下，长内容会撑破均分；要加 `min-width: 0`。
+- **原因**：`min-width: auto` 解析为内容最小尺寸，长单词把下限顶高，`flex: 1` 压不下去。
+- **确认**：给子项临时加 `outline`，看它是否被内容撑开而非按份额分配。
+- **修法**：子项加 `min-width: 0`，文本配 `overflow-wrap: anywhere`；代价是内容可能被截断。
 
-## 自己再做一次
+**坑 3：写了 `margin: 16px`，卡片间距却只有 16px**
 
-1. 写 `.b { width: 300px; padding: 20px; border: 5px solid; }`，先用默认 `content-box`，再改 `border-box`。**预期结果：默认下 `getBoundingClientRect().width` 为 `350px`；改成 border-box 后为 `300px`，且内容宽为 `250px`。**
-2. 写两个相邻 div：上 `margin-bottom: 30px`、下 `margin-top: 20px`，量两者间距；再给它们套 `display: flex` 的父容器。**预期结果：正常流下间距 `30px`；放进 flex 容器后间距变成 `50px`（flex 子项间 margin 不折叠）。**
-3. 写 `display: flex; width: 300px` 的容器，里面三个各含长不换行文本的 `flex: 1` 子项。**预期结果：子项宽度不均、容器溢出；给子项加 `min-width: 0` 后预期结果：三项各约 `100px`，恢复均分。**
+- **原因**：上下相邻卡片的 `margin-bottom` 与 `margin-top` 折叠，取较大值 16px，而不是相加得 32px。
+- **确认**：DevTools 选中上面那张卡片，Layout 覆盖层会把两个 margin 区域重叠画在同一段空白上。
+- **修法**：容器改用 `gap: 16px`（flex/grid 下不折叠），或只加单侧 `margin-block-start`。
+
+## 6. 练习
+
+1. **基础**：写 `.b { width: 300px; padding: 20px; border: 5px solid; }`，先保持默认，再加 `box-sizing: border-box`。
+   验收：默认下 `getBoundingClientRect().width` 为 `350px`；加 border-box 后为 `300px`，且用 `clientWidth - padding` 算出的内容宽为 `250px`。
+
+2. **基础**：写两个相邻 div，上 `margin-bottom: 30px`、下 `margin-top: 20px`，量间距；再把它们放进 `display: flex` 的父容器量一次。
+   验收：正常流下间距为 `30px`；放进 flex 容器后为 `50px`（不折叠）。
+
+3. **进阶**：用 `display: flex; width: 300px` 的容器装三个 `flex: 1` 子项，其中一项塞入不含空格的长字符串。先观察溢出，再加修复。
+   验收：修复前三项宽度不均且容器出现横向溢出（`scrollWidth > clientWidth`）；给子项加 `min-width: 0` 与 `overflow-wrap: anywhere` 后，三项各为 `100px`，溢出消失。
+
+4. **进阶**：写一个 `width: 200px; padding: 0 100px; box-sizing: border-box` 的盒子，观察内容宽。
+   验收：padding 总和等于 `width`，内容宽为 `0`；此时若放入一个不可断行的长单词，盒子会被撑到大于 `200px`——这验证了 4.2 里的失效条件。
+
+5. **挑战**：不查资料，预测下面这条规则下盒子的占位宽，然后用浏览器验证。
+   ```css
+   .x { box-sizing: content-box; width: 50%; padding: 8%; border: 2px solid; margin: 4%; }
+   ```
+   验收：说明 `width: 50%` 与 `padding: 8%` 的百分比**都**相对包含块宽度解析（padding 的百分比不以自身宽度为基准），并算出在 400px 容器下内容宽 `200px`、占位宽 `200 + 2×32 + 4 = 268px`，含 margin（4% × 400 = 16px，两侧共 32px）为 `300px`。
 
 > 下一篇：[百分比是谁的百分比](06-containing-block.md)

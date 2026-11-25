@@ -35,9 +35,11 @@ background-image:
 
 ## 先建立直觉
 
-:::figure 11-background-border|多层背景剖面：颜色垫底，图像层依次上叠，每层被裁到同一个盒子
+![多层背景剖面：颜色垫底，图像层依次上叠，每层被裁到同一个盒子](figures/11-background-border.svg)
+
+*图 11-1 · 多层背景剖面：颜色垫底，图像层依次上叠，每层被裁到同一个盒子*
+
 图从侧面剖开一个盒子：最底下是唯一的 `background-color`，往上依次是第二层、第一层 `background-image`（第一层在最上），虚线标出 `background-clip` 指定的边界——所有层画到这条边界为止，超出部分不绘制。边框画在背景之上，所以只有半透明边框才让你看见边界的差异。
-:::
 
 关键一句：**层叠顺序、绘制区域、几何来源是三件独立的事**，改动其中一个不影响另外两个。
 
@@ -99,10 +101,15 @@ background-image:
 
 ## 动手验证
 
-:::demo 11-background-border|切换裁剪区域与阴影来源
-先预测：把 `background-clip` 从 `border-box` 改为 `padding-box`，那圈 10px 半透明边框会变成什么颜色？再预测：给透明星形换成 `drop-shadow()`，阴影轮廓会怎么变？
+[打开 demo：切换裁剪区域与阴影来源](../../examples/minimal/11-background-border.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/11-background-border.html" title="切换裁剪区域与阴影来源" loading="lazy"></iframe>
+
+> **先预测**：把 `background-clip` 从 `border-box` 改为 `padding-box`，那圈 10px 半透明边框会变成什么颜色？再预测：给透明星形换成 `drop-shadow()`，阴影轮廓会怎么变？
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，先用下拉切换裁剪区域，对照页面显示的当前 CSS 与边框区取样色；再切阴影开关，看阴影是跟着盒子还是跟着星形。把答案写完再点揭晓。
-:::
 
 demo 把半透明边框、两层背景和星形放在同一屏。控件只改两件事：绘制区域、阴影函数。页面实时显示生效的 CSS 和取样状态文本，预测可以被逐项核对。核对时按这个顺序问：先问"背景画到哪条边"，再问"哪一层在上"，最后问"阴影像盒还是像形"。三个问题对应不同机制，混在一起看就会觉得结果随机。
 

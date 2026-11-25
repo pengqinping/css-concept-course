@@ -22,9 +22,11 @@
 
 ## 先建立直觉
 
-:::figure 25-rendering|属性从流水线的哪一站进入，决定动画的代价
+![属性从流水线的哪一站进入，决定动画的代价](figures/25-rendering.svg)
+
+*图 25-1 · 属性从流水线的哪一站进入，决定动画的代价*
+
 图说明：一条自左向右的流水线——样式计算 → 布局 → 绘制 → 合成，前一站的输出是后一站的输入。三支箭头分别从布局、绘制、合成三站进入：从布局进的必须连着重做绘制和合成，从绘制进的只需重做绘制和合成，从合成进的没有下游可做。另有一条虚线从"读几何值"指回布局站，表示强制同步布局把流水线硬拉回起点。读者应当看出：卡不卡取决于箭头插在哪，而不是动画时长。
-:::
 
 图里最关键的一条：**流水线是单向依赖**。布局决定画在哪，绘制决定画什么，合成决定怎么叠。因此从布局进的改动无法跳过后面两站；而从合成进的改动没有下游可连累，这就是它轻的全部原因。
 
@@ -98,9 +100,13 @@ for (const box of boxes) {
 
 ## 动手验证
 
-:::demo 25-rendering|width 与 transform，同一段位移两种代价
-先预测：两根绿条从 120px 变到 300px，哪一根会在 Performance 的 Main 轨道里出现 Layout 和 Paint 段？把 `scaleX` 的系数从 2.5 调到 1 时，哪一根的实际宽度会变？先写下答案再揭晓。
-:::
+[打开 demo：width 与 transform，同一段位移两种代价](../../examples/minimal/25-rendering.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/25-rendering.html" title="width 与 transform，同一段位移两种代价" loading="lazy"></iframe>
+
+> **先预测**：两根绿条从 120px 变到 300px，哪一根会在 Performance 的 Main 轨道里出现 Layout 和 Paint 段？把 `scaleX` 的系数从 2.5 调到 1 时，哪一根的实际宽度会变？先写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
 
 验证分三步做，每步只看一个信号：
 

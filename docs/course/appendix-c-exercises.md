@@ -37,7 +37,7 @@
 **04-1 · initial 与 revert**：任务：对比 `color: initial` 与 `color: revert` 分别用在 `p` 和 `<a>` 上的显示。验收：`p` 两者都黑；`<a>` 的 `initial` 黑、`revert` 链接蓝。
 
 <details><summary>参考答案</summary>
-`initial` 取规范初始值（`canvastext`），`revert` 退回浏览器默认样式——`<a>` 的 UA 样式设了蓝色，所以两者在链接上分叉。
+`initial` 取规范初始值（`canvastext`），`revert` 退回浏览器默认样式——&lt;a&gt; 的 UA 样式设了蓝色，所以两者在链接上分叉。
 
 </details>
 

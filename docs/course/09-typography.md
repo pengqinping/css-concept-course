@@ -15,9 +15,11 @@
 
 ## 先建立直觉
 
-:::figure 09-typography|基线、行高与字体度量的剖面
+![基线、行高与字体度量的剖面](figures/09-typography.svg)
+
+*图 9-1 · 基线、行高与字体度量的剖面*
+
 一条行盒里有四条关键线：顶边、基线、字形上下界、底边。字号描述字形大小，行高描述行盒高度，两者之差被平均分成上下"半行距"。图中取 20px 字、40px 行高：字体 ascent 18px、descent 6px 合计 24px，于是上下各留 (40 − 24) ÷ 2 = 8px，基线距顶边 8 + 18 = 26px。
-:::
 
 上面这组数值是为了心算方便挑的，不是某款字体的真实参数。**为什么要把它们分开看？** 因为文本占据的高度由字体度量和行高共同决定，只盯着 `font-size` 就解释不了"字号没变，行距却变了"这类现象。
 
@@ -97,10 +99,15 @@
 
 ## 动手验证
 
-:::demo 09-typography|把固定行高换成无单位数
-先预测：父级 `font-size: 16px`、`line-height: 28px` 时，一个 `font-size: 32px` 的标题行高是多少？把父级改成 `line-height: 1.75` 后又是多少？
+[打开 demo：把固定行高换成无单位数](../../examples/minimal/09-typography.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/09-typography.html" title="把固定行高换成无单位数" loading="lazy"></iframe>
+
+> **先预测**：父级 `font-size: 16px`、`line-height: 28px` 时，一个 `font-size: 32px` 的标题行高是多少？把父级改成 `line-height: 1.75` 后又是多少？
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，切换行高模式，并用滑块调标题字号；状态栏会显示当前 CSS 与标题的计算行高，两行标题是否重叠可直接核对预测。
-:::
 
 demo 里只有一个开关和一个滑块。建议先把滑块拉到最大，再切换开关：此时固定行高造成的重叠最明显，数值变化也最好读。
 

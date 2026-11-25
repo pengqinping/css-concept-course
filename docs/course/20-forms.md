@@ -21,9 +21,11 @@ input:invalid { border: 2px solid #b42318; }
 
 ## 先建立直觉
 
-:::figure 20-forms|控件状态的触发时机
+![控件状态的触发时机](figures/20-forms.svg)
+
+*图 20-1 · 控件状态的触发时机*
+
 图是一条时间轴：页面加载 → 用户交互（输入或点击）→ 失焦或提交。轴上标出各伪类点亮的时刻：`:invalid` 在加载时就能亮（空的 `required`），值一变就重算；`:user-invalid` 要等用户交互并失焦后才亮；`:checked` 选中即亮；`:indeterminate` 由脚本设置后亮；`:focus` 只要获得焦点就亮；`:focus-visible` 只在键盘等启发式场景亮。看图时只问一句：这个伪类说的是"值满足什么"，还是"人做过什么"？
-:::
 
 这张图要记住的不是伪类清单，而是**把"当前值"和"用户是否已交互"分开**。两者混用，就会在用户还没填写时提前报错。
 
@@ -103,10 +105,15 @@ input:invalid { border: 2px solid #b42318; }
 
 ## 动手验证
 
-:::demo 20-forms|切换状态，看哪个伪类先亮
-先预测：一个空的必填邮箱框，页面刚打开时 `:invalid` 和 `:user-invalid` 哪个命中？用鼠标点进文本框和用 Tab 键聚焦旁边的按钮，`:focus-visible` 分别怎样？写下答案再揭晓。
+[打开 demo：切换状态，看哪个伪类先亮](../../examples/minimal/20-forms.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/20-forms.html" title="切换状态，看哪个伪类先亮" loading="lazy"></iframe>
+
+> **先预测**：一个空的必填邮箱框，页面刚打开时 `:invalid` 和 `:user-invalid` 哪个命中？用鼠标点进文本框和用 Tab 键聚焦旁边的按钮，`:focus-visible` 分别怎样？写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，用开关切换"用户已交互"，分别用鼠标和键盘聚焦控件，状态文本会列出当前命中的伪类。核对加载时只有 `:invalid`、交互失焦后 `:user-invalid` 才出现。
-:::
 
 ## 容易误判的地方
 

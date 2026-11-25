@@ -28,9 +28,11 @@
 
 ## 先建立直觉
 
-:::figure 07-bfc|margin 穿透 vs flow-root 隔离
+![margin 穿透 vs flow-root 隔离](figures/07-bfc.svg)
+
+*图 7-1 · margin 穿透 vs flow-root 隔离*
+
 左图：普通父元素与第一个子元素共用同一个上 margin，50px 被画在父元素之外，父元素被推下去。右图：父元素成为 BFC 后，边界把 margin 拦在内侧，50px 变成父元素内部的一段空白，父元素不再被那段 margin 推下去。两张图的盒子尺寸、margin 数值完全相同，只差那一条边界。
-:::
 
 看图时不要去数"这里有几个属性"，只盯住那条边界：**边界之内的 margin 和浮动不能越过它，边界之外的也不能进来。** 剩下的规则都是从这一句推出来的。
 
@@ -95,9 +97,13 @@
 
 ## 动手验证
 
-:::demo 07-bfc|一键切换边界，看 margin 和浮动怎么变
-先预测：打开「BFC 开关」后，父元素的位置会下移还是内部出现空隙？父元素里全是浮动子元素时，它的高度会从 0 变成多少？写下答案再揭晓。
-:::
+[打开 demo：一键切换边界，看 margin 和浮动怎么变](../../examples/minimal/07-bfc.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/07-bfc.html" title="一键切换边界，看 margin 和浮动怎么变" loading="lazy"></iframe>
+
+> **先预测**：打开「BFC 开关」后，父元素的位置会下移还是内部出现空隙？父元素里全是浮动子元素时，它的高度会从 0 变成多少？写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
 
 demo 只有一个开关：`display: flow-root` 开或关。页面并排显示两种塌方案例——margin 穿透和浮动高度归零——并实时列出父元素的 `margin-top`、子元素的 `margin-top`、父元素的实际高度。
 

@@ -22,9 +22,11 @@
 
 ## 先建立直觉
 
-:::figure 02-selectors|从右往左：把选择器读成筛选关卡
+![从右往左：把选择器读成筛选关卡](figures/02-selectors.svg)
+
+*图 2-1 · 从右往左：把选择器读成筛选关卡*
+
 把 `.post > p:first-child::first-line` 从右端拆开：右端 `p` 给出候选集合，`:first-child` 与 `>` `.post` 逐个向左验证；最后的 `::first-line` 不再筛选元素，而是在已命中的元素内部指一块子区域。读选择器的顺序和写它的顺序是反的。
-:::
 
 图里最容易看漏的一点：组合器并没有"选中"任何元素，它只是在回答"这个候选元素的父/兄是谁"。真正决定候选集合大小的是最右端那一段。
 
@@ -98,10 +100,15 @@ li:nth-of-type(2n) { font-weight: 600; }    /* 只数同类兄弟 */
 
 ## 动手验证
 
-:::demo 02-selectors|把选择器拆成筛选关卡
-先预测：把 `.post > p` 改成 `.post p`，那个嵌在 `<blockquote>` 里的 `p` 会不会被选中？再预测 `:where(.post) h2` 与 `.post h2` 谁的优先级更高。
+[打开 demo：把选择器拆成筛选关卡](../../examples/minimal/02-selectors.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/02-selectors.html" title="把选择器拆成筛选关卡" loading="lazy"></iframe>
+
+> **先预测**：把 `.post > p` 改成 `.post p`，那个嵌在 `<blockquote>` 里的 `p` 会不会被选中？再预测 `:where(.post) h2` 与 `.post h2` 谁的优先级更高。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，切换组合器开关，对照"当前命中"列表与页面高亮；优先级读数显示在状态栏，用来核对第二次预测。
-:::
 
 demo 把上面四步做成了一个小 DOM 树和一个选择器输入框。重点不是记住哪条规则命中了哪个段落，而是每次改动后你都能指出：**右端锚点是谁，哪几段在往左验证**。
 

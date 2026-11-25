@@ -26,9 +26,11 @@
 
 ## 先建立直觉
 
-:::figure 14-animation|状态变化的时间轴与层叠席位
+![状态变化的时间轴与层叠席位](figures/14-animation.svg)
+
+*图 14-1 · 状态变化的时间轴与层叠席位*
+
 图上半是一条 transition 时间轴：事件发生时，浏览器已经算出变化前的计算值 A，变化后得到 B，在 duration 内用 timing-function 把"时间进度"映射成"值进度"，补出一串中间值；delay 只是让元素先停在 A。图下半是层叠席位：过渡值最高，重要声明居中，动画值夹在普通作者声明和重要声明之间。看图时只问一句：当前这一帧的值，来自静态声明，还是插值？
-:::
 
 这张图的关键不是记住动画属性，而是接受一件事：**插值产生的值也是参与层叠的值**，只是它的位置由机制规定，不能靠书写顺序挪动。
 
@@ -106,10 +108,15 @@
 
 ## 动手验证
 
-:::demo 14-animation|把 duration 调到 0，看插值怎么消失
-先预测：一个方块从浅色过渡到深色，`transition-duration` 为 300ms 时中途出现灰；把它拖到 0s 再切换，方块会渐变还是瞬间跳变？写下答案再揭晓。
+[打开 demo：把 duration 调到 0，看插值怎么消失](../../examples/minimal/14-animation.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/14-animation.html" title="把 duration 调到 0，看插值怎么消失" loading="lazy"></iframe>
+
+> **先预测**：一个方块从浅色过渡到深色，`transition-duration` 为 300ms 时中途出现灰；把它拖到 0s 再切换，方块会渐变还是瞬间跳变？写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，拖动 duration 滑块（0–600ms），点开关切换状态，对照状态文本里显示的当前计算值和过渡进度。重点看 duration 为 0 时中间帧是否还存在。
-:::
 
 ## 容易误判的地方
 

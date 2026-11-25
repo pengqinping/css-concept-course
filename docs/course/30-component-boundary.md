@@ -10,9 +10,11 @@
 
 ## 先建立直觉
 
-:::figure 30-component-boundary|Shadow DOM 边界：哪条线能过去
+![Shadow DOM 边界：哪条线能过去](figures/30-component-boundary.svg)
+
+*图 30-1 · Shadow DOM 边界：哪条线能过去*
+
 图说明：一道竖墙把左侧页面文档与右侧影子树分开，墙上的自定义元素宿主 `:host` 是关口。左边三条箭头被墙挡回：`.card button`、页面全局 `button`、页面里的 `:focus-visible`。右边三条带标签的箭头穿过关口：CSS 变量沿继承链进入、`:host` 从内部描述宿主、`::part()` 只命中组件显式标了 `part` 的节点。图上注明：跨树的普通声明由外层胜出，`!important` 则反过来。
-:::
 
 图要记住的一句话：边界不是"全封闭"，而是"只有列出的通道能过"。想改组件内部，要么改它公开的令牌和 Part，要么别越过边界。
 
@@ -101,10 +103,15 @@ demo-card button { color: red; }   /* 无效：内部按钮在影子树里 */
 
 ## 动手验证
 
-:::demo 30-component-boundary|两道开关，看谁改得动影子树里的按钮
-先预测：页面写 `button { color: red }`，影子树内部按钮会变红吗？给内部按钮加上 `part="action"` 并在页面写 `::part(action) { color: green }`，它会不会变绿？先写下答案。
+[打开 demo：两道开关，看谁改得动影子树里的按钮](../../examples/minimal/30-component-boundary.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/30-component-boundary.html" title="两道开关，看谁改得动影子树里的按钮" loading="lazy"></iframe>
+
+> **先预测**：页面写 `button { color: red }`，影子树内部按钮会变红吗？给内部按钮加上 `part="action"` 并在页面写 `::part(action) { color: green }`，它会不会变绿？先写下答案。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：用开关切换"页面全局 button 规则"与"组件暴露 action part"，状态文本显示当前生效 CSS、内部按钮的计算颜色与命中的通道（被挡住 / `::part()`）。核对普通选择器被挡、只有公开 Part 能改内部这两件事。
-:::
 
 ## 容易误判的地方
 

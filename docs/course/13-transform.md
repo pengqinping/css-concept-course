@@ -22,9 +22,11 @@
 
 ## 先建立直觉
 
-:::figure 13-transform|函数顺序示意：从右往左应用，平移向量会不会跟着转
+![函数顺序示意：从右往左应用，平移向量会不会跟着转](figures/13-transform.svg)
+
+*图 13-1 · 函数顺序示意：从右往左应用，平移向量会不会跟着转*
+
 图并排画同一元素中心出发的两条路径。左：`rotate(30deg) translateX(100px)`——先沿局部 X 轴平移 100px，再把结果绕原点旋转 30deg，落点约 `(86.6px, 50px)`。右：`translateX(100px) rotate(30deg)`——先旋转，再沿屏幕 X 轴平移 100px，落点 `(100px, 0)`。箭头上标"右先左后"，强调每个函数改的是随后的坐标系。
-:::
 
 读出一句：**列表里越靠右的函数越先作用到点上**——这是矩阵乘法，不是"依次拖动物体"。
 
@@ -98,10 +100,15 @@ transform: translateX(100px) rotate(30deg);
 
 ## 动手验证
 
-:::demo 13-transform|调角度，核对从右往左的落点
-先预测：`rotate(30deg) translateX(100px)` 的元素中心最终落在哪里（相对原点的 x, y）？把顺序反过来呢？
+[打开 demo：调角度，核对从右往左的落点](../../examples/minimal/13-transform.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/13-transform.html" title="调角度，核对从右往左的落点" loading="lazy"></iframe>
+
+> **先预测**：`rotate(30deg) translateX(100px)` 的元素中心最终落在哪里（相对原点的 x, y）？把顺序反过来呢？
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，用角度滑块从 0 调到 30deg，页面实时显示当前 transform、合成的 matrix 与计算落点；再用开关切换函数顺序，看落点是否变成 `(100px, 0)`。先写答案再点揭晓。
-:::
 
 demo 只有两个控件：角度、函数顺序。落点数值和 CSS 同步更新，预测可以直接核对。核对时别只看形状：`scale(1)` 或 `translateX(0)` 这类"看起来没变"的变换同样会创建层叠上下文，demo 里会单独提示这一点。判断顺序也可以反过来用：先看到落点不对，再检查是不是函数顺序写反了，而不是先怀疑布局。
 

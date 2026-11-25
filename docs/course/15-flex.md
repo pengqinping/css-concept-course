@@ -18,9 +18,11 @@
 
 ## 先建立直觉
 
-:::figure 15-flex|Flex 的空间分配四步
+![Flex 的空间分配四步](figures/15-flex.svg)
+
+*图 15-1 · Flex 的空间分配四步*
+
 上图先分清两条轴：主轴决定空间往哪个方向流，交叉轴决定对齐方向。下图用具体数字走一遍分配过程，最后一步的 min-size 是很多"算对了却不对"的原因。
-:::
 
 ## 机制拆成四步
 
@@ -64,9 +66,13 @@ Flex 子项默认 `min-width: auto`（`column` 方向是 `min-height: auto`）�
 
 ## 动手验证
 
-:::demo 15-flex-space|拖动容器宽度，看每一项实际分到多少
-先预测：容器 600px、gap 16px、三项 basis 各 100px、grow 为 2:1:1 时，第一项最终多少 px？写下答案再揭晓。
-:::
+[打开 demo：拖动容器宽度，看每一项实际分到多少](../../examples/minimal/15-flex-space.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/15-flex-space.html" title="拖动容器宽度，看每一项实际分到多少" loading="lazy"></iframe>
+
+> **先预测**：容器 600px、gap 16px、三项 basis 各 100px、grow 为 2:1:1 时，第一项最终多少 px？写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
 
 demo 会把每项实测像素和计算式一起显示。拖动滑块时重点观察：**剩余空间怎么变、每项的增量比例是否保持 2:1:1、什么时候 min-size 开始拦截。**
 

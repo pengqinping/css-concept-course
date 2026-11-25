@@ -23,9 +23,11 @@
 
 ## 先建立直觉
 
-:::figure 17-container-query|视口查询与容器查询的作用范围
+![视口查询与容器查询的作用范围](figures/17-container-query.svg)
+
+*图 17-1 · 视口查询与容器查询的作用范围*
+
 外层是视口，`@media` 读的是它的宽度；视口里有侧栏和主区两个盒子，各自建立查询容器；`@container` 读的是**离自己最近的那个查询容器**的宽度。同一个组件放进不同盒子，读到的数就不同。
-:::
 
 图的关键：两张卡片代码完全相同，只是所在容器不同，就读出不同的宽度。这正是视口查询做不到的事——它对所有卡片返回同一个数。
 
@@ -98,10 +100,15 @@
 
 ## 动手验证
 
-:::demo 17-container-query|拖动容器宽度，看同一张卡片重排
-先预测：一个 `container-type: inline-size` 的容器，初始宽 320px，卡片用 `@container (min-width: 420px)` 切换横排。当宽度拖到 500px 时，卡片是横排还是竖排？
+[打开 demo：拖动容器宽度，看同一张卡片重排](../../examples/minimal/17-container-query.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/17-container-query.html" title="拖动容器宽度，看同一张卡片重排" loading="lazy"></iframe>
+
+> **先预测**：一个 `container-type: inline-size` 的容器，初始宽 320px，卡片用 `@container (min-width: 420px)` 切换横排。当宽度拖到 500px 时，卡片是横排还是竖排？
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo 拖动宽度滑块，观察卡片布局切换的临界点是否正好在 420px，并对照视口宽度保持不变这一点。
-:::
 
 demo 同时显示视口宽度和容器宽度两个数值，你会看到视口没变而卡片已经重排——这正是容器查询的证据。
 

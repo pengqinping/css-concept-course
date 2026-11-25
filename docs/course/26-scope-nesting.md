@@ -20,9 +20,11 @@
 
 ## 先建立直觉
 
-:::figure 26-scope-nesting|`:has()` 把匹配的箭头掉了个头
+![`:has()` 把匹配的箭头掉了个头](figures/26-scope-nesting.svg)
+
+*图 26-1 · `:has()` 把匹配的箭头掉了个头*
+
 图上是同一棵小 DOM 树画了两遍。左半：普通选择器 `.card button` 的箭头从外向内、从父到子，先圈出 `button` 再往祖先验证。右半：`.card:has(button:disabled)` 的匹配箭头从内部的 `button:disabled` 出发，反向指回外层的 `.card`；DOM 树的节点、连线、顺序一模一样，只有箭头方向反了。读者应当看出：变的是"谁被选中"，不是"树长什么样"。
-:::
 
 图里最关键的一条：**`:has()` 是条件反向，不是结构变化**。它让父子关系反过来当筛选条件，所以写它的代价是可审查性——表达式越复杂，越难一眼看出选中了谁。
 
@@ -99,10 +101,15 @@
 
 ## 动手验证
 
-:::demo 26-scope-nesting|三个轴，各切一次
-先预测：把 `.card { & button { color: red } }` 展开成扁平选择器后，嵌在卡片里的第三方按钮会不会变红？在 `@scope (.card) to (figure)` 里给 `p` 上色，figure 内部的 `p` 会不会命中？把答案写下来再揭晓。
+[打开 demo：三个轴，各切一次](../../examples/minimal/26-scope-nesting.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/26-scope-nesting.html" title="三个轴，各切一次" loading="lazy"></iframe>
+
+> **先预测**：把 `.card { & button { color: red } }` 展开成扁平选择器后，嵌在卡片里的第三方按钮会不会变红？在 `@scope (.card) to (figure)` 里给 `p` 上色，figure 内部的 `p` 会不会命中？把答案写下来再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，用模式下拉在「嵌套 / @scope / :has」之间切换，再用「启用下限」开关对照 scope 边界。状态栏显示当前命中列表、DOM 节点数（三次切换都不变）和优先级读数，用来核对"这次动的是写法、范围还是方向"。
-:::
 
 demo 一次只看一个轴，两个参数。重点不是记哪条规则命中哪个按钮，而是每次切换后都能回答：**这次动的是写法、范围，还是方向？** 状态栏的优先级读数用第 03 篇的四元组 `(行内, ID, 类/属性/伪类, 标签/伪元素)`，方便核对。
 

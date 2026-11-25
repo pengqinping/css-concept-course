@@ -37,9 +37,11 @@
 
 ## 先建立直觉
 
-:::figure 06-containing-block|两个参照盒：content box 与 padding box
+![两个参照盒：content box 与 padding box](figures/06-containing-block.svg)
+
+*图 6-1 · 两个参照盒：content box 与 padding box*
+
 图把同一个父元素画了两遍。左图是普通流：50% 的箭头从 content box 的左边缘量到右边缘，量的是 400px 的盒子。右图是绝对定位：箭头改从 padding box 的边缘量起，padding 被算进了"画布"，于是同样是 50%，量出来的是 440px 的盒子。border 始终在两道箭头之外。
-:::
 
 图里要看出一件事：**百分比本身没变，变的是尺子的起点和终点。** 与其死记"绝对定位 padding box"，不如养成习惯：看到百分比，先问"这把尺子搭在哪个盒子上"。
 
@@ -97,9 +99,13 @@
 
 ## 动手验证
 
-:::demo 06-containing-block|切换 position，看 50% 换尺子
-先预测：把子元素从 `static` 改成 `absolute`（父元素带 400px content、20px padding、2px border）后，`width: 50%` 会从 200px 变成多少？再预测改成 `fixed` 时参照盒是谁。把答案写下来，再点揭晓。
-:::
+[打开 demo：切换 position，看 50% 换尺子](../../examples/minimal/06-containing-block.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/06-containing-block.html" title="切换 position，看 50% 换尺子" loading="lazy"></iframe>
+
+> **先预测**：把子元素从 `static` 改成 `absolute`（父元素带 400px content、20px padding、2px border）后，`width: 50%` 会从 200px 变成多少？再预测改成 `fixed` 时参照盒是谁。把答案写下来，再点揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
 
 demo 只有一个下拉控件：`position`，在 `static / absolute / fixed` 之间切换。页面同时显示三样东西：当前生效的核心 CSS、当前参照盒的类型与宽度、以及子元素的实际 px 宽度。padding 和 border 保持固定，这样数值变化只可能来自参照盒。
 

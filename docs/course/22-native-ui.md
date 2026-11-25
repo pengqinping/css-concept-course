@@ -18,9 +18,11 @@
 
 ## 先建立直觉
 
-:::figure 22-native-ui|top layer 与常规文档层的剖面
+![top layer 与常规文档层的剖面](figures/22-native-ui.svg)
+
+*图 22-1 · top layer 与常规文档层的剖面*
+
 图是一个竖直剖面：下方大块是常规文档层，里面画着若干层叠上下文和 `overflow: hidden` 的裁剪框；上方一条窄带是 top layer，放着模态 `dialog` 和 popover。箭头从"触发"指向"元素被提升到 top layer"。图上标明两条规则：top layer 绘制在所有常规内容之上，且不受祖先 `overflow` 裁剪；但元素自身的尺寸与定位仍按原本的包含块计算。
-:::
 
 记住这条剖面：**"盖得住"靠的是层级，不是数值大小**。top layer 是浏览器单独开的一层，`z-index` 再大也到不了那里。
 
@@ -100,10 +102,15 @@ dialog.showModal(); // 而不是 dialog.setAttribute("open", "")
 
 ## 动手验证
 
-:::demo 22-native-ui|三种弹层逐个开，看焦点和背景怎么变
-先预测：打开模态 `dialog` 后，Tab 会不会跑到背景里的按钮？打开 popover 后呢？分别按 Escape，谁会关闭？写下答案再揭晓。
+[打开 demo：三种弹层逐个开，看焦点和背景怎么变](../../examples/minimal/22-native-ui.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/22-native-ui.html" title="三种弹层逐个开，看焦点和背景怎么变" loading="lazy"></iframe>
+
+> **先预测**：打开模态 `dialog` 后，Tab 会不会跑到背景里的按钮？打开 popover 后呢？分别按 Escape，谁会关闭？写下答案再揭晓。
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，依次触发三种弹层，用 Tab 和 Escape 操作，核对状态文本显示的"是否模态 / 背景是否 inert / 关闭方式"。再调背景遮罩开关，确认给 popover 加深遮罩后它依然不是模态。
-:::
 
 ## 容易误判的地方
 

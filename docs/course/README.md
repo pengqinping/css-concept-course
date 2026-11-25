@@ -2,7 +2,7 @@
 
 这是一份**从头读到尾**的 CSS 教程，30 篇正文 + 5 份附录。它面向"会写常见样式、但还在靠刷新浏览器猜结果"的人：目标不是再列一遍属性，而是把 CSS 的行为变成可以推演的东西。
 
-每篇固定三件套：**一张概念图 + 一个最小可运行 demo + 3 道带可核对预期结果的练习**。图和 demo 都紧贴讲它的那一段，而不是堆在文末。
+每篇固定三件套：**一张概念图 + 一个可交互 demo + 4–6 道带可核对预期结果的练习**。图和 demo 都紧贴讲它的那一段，而不是堆在文末。
 
 阅读顺序建议：正文 01–30 顺读，附录按需查。遇到"这个属性还有哪些取值"再翻 [属性速查表](appendix-a-cheatsheet.md)。
 
@@ -80,5 +80,5 @@
 
 - 每篇先只看图和"一句话模型"，自己预测 demo 结果，再打开验证。
 - demo 故意做得很小（1–2 个参数），复杂实验台不再是主线。
-- 交互式版本：[course-site/index.html](../../course-site/index.html)，可离线打开，图和 demo 全部内嵌，浏览器打印可导出全书。
-- 写作规范见 [STYLE.md](STYLE.md)；改了 Markdown 后运行 `python3 course-site/build_site.py` 重新生成站点。
+- 在线版本：<https://pengqinping.github.io/css-concept-course/>，带侧栏导航、搜索与内嵌 demo。
+- 写作规范见 [STYLE.md](STYLE.md)；改了 Markdown 后运行 `npm run docs:build` 验证站点，推送后 Pages 自动更新。

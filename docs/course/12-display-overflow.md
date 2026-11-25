@@ -20,9 +20,11 @@
 
 ## 先建立直觉
 
-:::figure 12-display-overflow|display 决定生成什么盒：同一段内容在五种值下的结果
+![display 决定生成什么盒：同一段内容在五种值下的结果](figures/12-display-overflow.svg)
+
+*图 12-1 · display 决定生成什么盒：同一段内容在五种值下的结果*
+
 图左是一段 DOM（一个包装元素加两个子元素），图右列出五种结果：`block` 生成占满一行的块盒；`inline` 生成跟着文字走的行内盒，宽高不生效；`inline-block` 外部像行内、内部可设宽高；`none` 不生成盒，占位也没了；`contents` 包装自身没有盒，两个子元素直接顶到父级布局里。箭头从 DOM 指向结果，强调"先选格式化上下文，再算尺寸位置"。
-:::
 
 读出一句：**`display` 改的是参与哪种格式化上下文，不是简单地把元素变大变小。**
 
@@ -100,10 +102,15 @@
 
 ## 动手验证
 
-:::demo 12-display-overflow|四种隐藏方式，谁还占位、谁还能点
-先预测：把浮层从 `opacity: 0` 改成 `visibility: hidden`，底下的按钮能点了吗？页面留白会不会变？再换成 `display: none` 呢？
+[打开 demo：四种隐藏方式，谁还占位、谁还能点](../../examples/minimal/12-display-overflow.html)
+
+<iframe class="demo-frame" src="/css-concept-course/examples/minimal/12-display-overflow.html" title="四种隐藏方式，谁还占位、谁还能点" loading="lazy"></iframe>
+
+> **先预测**：把浮层从 `opacity: 0` 改成 `visibility: hidden`，底下的按钮能点了吗？页面留白会不会变？再换成 `display: none` 呢？
+>
+> **验证**：打开 demo 调节参数，用页面显示的实时读数核对你的预测。
+
 验证：打开 demo，用下拉切换隐藏方式，对照页面显示的当前 CSS 与状态文本（是否占位 / 是否可命中 / 是否可 Tab）。先写下答案再点揭晓。
-:::
 
 demo 只有一个下拉：四种隐藏方式。按钮、占位条和状态文本同屏，每一项预测都能当场核对。注意状态文本里"可 Tab"和"可命中"是两行：很多 bug 正是只关掉了其中一个。核对完再去看当前 CSS，确认你预测的是机制而不是记下的结论。如果预测和实测不一致，先问"盒还在不在"，再问"像素有没有画"，最后问"命中区域还在不在"——按这个顺序定位，比逐个猜属性快。
 

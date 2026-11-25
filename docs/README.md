@@ -1,12 +1,13 @@
-# CSS 完整教程
+# CSS 技术教程
 
-一份按"现象 → 直觉 → 机制 → 验证 → 边界"写的 CSS 教程：**30 篇正文 + 5 份附录**，每篇配一张概念图和一个最小可运行 demo。
+一份按依赖顺序组织的 CSS 教程：**30 篇正文 + 5 份附录**，每篇配一张概念图、一个可交互 demo 和带验收标准的练习。
 
-## 从这里开始
+## 阅读入口
 
-- **[教程总览与完整目录](course/README.md)** —— 30 篇正文按六个部分组织，从"CSS 怎么变成画面"一路写到组件边界。
-- **[交互式学习站](../course-site/index.html)** —— 双击打开即可离线阅读，图和 demo 全部内嵌，支持浏览器打印导出全书。
-- **[最小 demo 索引](../examples/minimal/README.md)** —— 30 个单概念 demo，每个 1–2 个参数、带"先预测再揭晓"。
+- **在线站点（GitHub Pages）**：<https://pengqinping.github.io/css-concept-course/>
+- **[课程总览与完整目录](course/README.md)** —— 30 篇正文按三阶段组织：能预测、能构建、能维护。
+- **[写作规范](course/STYLE.md)** —— 六段结构、图示与 demo 的要求。
+- **[最小 demo 索引](https://github.com/pengqinping/css-concept-course/tree/main/examples/minimal)** —— 30 个单概念演示，可单独打开。
 
 ## 六大主题
 
@@ -23,6 +24,7 @@
 
 ## 写作与维护
 
-- [写作规范](course/STYLE.md) 规定了篇幅、结构、图示与 demo 的标准。
-- 新增或修改章节后，运行 `python3 course-site/build_site.py` 重新生成学习站。
-- 图中文字方块代表元素或内容，箭头代表方向、层次或数据流向。
+- Markdown 是唯一源文件；图示在 `docs/course/figures/`，demo 在仓库根目录 `examples/minimal/`。
+- 图与 demo 都用标准 Markdown 语法引用，GitHub 仓库页与站点都能正确显示。
+- 本地预览：`npm install && npm run docs:dev`；构建：`npm run docs:build`。
+- 推送到 `main` 后，GitHub Actions 会自动构建并发布 Pages。
