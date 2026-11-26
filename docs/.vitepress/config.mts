@@ -48,7 +48,12 @@ export default defineConfig({
             if (child.type !== 'link_open') continue
             const href = child.attrGet('href') || ''
             const m = href.match(/^(?:\.\.\/)+examples\/minimal\/(.+\.html)(?:#.*)?$/)
-            if (m) child.attrSet('href', `/examples/minimal/${m[1]}`)
+            if (m) {
+              child.attrSet('href', `/css-concept-course/examples/minimal/${m[1]}`)
+              // 直接打开 demo 时另开标签页，避免离开当前教程页。
+              child.attrSet('target', '_blank')
+              child.attrSet('rel', 'noopener noreferrer')
+            }
           }
         }
       })
