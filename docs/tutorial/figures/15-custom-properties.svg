@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <rect x="0" y="0" width="800" height="400" fill="#FFFDF7"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#1F2A1B">自定义属性：沿 DOM 向下继承，最近定义生效</text>
+  <text x="400" y="66" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#4A5544">找值时向上找最近的定义，找到就停</text>
+
+  <rect x="40" y="96" width="360" height="250" rx="6" fill="#DCEBD4" stroke="#3F7A3F" stroke-width="1.5"/>
+  <text x="56" y="120" font-family="sans-serif" font-size="13" font-weight="700" fill="#1F2A1B">:root { --brand: 绿 }</text>
+
+  <rect x="80" y="136" width="290" height="190" rx="6" fill="#F6E6CC" stroke="#A7631D" stroke-width="1.5"/>
+  <text x="96" y="160" font-family="sans-serif" font-size="13" font-weight="700" fill="#8A6A1F">section { --brand: 琥珀 }</text>
+
+  <rect x="120" y="176" width="220" height="130" rx="6" fill="#FFFDF7" stroke="#6B7F5B" stroke-width="1.2"/>
+  <text x="136" y="200" font-family="sans-serif" font-size="13" fill="#1F2A1B">.btn { color: var(--brand) }</text>
+  <text x="230" y="240" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#A7631D">取到 琥珀</text>
+  <text x="230" y="272" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">就近覆盖了 :root 的绿</text>
+
+  <rect x="440" y="96" width="320" height="130" rx="6" fill="#DCEBD4" stroke="#3F7A3F" stroke-width="1.5"/>
+  <text x="600" y="126" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1F2A1B">.btn2（在 section 之外）</text>
+  <text x="600" y="160" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#3F7A3F">取到 绿</text>
+  <text x="600" y="190" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">向上只找到 :root 的定义</text>
+
+  <text x="600" y="270" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#4A5544">主题切换 = 在更高的祖先上重定义一次</text>
+  <text x="600" y="292" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#4A5544">所有后代自动换装，组件一行不用改</text>
+
+  <text x="400" y="372" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#8A6A1F">一句话结论：变量不是"全局替换"，是带作用域的继承——谁离得近听谁的。</text>
+</svg>

@@ -5,8 +5,9 @@
 ## 阅读入口
 
 - **在线站点（GitHub Pages）**：<https://pengqinping.github.io/css-concept-course/>
+- **[新教程 · 按知识点（重写版）](tutorial/README.md)** —— 基础 / 进阶 / 高级，知识点驱动，每章配图示与可交互 demo。
 - **[课程总览与完整目录](course/README.md)** —— 30 篇正文按三阶段组织：能预测、能构建、能维护。
-- **[写作规范](course/STYLE.md)** —— 六段结构、图示与 demo 的要求。
+- **[写作规范](course/STYLE.md)** —— 一条主线、六条硬规则、章节弧线与 demo 两档。
 - **[最小 demo 索引](https://github.com/pengqinping/css-concept-course/tree/main/examples/minimal)** —— 30 个单概念演示，可单独打开。
 
 ## 六大主题

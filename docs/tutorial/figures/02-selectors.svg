@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="800" height="360" font-family="sans-serif">
+  <defs>
+    <marker id="arGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F6F4F"/>
+    </marker>
+    <marker id="arAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B26B00"/>
+    </marker>
+    <marker id="arDark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4A5544"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="360" fill="#F7F8F4"/>
+
+  <text x="400" y="42" text-anchor="middle" font-size="18" font-weight="700" fill="#1F2A1B">从右往左：把选择器读成筛选关卡</text>
+  <text x="400" y="66" text-anchor="middle" font-size="13" fill="#4A5544">以 .post &gt; p:first-child::first-line 为例：读的顺序和写的顺序是反的</text>
+
+  <rect x="40" y="84" width="720" height="44" rx="5" fill="#FFFDF7" stroke="#C8CEBF" stroke-width="1"/>
+  <text x="52" y="111" font-size="12" fill="#4A5544">书写（左→右）</text>
+  <rect x="180" y="91" width="76" height="30" rx="3" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <text x="218" y="112" text-anchor="middle" font-size="14" fill="#4A5544" font-family="monospace">.post</text>
+  <rect x="266" y="91" width="32" height="30" rx="3" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <text x="282" y="112" text-anchor="middle" font-size="14" fill="#4A5544" font-family="monospace">&gt;</text>
+  <rect x="308" y="91" width="40" height="30" rx="3" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <text x="328" y="112" text-anchor="middle" font-size="14" fill="#4A5544" font-family="monospace">p</text>
+  <rect x="358" y="91" width="126" height="30" rx="3" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <text x="421" y="112" text-anchor="middle" font-size="14" fill="#4A5544" font-family="monospace">:first-child</text>
+  <rect x="494" y="91" width="132" height="30" rx="3" fill="#FBF0DE" stroke="#B26B00" stroke-width="1.2"/>
+  <text x="560" y="112" text-anchor="middle" font-size="14" fill="#7A5A12" font-family="monospace">::first-line</text>
+
+  <rect x="612" y="160" width="160" height="100" rx="6" fill="#EAF0E4" stroke="#2F6F4F" stroke-width="1.5"/>
+  <text x="628" y="183" font-size="12" font-weight="700" fill="#2F6F4F">① 右端锚定</text>
+  <text x="628" y="207" font-size="16" font-weight="700" fill="#1F2A1B" font-family="monospace">p</text>
+  <text x="628" y="230" font-size="12" fill="#1F2A1B">扫过文档里全部的 p，</text>
+  <text x="628" y="248" font-size="12" fill="#1F2A1B">得到候选集合：所有 p</text>
+
+  <rect x="418" y="160" width="160" height="100" rx="6" fill="#EAF0E4" stroke="#2F6F4F" stroke-width="1.5"/>
+  <text x="434" y="183" font-size="12" font-weight="700" fill="#2F6F4F">② 向左验证</text>
+  <text x="434" y="207" font-size="15" font-weight="700" fill="#1F2A1B" font-family="monospace">:first-child</text>
+  <text x="434" y="230" font-size="12" fill="#1F2A1B">逐个问：自己是父元素</text>
+  <text x="434" y="248" font-size="12" fill="#1F2A1B">的第一个孩子吗？</text>
+
+  <rect x="224" y="160" width="160" height="100" rx="6" fill="#EAF0E4" stroke="#2F6F4F" stroke-width="1.5"/>
+  <text x="240" y="183" font-size="12" font-weight="700" fill="#2F6F4F">③ 向左验证</text>
+  <text x="240" y="207" font-size="15" font-weight="700" fill="#1F2A1B" font-family="monospace">&gt; .post</text>
+  <text x="240" y="230" font-size="12" fill="#1F2A1B">再问：父元素带 .post</text>
+  <text x="240" y="248" font-size="12" fill="#1F2A1B">吗？三项都过才命中</text>
+
+  <rect x="30" y="160" width="160" height="100" rx="6" fill="#FBF0DE" stroke="#B26B00" stroke-width="1.5"/>
+  <text x="46" y="183" font-size="12" font-weight="700" fill="#A86A00">④ 指子部分</text>
+  <text x="46" y="207" font-size="15" font-weight="700" fill="#1F2A1B" font-family="monospace">::first-line</text>
+  <text x="46" y="230" font-size="12" fill="#1F2A1B">不再筛选元素，在命中</text>
+  <text x="46" y="248" font-size="12" fill="#1F2A1B">元素内部指向其首行</text>
+
+  <line x1="610" y1="210" x2="584" y2="210" stroke="#2F6F4F" stroke-width="1.5" marker-end="url(#arGreen)"/>
+  <line x1="416" y1="210" x2="390" y2="210" stroke="#2F6F4F" stroke-width="1.5" marker-end="url(#arGreen)"/>
+  <line x1="222" y1="210" x2="196" y2="210" stroke="#B26B00" stroke-width="1.5" marker-end="url(#arAmber)"/>
+  <text x="400" y="278" text-anchor="middle" font-size="12" font-weight="700" fill="#4A5544">筛选方向：右 → 左（组合器只回答"父/兄是谁"，并不选中任何元素）</text>
+
+  <rect x="40" y="294" width="720" height="50" rx="5" fill="#FFFDF7" stroke="#B26B00" stroke-width="1.2"/>
+  <text x="400" y="316" text-anchor="middle" font-size="14" font-weight="700" fill="#1F2A1B">决定候选集合大小的是最右端那一段 p；左边各段只是对同一候选的额外检查</text>
+  <text x="400" y="336" text-anchor="middle" font-size="12" fill="#4A5544">伪元素只能写在链末端：先筛完元素，才谈得上指它的哪一块</text>
+</svg>

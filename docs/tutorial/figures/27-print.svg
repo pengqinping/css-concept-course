@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580" width="800" height="580" font-family="sans-serif">
+  <defs>
+    <marker id="arGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F6F4F"/>
+    </marker>
+    <marker id="arAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B26B00"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="580" fill="#F7F8F4"/>
+
+  <text x="400" y="38" text-anchor="middle" font-size="18" font-weight="700" fill="#1F2A1B">分页示意：连续的正文流被切成一叠 A4</text>
+  <text x="400" y="62" text-anchor="middle" font-size="13" fill="#4A5544">@page 管外圈纸张与页边距，@media print 管进入页面区的内容；分页点只能请求</text>
+
+  <rect x="40" y="90" width="720" height="52" rx="5" fill="#FFFDF7" stroke="#C8CEBF" stroke-width="1.2"/>
+  <text x="56" y="122" font-size="13" font-weight="700" fill="#1F2A1B">连续文档流（屏幕上可无限向下）</text>
+  <rect x="330" y="102" width="55" height="28" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <rect x="395" y="102" width="55" height="28" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <rect x="460" y="102" width="55" height="28" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <rect x="525" y="102" width="55" height="28" fill="#EDEFE6" stroke="#8A9384" stroke-width="1"/>
+  <line x1="610" y1="88" x2="610" y2="145" stroke="#B26B00" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="610" y="84" text-anchor="middle" font-size="12" fill="#B26B00">break-before: page（建议点）</text>
+
+  <line x1="140" y1="144" x2="140" y2="176" stroke="#2F6F4F" stroke-width="1.2" marker-end="url(#arGreen)"/>
+  <line x1="660" y1="144" x2="660" y2="176" stroke="#2F6F4F" stroke-width="1.2" marker-end="url(#arGreen)"/>
+  <text x="400" y="166" text-anchor="middle" font-size="12" fill="#4A5544">切点由分页算法决定，CSS 只能递建议</text>
+
+  <!-- 第 1 页 -->
+  <text x="210" y="176" text-anchor="middle" font-size="12" fill="#1F2A1B">第 1 页</text>
+  <rect x="90" y="180" width="240" height="300" rx="3" fill="#FFFDF7" stroke="#C8CEBF" stroke-width="1.5"/>
+  <rect x="112" y="200" width="196" height="258" fill="none" stroke="#C9BFA6" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="120" y="216" font-size="12" fill="#B26B00">页边距 @page margin</text>
+  <rect x="128" y="222" width="164" height="220" fill="#FFFFFF" stroke="#2F6F4F" stroke-width="1.2"/>
+  <text x="136" y="238" font-size="12" fill="#2F6F4F">页面区</text>
+  <rect x="136" y="246" width="148" height="26" fill="#E8F1E9" stroke="#2F6F4F" stroke-width="1"/>
+  <text x="210" y="264" text-anchor="middle" font-size="12" fill="#1F2A1B">表头（每页重复）</text>
+  <rect x="136" y="284" width="140" height="6" fill="#D8DDD0"/>
+  <rect x="136" y="298" width="148" height="6" fill="#D8DDD0"/>
+  <rect x="136" y="312" width="132" height="6" fill="#D8DDD0"/>
+  <rect x="136" y="326" width="144" height="6" fill="#D8DDD0"/>
+  <rect x="136" y="340" width="120" height="6" fill="#D8DDD0"/>
+  <rect x="136" y="360" width="148" height="44" fill="none" stroke="#B26B00" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="210" y="387" text-anchor="middle" font-size="12" fill="#B26B00">图块（可能被切）</text>
+  <text x="210" y="470" text-anchor="middle" font-size="12" fill="#4A5544">counter(page) 1 / 3</text>
+
+  <!-- 第 2 页 -->
+  <text x="590" y="176" text-anchor="middle" font-size="12" fill="#1F2A1B">第 2 页</text>
+  <rect x="470" y="180" width="240" height="300" rx="3" fill="#FFFDF7" stroke="#C8CEBF" stroke-width="1.5"/>
+  <rect x="492" y="200" width="196" height="258" fill="none" stroke="#C9BFA6" stroke-width="1" stroke-dasharray="5,3"/>
+  <rect x="508" y="222" width="164" height="220" fill="#FFFFFF" stroke="#2F6F4F" stroke-width="1.2"/>
+  <rect x="516" y="246" width="148" height="26" fill="#E8F1E9" stroke="#2F6F4F" stroke-width="1"/>
+  <text x="590" y="264" text-anchor="middle" font-size="12" fill="#1F2A1B">表头（每页重复）</text>
+  <rect x="516" y="284" width="146" height="6" fill="#D8DDD0"/>
+  <rect x="516" y="298" width="130" height="6" fill="#D8DDD0"/>
+  <rect x="516" y="312" width="148" height="6" fill="#D8DDD0"/>
+  <rect x="516" y="326" width="138" height="6" fill="#D8DDD0"/>
+  <rect x="516" y="340" width="144" height="6" fill="#D8DDD0"/>
+  <text x="590" y="380" text-anchor="middle" font-size="12" fill="#2F6F4F">thead 每页顶部重画</text>
+  <text x="590" y="402" text-anchor="middle" font-size="12" fill="#4A5544">tr 行不被拆开</text>
+  <text x="590" y="470" text-anchor="middle" font-size="12" fill="#4A5544">counter(page) 2 / 3</text>
+
+  <line x1="400" y1="190" x2="400" y2="462" stroke="#B26B00" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arAmber)"/>
+  <text x="400" y="480" text-anchor="middle" font-size="12" fill="#B26B00">页边界 / 切点</text>
+
+  <rect x="40" y="495" width="720" height="70" rx="5" fill="#FFFDF7" stroke="#B26B00" stroke-width="1.2"/>
+  <text x="400" y="520" text-anchor="middle" font-size="13" font-weight="700" fill="#1F2A1B">页边距盒不属于正文流：放页码与页眉页脚，不参与排版</text>
+  <text x="400" y="542" text-anchor="middle" font-size="12" fill="#4A5544">@page 描述页面盒（size / margin），不是选择器；元素样式写在 @media print</text>
+  <text x="400" y="560" text-anchor="middle" font-size="12" fill="#4A5544">break-before / break-inside / orphans / widows 只是请求；超长块仍会被切开</text>
+</svg>

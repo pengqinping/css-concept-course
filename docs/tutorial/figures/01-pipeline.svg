@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="800" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4A5544"/>
+    </marker>
+    <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B8860B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="360" fill="#F7F8F4"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#1F2A1B">渲染流水线：一份样式要过的四道关</text>
+  <text x="400" y="66" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#4A5544">DOM 与 CSSOM 是原料，依次经过四道加工；每一道只回答一个问题</text>
+
+  <text x="400" y="88" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8A6A1F">transform / opacity 动画：有机会从样式计算直接跳到合成</text>
+  <path d="M 245 114 L 245 100 Q 245 96 249 96 L 706 96 Q 710 96 710 100 L 710 114" fill="none" stroke="#B8860B" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrowGold)"/>
+
+  <rect x="30" y="114" width="120" height="72" rx="6" fill="#E7EADF" stroke="#7A846F" stroke-width="1.5"/>
+  <text x="90" y="144" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#1F2A1B">DOM + CSSOM</text>
+  <text x="90" y="164" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">原料：两棵树</text>
+
+  <rect x="185" y="114" width="120" height="72" rx="6" fill="#EAF0E4" stroke="#6B7F5B" stroke-width="1.5"/>
+  <text x="245" y="144" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">样式计算</text>
+  <text x="245" y="164" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">指定值 → 计算值</text>
+
+  <rect x="340" y="114" width="120" height="72" rx="6" fill="#EAF0E4" stroke="#6B7F5B" stroke-width="1.5"/>
+  <text x="400" y="144" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">布局</text>
+  <text x="400" y="164" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">几何结算</text>
+
+  <rect x="495" y="114" width="120" height="72" rx="6" fill="#EAF0E4" stroke="#6B7F5B" stroke-width="1.5"/>
+  <text x="555" y="144" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">绘制</text>
+  <text x="555" y="164" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">绘制指令 + 光栅化</text>
+
+  <rect x="650" y="114" width="120" height="72" rx="6" fill="#EAF0E4" stroke="#6B7F5B" stroke-width="1.5"/>
+  <text x="710" y="144" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">合成</text>
+  <text x="710" y="164" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">图层 → 一张图</text>
+
+  <line x1="153" y1="150" x2="182" y2="150" stroke="#4A5544" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="308" y1="150" x2="337" y2="150" stroke="#4A5544" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="463" y1="150" x2="492" y2="150" stroke="#4A5544" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="618" y1="150" x2="647" y2="150" stroke="#4A5544" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <line x1="90" y1="186" x2="90" y2="202" stroke="#A8B09C" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="90" y="218" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#4A5544">提供原料</text>
+
+  <line x1="245" y1="186" x2="245" y2="202" stroke="#A8B09C" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="245" y="218" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#1F2A1B">用哪个值</text>
+
+  <line x1="400" y1="186" x2="400" y2="202" stroke="#A8B09C" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="400" y="218" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#1F2A1B">放哪里、占多大</text>
+
+  <line x1="555" y1="186" x2="555" y2="202" stroke="#A8B09C" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="555" y="218" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#1F2A1B">画什么、谁盖谁</text>
+
+  <line x1="710" y1="186" x2="710" y2="202" stroke="#A8B09C" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="710" y="214" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#1F2A1B">各层怎么叠成</text>
+  <text x="710" y="230" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#1F2A1B">最终画面</text>
+
+  <rect x="200" y="285" width="400" height="40" rx="6" fill="#FFFDF7" stroke="#B8860B" stroke-width="1.5"/>
+  <text x="400" y="311" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#7A5A12">改动越靠前，下游重做越多</text>
+</svg>

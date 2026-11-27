@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" width="800" height="560">
+  <defs>
+    <marker id="down" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 5 10 L 10 0 z" fill="#4A5544"/>
+    </marker>
+    <marker id="side" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#A89D80"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="560" fill="#FFFDF7"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#1F2A1B">层叠决策树：从一堆命中规则里选出胜者</text>
+  <text x="400" y="66" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#4A5544">每一关淘汰一批声明；书写顺序在最后一关，只在前面全部打平时才有用</text>
+
+  <text x="250" y="90" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#6B7F5B">关卡（自上而下）</text>
+  <text x="640" y="90" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#8A7A55">在此关被淘汰的声明</text>
+
+  <rect x="40" y="96" width="420" height="46" rx="5" fill="#E8EFE1" stroke="#7C8F6B" stroke-width="1.2"/>
+  <circle cx="66" cy="119" r="13" fill="#6B7F5B"/>
+  <text x="66" y="124" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="90" y="116" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">命中筛选</text>
+  <text x="90" y="134" font-family="sans-serif" font-size="12" fill="#4A5544">选择器命中 + 查询条件成立，才有资格参赛</text>
+  <rect x="520" y="96" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="115" font-family="sans-serif" font-size="12" fill="#6B6352">选择器未命中；@media /</text>
+  <text x="534" y="132" font-family="sans-serif" font-size="12" fill="#6B6352">@container 条件不成立</text>
+  <line x1="463" y1="119" x2="516" y2="119" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <rect x="40" y="156" width="420" height="46" rx="5" fill="#E8EFE1" stroke="#7C8F6B" stroke-width="1.2"/>
+  <circle cx="66" cy="179" r="13" fill="#6B7F5B"/>
+  <text x="66" y="184" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="90" y="176" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">来源与重要性</text>
+  <text x="90" y="194" font-family="sans-serif" font-size="12" fill="#4A5544">UA 普通 &lt; 用户普通 &lt; 作者普通 &lt; 动画 &lt; 作者 !important &lt; … &lt; 过渡</text>
+  <rect x="520" y="156" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="175" font-family="sans-serif" font-size="12" fill="#6B6352">来源更低；无 !important 者</text>
+  <text x="534" y="192" font-family="sans-serif" font-size="12" fill="#6B6352">输给更高来源 / 重要声明</text>
+  <line x1="463" y1="179" x2="516" y2="179" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <rect x="40" y="216" width="420" height="46" rx="5" fill="#E8EFE1" stroke="#7C8F6B" stroke-width="1.2"/>
+  <circle cx="66" cy="239" r="13" fill="#6B7F5B"/>
+  <text x="66" y="244" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="90" y="236" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">比层 @layer</text>
+  <text x="90" y="254" font-family="sans-serif" font-size="12" fill="#4A5544">普通声明：后层强；重要声明：顺序反转</text>
+  <rect x="520" y="216" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="235" font-family="sans-serif" font-size="12" fill="#6B6352">普通：先层弱、未分层强于分层；</text>
+  <text x="534" y="252" font-family="sans-serif" font-size="12" fill="#6B6352">重要：先层强、未分层最弱</text>
+  <line x1="463" y1="239" x2="516" y2="239" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <rect x="40" y="276" width="420" height="46" rx="5" fill="#E8EFE1" stroke="#7C8F6B" stroke-width="1.2"/>
+  <circle cx="66" cy="299" r="13" fill="#6B7F5B"/>
+  <text x="66" y="304" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">4</text>
+  <text x="90" y="296" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">比优先级</text>
+  <text x="90" y="314" font-family="sans-serif" font-size="12" fill="#4A5544">(行内, ID, 类/属性/伪类, 标签/伪元素) 逐位比较</text>
+  <rect x="520" y="276" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="295" font-family="sans-serif" font-size="12" fill="#6B6352">高位更小者出局；组合器不计，</text>
+  <text x="534" y="312" font-family="sans-serif" font-size="12" fill="#6B6352">:where() 贡献 0</text>
+  <line x1="463" y1="299" x2="516" y2="299" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <rect x="40" y="336" width="420" height="46" rx="5" fill="#E8EFE1" stroke="#7C8F6B" stroke-width="1.2"/>
+  <circle cx="66" cy="359" r="13" fill="#6B7F5B"/>
+  <text x="66" y="364" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">5</text>
+  <text x="90" y="356" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">作用域距离</text>
+  <text x="90" y="374" font-family="sans-serif" font-size="12" fill="#4A5544">优先级也相同时：离 @scope 根更近者胜出</text>
+  <rect x="520" y="336" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="355" font-family="sans-serif" font-size="12" fill="#6B6352">跨越 DOM 层级更多者出局；</text>
+  <text x="534" y="372" font-family="sans-serif" font-size="12" fill="#6B6352">只在 scoped 规则之间判定</text>
+  <line x1="463" y1="359" x2="516" y2="359" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <rect x="40" y="396" width="420" height="46" rx="5" fill="#E8EFE1" stroke="#7C8F6B" stroke-width="1.2"/>
+  <circle cx="66" cy="419" r="13" fill="#6B7F5B"/>
+  <text x="66" y="424" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">6</text>
+  <text x="90" y="416" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">源码顺序（最后）</text>
+  <text x="90" y="434" font-family="sans-serif" font-size="12" fill="#4A5544">前面全部打平，才轮到后写的赢</text>
+  <rect x="520" y="396" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="415" font-family="sans-serif" font-size="12" fill="#6B6352">先写的出局；只要上面任一关</text>
+  <text x="534" y="432" font-family="sans-serif" font-size="12" fill="#6B6352">分出胜负，本关根本不比</text>
+  <line x1="463" y1="419" x2="516" y2="419" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <rect x="40" y="456" width="420" height="46" rx="5" fill="#DCEBD4" stroke="#3F7A3F" stroke-width="2"/>
+  <circle cx="66" cy="479" r="13" fill="#3F7A3F"/>
+  <text x="66" y="484" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">7</text>
+  <text x="90" y="476" font-family="sans-serif" font-size="15" font-weight="700" fill="#1F2A1B">胜出</text>
+  <text x="90" y="494" font-family="sans-serif" font-size="12" fill="#4A5544">唯一生效的声明</text>
+  <rect x="520" y="456" width="240" height="46" rx="5" fill="#F3EFE3" stroke="#C9BFA6" stroke-width="1"/>
+  <text x="534" y="484" font-family="sans-serif" font-size="12" fill="#6B6352">—（无人淘汰，抵达终点）</text>
+  <line x1="463" y1="479" x2="516" y2="479" stroke="#A89D80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#side)"/>
+
+  <line x1="250" y1="145" x2="250" y2="153" stroke="#4A5544" stroke-width="1.2" marker-end="url(#down)"/>
+  <line x1="250" y1="205" x2="250" y2="213" stroke="#4A5544" stroke-width="1.2" marker-end="url(#down)"/>
+  <line x1="250" y1="265" x2="250" y2="273" stroke="#4A5544" stroke-width="1.2" marker-end="url(#down)"/>
+  <line x1="250" y1="325" x2="250" y2="333" stroke="#4A5544" stroke-width="1.2" marker-end="url(#down)"/>
+  <line x1="250" y1="385" x2="250" y2="393" stroke="#4A5544" stroke-width="1.2" marker-end="url(#down)"/>
+  <line x1="250" y1="445" x2="250" y2="453" stroke="#4A5544" stroke-width="1.2" marker-end="url(#down)"/>
+
+  <text x="400" y="530" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="600" fill="#7A5A12">层比优先级更早被比较：普通声明后层强，重要声明反转层顺序</text>
+</svg>
