@@ -55,7 +55,7 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
     }
-    html.iframe-embedded .back, html.iframe-embedded footer { display: none; }
+    html.iframe-embedded header, html.iframe-embedded .topbar, html.iframe-embedded .back, html.iframe-embedded footer { display: none; }
   </style>
   <script>
     if (window.self !== window.top || new URLSearchParams(location.search).has("embed")) {

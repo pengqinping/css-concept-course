@@ -63,7 +63,7 @@
       html { scroll-behavior: auto; }
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
-    html.iframe-embedded .back, html.iframe-embedded footer { display: none; }
+    html.iframe-embedded header, html.iframe-embedded .topbar, html.iframe-embedded .back, html.iframe-embedded footer { display: none; }
   </style>
   <script>
     if (window.self !== window.top || new URLSearchParams(location.search).has("embed")) {
